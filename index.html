@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>KOves — Alfa V9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,900;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════ HEADER ═══════ -->
+  <header class="app-header">
+    <div class="header-logo">KOves</div>
+    <button class="header-activity-btn" onclick="showScreen('roulette')" aria-label="Ruleta de decisiones" style="margin-right:2px;">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="12" y1="12" x2="19" y2="16"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
+    </button>
+    <div class="header-group" onclick="openGroupSheet()">
+      <div class="header-group-avatar" id="hdr-group-avatar">EL</div>
+      <div class="header-group-name" id="hdr-group-name">EL CLUB</div>
+      <div class="header-group-caret">▾</div>
+    </div>
+    <div class="header-right">
+      <button class="header-activity-btn" onclick="showScreen('activity')" aria-label="Actividad reciente">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="header-activity-dot"></span>
+      </button>
+      <button class="header-activity-btn" onclick="openGroupChat()" aria-label="Chat del grupo">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="header-activity-dot" id="chat-dot" style="display:none;"></span>
+      </button>
+      <div class="header-avatar" id="hdr-user-avatar" onclick="openUserSheet()">TU</div>
+    </div>
+  </header>
+
+  <!-- ═══════ SCREEN: PLANES ═══════ -->
+  <section class="screen active" id="s-plans">
+
+    <div class="page-hero">
+      <div class="hero-label">Planes</div>
+      <div class="hero-title">Todo lo que<br>se mueve</div>
+      <div class="kpi-row">
+        <div class="kpi" id="kpi-pending-box" onclick="openKpiSheet('pendientes')" style="cursor:pointer;">
+          <strong id="kpi-pending-num">2</strong><span>Pendientes</span>
+          <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-pending-bar"><div class="kpi-bar-fill" style="width:100%;background:var(--ink);"></div></div><span class="kpi-bar-pct" id="kpi-pending-pct">&nbsp;</span></div>
+        </div>
+        <div class="kpi" onclick="openKpiSheet('activos')" style="cursor:pointer;">
+          <strong>1/5</strong><span>Activos</span>
+          <div class="kpi-bar-wrap"><div class="kpi-bar"><div class="kpi-bar-fill" style="width:20%;"></div></div><span class="kpi-bar-pct">20%</span></div>
+        </div>
+        <div class="kpi">
+          <strong>18/23</strong><span>Histórico</span>
+          <div class="kpi-bar-wrap"><div class="kpi-bar"><div class="kpi-bar-fill" style="width:78%;"></div></div><span class="kpi-bar-pct">78%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" style="padding-top:16px;">
+      <div class="tab-row">
+        <div class="tab active" onclick="switchPlansTab(this,'activos')">Activos</div>
+        <div class="tab" onclick="switchPlansTab(this,'historial')">Historial</div>
+      </div>
+
+      <!-- Activos -->
+      <div id="plans-activos">
+        <div class="month-nav" style="margin-bottom:10px;">
+          <button class="month-nav-btn" onclick="plansMonthNav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="month-nav-label" id="plans-act-month">Mayo 2026</div>
+          <button class="month-nav-btn" id="plans-act-next" onclick="plansMonthNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="card pending-border">
+          <div class="card-row" onclick="openPlan('quedada')">
+            <div class="card-content">
+              <div class="card-label">Hoy · 22:30</div>
+              <div class="card-name">Quedada en el piso</div>
+              <div class="card-sub card-sub-1line">Cena, música y después se decide si salir. Trae algo de beber si puedes.</div>
+            </div>
+            <div class="card-right">
+              <span class="attendance-tag pendiente">Pendiente</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-row" onclick="openPlan('fiesta-ana')">
+            <div class="card-content">
+              <div class="card-label">Sáb 14 Jun · 23:00</div>
+              <div class="card-name">Fiesta en casa de Ana</div>
+              <div class="card-sub card-sub-1line">Fiesta temática, llevar bebida. Empezamos sobre las 23:00 en su casa.</div>
+            </div>
+            <div class="card-right">
+              <span class="attendance-tag voy">✓ Voy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historial (planes a los que TÚ has asistido) -->
+      <div id="plans-historial" style="display:none;">
+        <div class="month-nav" style="margin-bottom:10px;">
+          <button class="month-nav-btn" onclick="histPlansNav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="month-nav-label" id="hist-plans-month">Mayo 2026</div>
+          <button class="month-nav-btn disabled" id="hist-plans-next" onclick="histPlansNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="openPlan('quedada')">
+          <div class="card-row" style="cursor:pointer;">
+            <div class="card-content">
+              <div class="card-label">10 May 2026</div>
+              <div class="card-name">Cumpleaños de Carlos</div>
+              <div class="card-sub card-sub-1line">Cena sorpresa en el piso de Carlos con todo el grupo.</div>
+            </div>
+            <div class="card-right">
+              <span class="attendance-tag voy">✓ Asististe</span>
+            </div>
+          </div>
+          <div class="hist-metrics">
+            <div class="hist-metric"><strong>9</strong><span>Participan</span></div>
+            <div class="hist-metric"><strong>Pablo</strong><span>MVP</span></div>
+            <div class="hist-metric"><strong>1</strong><span>Sanción</span></div>
+            <div class="hist-metric"><strong>14</strong><span>Fotos</span></div>
+            <div class="hist-metric"><strong>124€</strong><span>Gasto</span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="openPlan('fiesta-ana')">
+          <div class="card-row" style="cursor:pointer;">
+            <div class="card-content">
+              <div class="card-label">2 May 2026</div>
+              <div class="card-name">Cena italiana</div>
+              <div class="card-sub card-sub-1line">Cena en el italiano de siempre, pizzas y pasta para todos.</div>
+            </div>
+            <div class="card-right">
+              <span class="attendance-tag voy">✓ Asististe</span>
+            </div>
+          </div>
+          <div class="hist-metrics">
+            <div class="hist-metric"><strong>6</strong><span>Participan</span></div>
+            <div class="hist-metric"><strong>Ana</strong><span>MVP</span></div>
+            <div class="hist-metric"><strong>0</strong><span>Sanción</span></div>
+            <div class="hist-metric"><strong>8</strong><span>Fotos</span></div>
+            <div class="hist-metric"><strong>67€</strong><span>Gasto</span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="openPlan('quedada')">
+          <div class="card-row" style="cursor:pointer;">
+            <div class="card-content">
+              <div class="card-label">19 Abr 2026</div>
+              <div class="card-name">Concierto + fiesta</div>
+              <div class="card-sub card-sub-1line">Concierto en la sala y después fiesta hasta tarde por el centro.</div>
+            </div>
+            <div class="card-right">
+              <span class="attendance-tag novoy">✗ No asististe</span>
+            </div>
+          </div>
+          <div class="hist-metrics">
+            <div class="hist-metric"><strong>7</strong><span>Participan</span></div>
+            <div class="hist-metric"><strong>Lucas</strong><span>MVP</span></div>
+            <div class="hist-metric"><strong>2</strong><span>Sanción</span></div>
+            <div class="hist-metric"><strong>11</strong><span>Fotos</span></div>
+            <div class="hist-metric"><strong>89€</strong><span>Gasto</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════ V6: CALENDARIO MENSUAL CON FLECHAS LATERALES ═══════ -->
+    <div class="section" style="padding-bottom:24px;">
+      <div class="section-head"><span class="section-title">Calendario</span></div>
+      <div class="card" style="padding:12px 14px;">
+        <div class="month-nav">
+          <button class="month-nav-btn" id="cal-prev" onclick="calendarNav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="month-nav-label" id="cal-month-label">Mayo 2026</div>
+          <button class="month-nav-btn" id="cal-next" onclick="calendarNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="cal-grid" id="cal-month-grid">
+          <!-- Generado dinámicamente -->
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line);margin-top:12px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>Asististe</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;"></span>No asististe</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:#2563EB;display:inline-block;"></span>Quizás</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:#C07000;display:inline-block;"></span>Llego tarde</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+  <section class="screen" id="s-expenses">
+
+    <div class="page-hero">
+      <div class="hero-label">Gastos</div>
+      <div class="hero-title">Quién pagó,<br>quién debe</div>
+    </div>
+
+    <div class="section" style="padding-top:16px;">
+      <div class="spend-summary light">
+        <div class="spend-row"><span class="spend-label">Total gastado <span style="font-size:9px;opacity:.6;">(planes en los que estás)</span></span><span class="spend-value">498€</span></div>
+        <div class="spend-row"><span class="spend-label">Tú has pagado</span><span class="spend-value">312€</span></div>
+        <div class="spend-row"><span class="spend-label">Te deben</span><span class="spend-value" style="color:var(--green);">+25€</span></div>
+        <div class="spend-row"><span class="spend-label">Tú debes</span><span class="spend-value" style="color:var(--red);">−6€</span></div>
+        <div class="spend-row total"><span class="spend-label" style="font-weight:700;">Tu balance</span><span class="spend-value" style="color:var(--green);">+19€</span></div>
+      </div>
+    </div>
+
+
+    <!-- Mis pendientes: selector Te deben / Tú debes -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Mis pendientes</span></div>
+      <div class="split-toggle">
+        <div class="split-toggle-item active" onclick="switchPendientesTab(this,'te-deben')">Te deben</div>
+        <div class="split-toggle-item" onclick="switchPendientesTab(this,'tu-debes')">Tú debes</div>
+      </div>
+
+      <!-- Te deben -->
+      <div id="pendientes-te-deben">
+        <div class="card" style="padding:0 14px;">
+          <!-- Caso 1: el otro YA liquidó → puedes confirmar Recibido -->
+          <div class="expense-item">
+            <div class="exp-left"><div class="exp-icon">🎂</div><div class="exp-info"><div class="exp-name">Javi te debe</div><div class="exp-sub">Tarta cumpleaños · ✓ Comprobante adjuntado</div></div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+              <div class="exp-amount positive">+14€</div>
+              <button class="btn btn-primary" style="font-size:10px;padding:5px 10px;white-space:nowrap;" onclick="markReceived(this,'Javi','14€',true)">Recibido</button>
+            </div>
+          </div>
+          <!-- Caso 2: el otro AÚN no ha liquidado → Recibido bloqueado -->
+          <div class="expense-item" style="border-bottom:0;">
+            <div class="exp-left"><div class="exp-icon">🍕</div><div class="exp-info"><div class="exp-name">Sergio te debe</div><div class="exp-sub">Pizzas cena italiana · Esperando su pago</div></div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+              <div class="exp-amount positive">+11€</div>
+              <button class="btn btn-secondary" style="font-size:10px;padding:5px 10px;white-space:nowrap;opacity:.55;" disabled>Recibido</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">El botón "Recibido" se activa cuando la otra persona haya liquidado el pago y subido su comprobante.</div>
+      </div>
+
+      <!-- Tú debes: cada deuda con botón Liquidar individual -->
+      <div id="pendientes-tu-debes" style="display:none;">
+        <div class="card" style="padding:0 14px;">
+          <div class="expense-item" style="border-bottom:0;">
+            <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">Debes a Carlos</div><div class="exp-sub">Cena conjunta · Quedada en el piso</div></div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+              <div class="exp-amount negative">−6€</div>
+              <button class="btn btn-primary" id="liq-btn-carlos" style="font-size:10px;padding:5px 10px;white-space:nowrap;" onclick="openLiquidarItem('carlos','6€')">Liquidar</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Pulsa "Liquidar" para subir el comprobante de tu pago.</div>
+      </div>
+    </div>
+
+    <!-- Historial: selector Gastos / Transferencias -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Historial</span></div>
+      <div class="split-toggle">
+        <div class="split-toggle-item active" onclick="switchHistorialTab(this,'gastos')">Gastos</div>
+        <div class="split-toggle-item" onclick="switchHistorialTab(this,'transferencias')">Transferencias</div>
+      </div>
+      <div class="month-nav" style="margin-bottom:10px;">
+        <button class="month-nav-btn" onclick="histExpNav(-1)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-nav-label" id="hist-exp-month">Mayo 2026</div>
+        <button class="month-nav-btn disabled" id="hist-exp-next" onclick="histExpNav(1)">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <!-- Gastos -->
+      <div id="historial-gastos">
+        <div class="card" style="padding:0 14px;">
+          <div class="scroll-y">
+            <div class="expense-item" onclick="openExpenseDetail('cena-conjunta')">
+              <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">Cena conjunta</div><div class="exp-sub">Carlos · 5 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">27€</div>
+            </div>
+            <div class="expense-item" onclick="openExpenseDetail('tarta')">
+              <div class="exp-left"><div class="exp-icon">🎂</div><div class="exp-info"><div class="exp-name">Tarta cumpleaños</div><div class="exp-sub">Tú · 9 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">42€</div>
+            </div>
+            <div class="expense-item" onclick="openExpenseDetail('pizzas')">
+              <div class="exp-left"><div class="exp-icon">🍕</div><div class="exp-info"><div class="exp-name">Pizzas cena italiana</div><div class="exp-sub">Ana · 6 personas · <span class="pill pill-amber" style="font-size:10px;padding:2px 6px;">Pendiente</span></div></div></div>
+              <div class="exp-amount">67€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">🍻</div><div class="exp-info"><div class="exp-name">Copas concierto</div><div class="exp-sub">Lucas · 7 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">38€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">🚕</div><div class="exp-info"><div class="exp-name">Taxi vuelta</div><div class="exp-sub">Mario · 4 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">18€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">🏨</div><div class="exp-info"><div class="exp-name">Hotel Alicante</div><div class="exp-sub">Carlos · 8 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">340€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">⛽</div><div class="exp-info"><div class="exp-name">Gasolina viaje</div><div class="exp-sub">Pablo · 4 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">62€</div>
+            </div>
+            <div class="expense-item" style="border-bottom:0;">
+              <div class="exp-left"><div class="exp-icon">🥃</div><div class="exp-info"><div class="exp-name">Cubatas fiesta Javi</div><div class="exp-sub">Ana · 6 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
+              <div class="exp-amount">48€</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transferencias (pendientes liquidados) -->
+      <div id="historial-transferencias" style="display:none;">
+        <div class="card" style="padding:0 14px;">
+          <div class="scroll-y" id="transferencias-list">
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Pagaste a Carlos</div><div class="exp-sub">18 May · Cena anterior · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
+              <div class="exp-amount negative">−12€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name">Ana te pagó</div><div class="exp-sub">15 May · Tarta cumpleaños · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
+              <div class="exp-amount positive">+8€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Pagaste a Pablo</div><div class="exp-sub">12 May · Gasolina · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
+              <div class="exp-amount negative">−15€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name">Lucas te pagó</div><div class="exp-sub">3 May · Concierto · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
+              <div class="exp-amount positive">+9€</div>
+            </div>
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Pagaste a Carlos</div><div class="exp-sub">28 Abr · Hotel Alicante · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
+              <div class="exp-amount negative">−42€</div>
+            </div>
+            <div class="expense-item" style="border-bottom:0;">
+              <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name">Mario te pagó</div><div class="exp-sub">22 Abr · Cena italiana · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
+              <div class="exp-amount positive">+11€</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" style="padding-bottom:16px;">
+      <div class="notice" style="text-align:center;">
+        Los gastos se añaden desde cada plan, en su sección "Gastos del plan".
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═══════ SCREEN: GRUPO ═══════ -->
+  <section class="screen" id="s-group">
+
+    <div class="page-hero">
+      <div class="hero-label">Grupo</div>
+      <div class="hero-title" id="group-name-hero">EL CLUB</div>
+      <div class="hero-sub" id="group-meta-hero">Creado en enero 2025</div>
+      <div class="kpi-row">
+        <div class="kpi"><strong>9</strong><span>Miembros</span></div>
+        <div class="kpi"><strong>23</strong><span>Planes</span></div>
+        <div class="kpi">
+          <strong>78%</strong><span>Tu asistencia</span>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:78%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón invitar (grande) -->
+    <div class="section" style="padding-top:18px;padding-bottom:0;">
+      <button class="btn btn-primary btn-full" onclick="openInviteSheet()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Invitar a alguien al grupo
+      </button>
+    </div>
+
+    <!-- Clasificación tipo Liga: con AM y RJ. Al tocar una fila se abre el perfil -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Clasificación</span><span class="section-action" onclick="showStandingsLegend()">Cómo se calcula</span></div>
+      <div class="month-nav">
+        <button class="month-nav-btn" id="stand-prev" onclick="standingsNav(-1)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-nav-label" id="stand-month-label">Mayo 2026 · Mes actual</div>
+        <button class="month-nav-btn disabled" id="stand-next" onclick="standingsNav(1)">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="standings-header">
+          <div>#</div>
+          <div>Jugador</div>
+          <div>PJ</div>
+          <div>NC</div>
+          <div>MVP</div>
+          <div>TRD</div>
+          <div>AM</div>
+          <div>RJ</div>
+          <div>PTS</div>
+        </div>
+        <div id="standings-rows">
+          <!-- Generado dinámicamente -->
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:8px;line-height:1.5;">
+        PJ: planes jugados · NC: no confirmados (−1) · MVP: podio MVP · TRD: tardón · AM: amarillas (−2) · RJ: rojas (−5) · PTS: total.
+      </div>
+    </div>
+
+    <!-- Disciplina con selector Activas/Historial -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Disciplina</span></div>
+      <div class="split-toggle">
+        <div class="split-toggle-item active" onclick="switchDisciplinaTab(this,'activas')">Activas</div>
+        <div class="split-toggle-item" onclick="switchDisciplinaTab(this,'historial')">Historial</div>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;">
+        Las tarjetas pasan al historial automáticamente a los 7 días.
+      </div>
+
+      <!-- Activas (≤7 días) -->
+      <div id="disciplina-activas">
+        <div class="card" style="padding:0 14px;">
+          <div class="discipline-item">
+            <div class="disc-avatar" style="background:#C07000;">MR</div>
+            <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 2 días</span></div><div class="disc-reason">Quedada en el piso · Llegó 2h tarde</div></div>
+            <span class="pill pill-amber">Amarilla</span>
+          </div>
+          <div class="discipline-item">
+            <div class="disc-avatar" style="background:var(--red);">JV</div>
+            <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 4 días</span></div><div class="disc-reason">Fiesta del sábado · Expulsado 7 días</div></div>
+            <span class="pill pill-red">Roja</span>
+          </div>
+          <div class="discipline-item" style="border-bottom:0;">
+            <div class="disc-avatar" style="background:#C07000;">LC</div>
+            <div class="disc-body"><div class="disc-name">Lucas <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 6 días</span></div><div class="disc-reason">Cena italiana · No pagó su parte</div></div>
+            <span class="pill pill-amber">Amarilla</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historial (>7 días) -->
+      <div id="disciplina-historial" style="display:none;">
+        <div class="month-nav" style="margin-bottom:10px;">
+          <button class="month-nav-btn" onclick="discHistNav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="month-nav-label" id="disc-hist-month">Abril 2026</div>
+          <button class="month-nav-btn disabled" id="disc-hist-next" onclick="discHistNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="card" style="padding:0 14px;">
+          <div class="scroll-y">
+            <div class="discipline-item">
+              <div class="disc-avatar" style="background:#C07000;">MR</div>
+              <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 10 May</span></div><div class="disc-reason">Concierto · Faltó sin avisar</div></div>
+              <span class="pill pill-amber">Amarilla</span>
+            </div>
+            <div class="discipline-item">
+              <div class="disc-avatar" style="background:var(--red);">JV</div>
+              <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 28 Abr</span></div><div class="disc-reason">Cumpleaños Carlos · Ofensa al grupo</div></div>
+              <span class="pill pill-red">Roja</span>
+            </div>
+            <div class="discipline-item">
+              <div class="disc-avatar" style="background:#C07000;">LC</div>
+              <div class="disc-body"><div class="disc-name">Lucas <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 15 Abr</span></div><div class="disc-reason">Cena italiana · Llegó tarde</div></div>
+              <span class="pill pill-amber">Amarilla</span>
+            </div>
+            <div class="discipline-item">
+              <div class="disc-avatar" style="background:#C07000;">MR</div>
+              <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 5 Abr</span></div><div class="disc-reason">Viaje Alicante · Olvidó la mochila</div></div>
+              <span class="pill pill-amber">Amarilla</span>
+            </div>
+            <div class="discipline-item" style="border-bottom:0;">
+              <div class="disc-avatar" style="background:var(--red);">JV</div>
+              <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 22 Mar</span></div><div class="disc-reason">Karaoke · Borracho ofensivo</div></div>
+              <span class="pill pill-red">Roja</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTE DE SANCIONES (sección propia con navegación lateral por meses) -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Bote de sanciones</span></div>
+      <div class="month-nav">
+        <button class="month-nav-btn" id="bote-prev" onclick="boteNav(-1)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-nav-label" id="bote-month-label">Mayo 2026 · Mes actual</div>
+        <button class="month-nav-btn disabled" id="bote-next" onclick="boteNav(1)">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <!-- Resumen del bote del mes -->
+      <div class="spend-summary light" style="margin-bottom:12px;">
+        <div class="spend-row"><span class="spend-label">Total recaudado</span><span class="spend-value" id="bote-total">14€</span></div>
+        <div class="spend-row"><span class="spend-label" id="bote-status-label">Estado del mes</span><span class="spend-value" id="bote-status">En curso</span></div>
+        <div class="spend-row" id="bote-reparto-status-row" style="display:none;flex-direction:column;align-items:stretch;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="spend-label">Estado del reparto</span>
+            <span class="spend-value" id="bote-reparto-status-count" style="font-size:12px;">0/0</span>
+          </div>
+          <div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;">
+            <div id="bote-reparto-status-bar" style="width:0%;height:100%;background:var(--green);border-radius:3px;transition:width .3s;"></div>
+          </div>
+          <div id="bote-reparto-status-pending" style="font-size:10px;color:var(--ink3);"></div>
+        </div>
+      </div>
+
+      <!-- Deuda al bote por usuario -->
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 8px;">Quién debe al bote</div>
+      <div class="card" style="padding:0 14px;margin-bottom:12px;">
+        <div id="bote-deudores">
+          <!-- Generado dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Reparto al top 3 -->
+      <div id="bote-reparto-wrap" style="display:none;">
+        <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 8px;">Reparto al top 3</div>
+        <div class="card" style="padding:0 14px;">
+          <div id="bote-reparto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reglas del grupo (justo debajo del bote) -->
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Reglas del grupo</span>
+        <span class="section-action" id="rules-edit-btn" onclick="openEditRules()">Editar</span>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;" id="rules-admin-hint">
+        Solo los administradores pueden modificar las reglas. Tú eres admin en este grupo.
+      </div>
+      <div class="card" style="padding:0 14px;">
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Amarilla</div><div class="card-sub">Importe que va al bote del mes</div></div>
+          <span class="pill pill-dark">2€</span>
+        </div>
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Roja</div><div class="card-sub">Importe que va al bote del mes</div></div>
+          <span class="pill pill-dark">10€</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;" onclick="openGroupVisibility()">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Tipo de grupo</div><div class="card-sub" id="group-visibility-sub">Privado · información no visible</div></div>
+          <span class="section-action">Configurar</span>
+        </div>
+        <div class="card-row" style="cursor:default;border-bottom:0;" onclick="openGroupInvitesSettings()">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Invitaciones</div><div class="card-sub">Quién ve el código, reseteo, límites</div></div>
+          <span class="section-action">Configurar</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:8px;line-height:1.5;">
+        Reglas fijas: rankings siempre anónimos · comprobante siempre obligatorio · 2 amarillas activas = roja · tarjetas activas 7 días · amarilla −2 pts, roja −5 pts · bote repartido 50/30/20 al top 3.
+      </div>
+    </div>
+
+    <!-- Lista de miembros (con opción admin de expulsar) -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Miembros · 9</span></div>
+      <div id="group-members-list">
+        <div class="member-row">
+          <div class="avatar green">CS</div>
+          <div class="member-info" onclick="openMemberProfile('carlos')" style="cursor:pointer;"><div class="member-name">Carlos <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@carlossanz)</span> <span class="pill pill-outline" style="font-size:8px;padding:1px 5px;">Admin</span></div></div>
+        </div>
+        <div class="member-row">
+          <div class="avatar amber">MR</div>
+          <div class="member-info" onclick="openMemberProfile('mario')" style="cursor:pointer;"><div class="member-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@mariorz)</span></div></div>
+          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Mario')">Expulsar</button>
+        </div>
+        <div class="member-row">
+          <div class="avatar">PB</div>
+          <div class="member-info" onclick="openMemberProfile('pablo')" style="cursor:pointer;"><div class="member-name">Pablo <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@pablobc)</span></div></div>
+          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Pablo')">Expulsar</button>
+        </div>
+        <div class="member-row">
+          <div class="avatar away">LC</div>
+          <div class="member-info" onclick="openMemberProfile('lucas')" style="cursor:pointer;"><div class="member-name">Lucas <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@lucascv)</span></div></div>
+          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Lucas')">Expulsar</button>
+        </div>
+        <div class="member-row">
+          <div class="avatar">AN</div>
+          <div class="member-info" onclick="openMemberProfile('ana')" style="cursor:pointer;"><div class="member-name">Ana <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@anam)</span> <span class="pill pill-outline" style="font-size:8px;padding:1px 5px;">Admin</span></div></div>
+        </div>
+        <div class="member-row">
+          <div class="avatar away">JV</div>
+          <div class="member-info" onclick="openMemberProfile('javi')" style="cursor:pointer;"><div class="member-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@javiv)</span></div></div>
+          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Javi')">Expulsar</button>
+        </div>
+        <div class="member-row">
+          <div class="avatar">SR</div>
+          <div class="member-info" onclick="openMemberProfile('sergio')" style="cursor:pointer;"><div class="member-name">Sergio <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@sergiog)</span></div></div>
+          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Sergio')">Expulsar</button>
+        </div>
+        <div class="member-row">
+          <div class="avatar">MT</div>
+          <div class="member-info" onclick="openMemberProfile('marta')" style="cursor:pointer;"><div class="member-name">Marta <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@martal)</span></div></div>
+          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Marta')">Expulsar</button>
+        </div>
+        <div class="member-row">
+          <div class="avatar" style="background:var(--blue);color:#fff;">TU</div>
+          <div class="member-info" onclick="openMemberProfile('tu')" style="cursor:pointer;"><div class="member-name">Tú <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@tu_usuario)</span></div></div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:8px;" id="kick-hint">Como administrador puedes expulsar a cualquier miembro del grupo.</div>
+    </div>
+
+    <!-- Salir del grupo -->
+    <div class="section" style="padding-bottom:24px;">
+      <button class="btn btn-full" onclick="leaveGroup()" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red);">Salir del grupo</button>
+    </div>
+
+  </section>
+
+
+  <!-- ═══════ SCREEN: PLAN DETAIL ═══════ -->
+  <section class="screen" id="s-plan-detail">
+
+    <div class="plan-header">
+      <div class="back-btn" onclick="goBack()"><span class="back-arrow">←</span> Planes</div>
+      <div class="hero-label"><span class="live-dot"></span><span id="pd-status">Plan confirmado · Hoy 22:30</span></div>
+      <div class="hero-title" id="pd-title" style="margin-bottom:10px;">Quedada<br>en el piso</div>
+      <!-- Likes y comentarios estilo Instagram, al lado del título -->
+      <div class="plan-actions-row">
+        <div class="action-pill" id="pd-like-btn" onclick="toggleLike(this)">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span id="like-count">12</span>
+        </div>
+        <div class="action-pill" onclick="document.getElementById('comment-input').focus()">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span id="comment-count">8</span>
+        </div>
+      </div>
+      <div class="hero-sub" id="pd-desc" style="margin-top:14px;">Cena, música y después se decide si salir.</div>
+      <div id="pd-creator" style="margin-top:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:-.01em;">Creado por Carlos</div>
+    </div>
+
+    <!-- Distribución de voto del grupo (barras) -->
+    <div class="section" style="padding-top:18px;">
+      <div class="section-head"><span class="section-title">Asistencia del grupo</span></div>
+      <div class="card" style="padding:14px;">
+        <div class="dist-row">
+          <span class="dist-label">Voy</span>
+          <div class="dist-track"><div class="dist-fill" style="width:78%;background:var(--green);"></div></div>
+          <span class="dist-count">7</span>
+        </div>
+        <div class="dist-row">
+          <span class="dist-label">Tarde</span>
+          <div class="dist-track"><div class="dist-fill" style="width:11%;background:var(--amber);"></div></div>
+          <span class="dist-count">1</span>
+        </div>
+        <div class="dist-row">
+          <span class="dist-label">Quizás</span>
+          <div class="dist-track"><div class="dist-fill" style="width:11%;background:var(--blue);"></div></div>
+          <span class="dist-count">1</span>
+        </div>
+        <div class="dist-row" style="margin-bottom:0;">
+          <span class="dist-label">No voy</span>
+          <div class="dist-track"><div class="dist-fill" style="width:0%;background:var(--red);"></div></div>
+          <span class="dist-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Asistencia del usuario -->
+    <div class="section">
+      <div class="section-head"><span class="section-title" id="pd-attendance-title">Tu asistencia</span></div>
+      <div class="action-grid" id="attendance-grid">
+        <div class="action-btn" onclick="selectAttendance(this)">
+          <div class="action-title">Voy ✓</div>
+          <div class="action-sub">Confirmado</div>
+        </div>
+        <div class="action-btn" onclick="selectAttendance(this)">
+          <div class="action-title">No voy</div>
+          <div class="action-sub">Marcar ausencia</div>
+        </div>
+        <div class="action-btn" onclick="selectAttendance(this)">
+          <div class="action-title">Quizás</div>
+          <div class="action-sub">Pendiente</div>
+        </div>
+        <div class="action-btn" onclick="selectAttendance(this)">
+          <div class="action-title">Llego tarde</div>
+          <div class="action-sub">Avisar al grupo</div>
+        </div>
+      </div>
+      <!-- Barra de cuántos han votado -->
+      <div style="margin-top:14px;">
+        <div class="progress-wrap"><div class="progress-bar" style="width:89%;"></div></div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px;text-align:right;">8 de 9 han votado su asistencia</div>
+      </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Comentarios</span><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);" id="comment-count-2">8</span></div>
+      <div id="comments-list">
+        <div class="comment" data-author="@mario" data-comment-id="c1">
+          <div class="comment-header">
+            <div class="comment-avatar">MR</div>
+            <div class="comment-author">Mario</div>
+            <div class="comment-time">20:45</div>
+          </div>
+          <div class="comment-text">Yo llego sobre las 22:45, si pedís cena contad conmigo.</div>
+          <div class="comment-actions">
+            <span class="comment-action" onclick="likeComment(this)">❤ 2</span>
+            <span class="comment-action" onclick="startReply('@mario','c1')">Responder</span>
+          </div>
+          <!-- Replies de c1 -->
+          <div class="comment-reply-thread">
+            <div class="comment-reply" data-author="@carlos" data-comment-id="c1r1">
+              <div class="comment-header">
+                <div class="comment-avatar" style="background:var(--green);">CS</div>
+                <div class="comment-author">Carlos</div>
+                <div class="comment-time">21:02</div>
+              </div>
+              <div class="comment-text"><strong style="color:var(--ink);">@mario</strong> ok, te esperamos para el arroz entonces 😄</div>
+              <div class="comment-actions">
+                <span class="comment-action" onclick="likeComment(this)">❤ 1</span>
+                <span class="comment-action" onclick="startReply('@carlos','c1')">Responder</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="comment" data-author="@lucas" data-comment-id="c2">
+          <div class="comment-header">
+            <div class="comment-avatar">LC</div>
+            <div class="comment-author">Lucas</div>
+            <div class="comment-time">21:10</div>
+          </div>
+          <div class="comment-text">Voy, pero no sé si después salgo. Depende del ambiente.</div>
+          <div class="comment-actions">
+            <span class="comment-action" onclick="likeComment(this)">❤ 1</span>
+            <span class="comment-action" onclick="startReply('@lucas','c2')">Responder</span>
+          </div>
+          <div class="comment-reply-thread"></div>
+        </div>
+        <div class="comment" data-author="@ana" data-comment-id="c3">
+          <div class="comment-header">
+            <div class="comment-avatar" style="background:var(--green);">AN</div>
+            <div class="comment-author">Ana</div>
+            <div class="comment-time">21:33</div>
+          </div>
+          <div class="comment-text">¿Alguien trae algo de beber? Yo traigo las cervezas si me decís cuántos sois.</div>
+          <div class="comment-actions">
+            <span class="comment-action" onclick="likeComment(this)">❤ 4</span>
+            <span class="comment-action" onclick="startReply('@ana','c3')">Responder</span>
+          </div>
+          <div class="comment-reply-thread"></div>
+        </div>
+      </div>
+      <!-- Input comentario -->
+      <div class="input-row" style="margin-bottom:4px;">
+        <input type="text" class="text-input" placeholder="Escribe un comentario…" id="comment-input">
+        <button class="send-btn" onclick="addComment()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Gastos del plan -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Gastos del plan</span><span class="section-action" onclick="showAddExpense(true)">Añadir</span></div>
+      <div class="card" style="padding:0 14px;">
+        <div class="expense-item" onclick="openExpenseDetail('cena-conjunta')">
+          <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">Cena conjunta</div><div class="exp-sub">Pagado por Carlos · 5 participantes</div></div></div>
+          <div style="text-align:right;"><div class="exp-amount">27€</div><div style="margin-top:3px;"><span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div>
+        </div>
+      </div>
+      <div class="upload-zone" onclick="showAddExpense(true)" style="margin-top:8px;">
+        <div class="upload-label">+ Añadir gasto</div>
+        <div class="upload-sub">Adjuntar comprobante obligatorio</div>
+      </div>
+    </div>
+
+    <!-- Disciplina del plan: solo 2 botones árbitro -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Disciplina</span><span style="font-size:10px;color:var(--ink3);">Proponer tarjeta a un asistente</span></div>
+      <div class="referee-row" style="margin-bottom:14px;">
+        <div class="referee-btn amber-frame" onclick="showDisciplineModal('amarilla')">
+          <div class="referee-card referee-yellow"></div>
+        </div>
+        <div class="referee-btn red-frame" onclick="showDisciplineModal('roja')">
+          <div class="referee-card referee-red"></div>
+        </div>
+      </div>
+      <!-- Tarjeta activa en este plan, votable porque asististe -->
+      <div id="plan-discipline-list">
+        <div class="card" style="padding:14px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Mario · Amarilla</div>
+              <div style="font-size:11px;color:var(--ink3);">Llegó 2 horas tarde · Propuesto por Carlos</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
+              <div style="width:71%;background:var(--green);"></div>
+              <div style="width:29%;background:var(--red);"></div>
+            </div>
+            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">5/7</span>
+          </div>
+          <div style="display:flex;gap:6px;" id="plan-disc-vote-btns">
+            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanDiscipline(this,'favor')">A favor (5)</button>
+            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanDiscipline(this,'contra')">En contra (2)</button>
+          </div>
+          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Asististe a este plan · Tu voto cuenta para validar la tarjeta</div>
+        </div>
+        <!-- Tarjeta tuya: puedes reclamarla -->
+        <div class="card" style="padding:14px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Tú · Amarilla</div>
+              <div style="font-size:11px;color:var(--ink3);">No trajiste lo acordado · Propuesto por Ana</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-full" style="font-size:11px;padding:8px;" onclick="openReclamFor('tarjeta','Tu amarilla en este plan')">Reclamar esta tarjeta</button>
+          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Es tu tarjeta · puedes reclamarla explicando el motivo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranking del plan: MVP (3 votos obligatorios) y Tardón (0 o 3) -->
+    <div class="section" style="padding-bottom:20px;" id="ranking-section">
+      <div class="section-head"><span class="section-title">Ranking del plan</span></div>
+
+      <!-- Aviso si tienes tarjeta en este plan -->
+      <div id="ranking-card-warning" style="display:none;" class="notice" style="margin-bottom:14px;border-left:3px solid var(--red);">
+        <strong>Tienes una tarjeta en este plan.</strong> No puedes participar en el ranking de este plan.
+      </div>
+
+      <!-- Aviso de cierre a 24h -->
+      <div class="notice" style="margin-bottom:14px;" id="ranking-time-notice">
+        Cierra a las 24h de que el plan empezó. Solo votan asistentes. Voto anónimo. No puedes votarte.
+      </div>
+
+      <div id="ranking-vote-wrap">
+        <!-- MVP -->
+        <div style="margin-bottom:18px;">
+          <div style="font-size:12px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;">MVP del plan</div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Vota a 3 personas. 1º = 3 pts · 2º = 2 pts · 3º = 1 pt.</div>
+          <div class="podium-slot" onclick="openPodiumPicker('mvp', 1)">
+            <div class="podium-pos p1">1</div>
+            <div style="flex:1;"><div class="podium-name podium-empty" id="mvp-slot-1">Toca para elegir 1º</div></div>
+            <div class="podium-pts">+3 PTS</div>
+          </div>
+          <div class="podium-slot" onclick="openPodiumPicker('mvp', 2)">
+            <div class="podium-pos p2">2</div>
+            <div style="flex:1;"><div class="podium-name podium-empty" id="mvp-slot-2">Toca para elegir 2º</div></div>
+            <div class="podium-pts">+2 PTS</div>
+          </div>
+          <div class="podium-slot" onclick="openPodiumPicker('mvp', 3)">
+            <div class="podium-pos p3">3</div>
+            <div style="flex:1;"><div class="podium-name podium-empty" id="mvp-slot-3">Toca para elegir 3º</div></div>
+            <div class="podium-pts">+1 PTS</div>
+          </div>
+        </div>
+
+        <!-- TARDÓN -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+            <div style="font-size:12px;font-weight:800;letter-spacing:-.01em;">Más tardón</div>
+            <span class="comment-action" onclick="resetTardon()">Vaciar</span>
+          </div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Opcional. Marca a todas las personas que llegaron tarde. Cada una resta −2 puntos.</div>
+          <div id="tardon-list"></div>
+          <button class="btn btn-secondary btn-full" style="margin-top:8px;font-size:12px;" onclick="openTardonPicker()">Añadir persona tardona</button>
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="submitRanking()">Enviar votación</button>
+      </div>
+    </div>
+
+    <!-- ═══ MEJORES MOMENTOS ═══ -->
+    <div class="section" style="padding-bottom:28px;">
+      <div class="section-head"><span class="section-title">Mejores momentos</span><span style="font-size:10px;color:var(--ink3);">Solo asistentes</span></div>
+      <div style="font-size:11px;color:var(--ink3);margin-bottom:12px;line-height:1.5;">Sube las fotos que quieras de este plan. Solo pueden subir fotos quienes asistieron.</div>
+
+      <!-- Fotos subidas (mock) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;" id="plan-photos-grid">
+        <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:24px;">🍽️</span>
+        </div>
+        <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:24px;">🎉</span>
+        </div>
+        <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:24px;">🎸</span>
+        </div>
+      </div>
+
+      <!-- Subir foto -->
+      <div class="upload-zone" onclick="openPhotoMenu()" style="padding:14px;">
+        <div class="upload-icon">📷</div>
+        <div class="upload-label">Añadir foto</div>
+        <div class="upload-sub">Solo visible para los asistentes al plan</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═══════ SCREEN: MEMBER PROFILE ═══════ -->
+  <section class="screen" id="s-member">
+    <div class="member-profile-header" style="position:relative;">
+      <div class="back-btn" onclick="goBack()" style="position:absolute;left:18px;top:16px;margin-bottom:0;"><span class="back-arrow">←</span> Atrás</div>
+      <div class="member-profile-avatar" id="mp-avatar">CS</div>
+      <div class="member-profile-name" id="mp-name">Carlos</div>
+      <div class="member-profile-handle" id="mp-handle">@carlossanz</div>
+      <!-- Datos de perfil estilo red social -->
+      <div id="mp-bio" style="font-size:12px;color:var(--ink2);margin:6px 0 4px;line-height:1.5;">Siempre el primero en organizar, el último en irse 🎉</div>
+      <div id="mp-phone" style="font-size:11px;color:var(--ink3);font-family:'DM Mono',monospace;margin-bottom:4px;">📱 +34 612 345 678</div>
+    </div>
+
+    <!-- KPI ampliado TOTALES (toda la antigüedad, todos los grupos) -->
+    <div class="section" style="padding-top:16px;">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-align:center;">Métricas totales · todos los grupos · desde el registro · toca para ver detalle</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;">
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('asistidos')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;" id="mp-attended">58/64</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Asistidos</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('mvps')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--green);" id="mp-mvps">12</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">MVPs</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('trds')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);" id="mp-trds">3</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">TRDs</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('amarillas')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:#C07000;" id="mp-yellows">4</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Amarillas</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('rojas')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);" id="mp-reds">1</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Rojas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Disciplina personal: selector Actual / Historial -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Disciplina personal</span></div>
+      <div class="split-toggle">
+        <div class="split-toggle-item active" onclick="switchMemberDiscTab(this,'actual')">Actual</div>
+        <div class="split-toggle-item" onclick="switchMemberDiscTab(this,'historial')">Historial</div>
+      </div>
+      <!-- Actual: tarjetas activas, indicando el grupo -->
+      <div id="mp-disc-actual">
+        <div class="card" style="padding:0 14px;">
+          <div class="discipline-item">
+            <div class="disc-avatar" style="background:#C07000;">⚠</div>
+            <div class="disc-body"><div class="disc-name">Amarilla · EL CLUB</div><div class="disc-reason">Llegó 2h tarde · activa 5 días más</div></div>
+            <span class="pill pill-amber">Amarilla</span>
+          </div>
+          <div class="discipline-item" style="border-bottom:0;">
+            <div class="disc-avatar" style="background:#C07000;">⚠</div>
+            <div class="disc-body"><div class="disc-name">Amarilla · La Cuadrilla</div><div class="disc-reason">No pagó su parte · activa 2 días más</div></div>
+            <span class="pill pill-amber">Amarilla</span>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Las tarjetas de cada grupo son independientes y solo cuentan en ese grupo.</div>
+      </div>
+      <!-- Historial: con scroll de meses -->
+      <div id="mp-disc-historial" style="display:none;">
+        <div class="month-nav" style="margin-bottom:10px;">
+          <button class="month-nav-btn" onclick="memberDiscNav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="month-nav-label" id="mp-disc-month">Abril 2026</div>
+          <button class="month-nav-btn disabled" id="mp-disc-next" onclick="memberDiscNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="card" style="padding:0 14px;">
+          <div class="discipline-item">
+            <div class="disc-avatar" style="background:var(--red);">⚠</div>
+            <div class="disc-body"><div class="disc-name">Roja · EL CLUB</div><div class="disc-reason">28 Abr · Ofensa al grupo</div></div>
+            <span class="pill pill-red">Roja</span>
+          </div>
+          <div class="discipline-item" style="border-bottom:0;">
+            <div class="disc-avatar" style="background:#C07000;">⚠</div>
+            <div class="disc-body"><div class="disc-name">Amarilla · Equipo BBVA</div><div class="disc-reason">15 Abr · Llegó tarde a la comida</div></div>
+            <span class="pill pill-amber">Amarilla</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Planes asistidos con scroll lateral por meses -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Planes asistidos</span></div>
+      <div class="month-nav" style="margin-bottom:10px;">
+        <button class="month-nav-btn" onclick="memberPlansNav(-1)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-nav-label" id="mp-plans-month">Mayo 2026 · Todos los grupos</div>
+        <button class="month-nav-btn" id="mp-plans-next" onclick="memberPlansNav(1)">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div id="mp-plans-list">
+        <div class="card" style="padding:0;">
+          <div class="scroll-y">
+            <div class="card-row" onclick="openPlan('quedada')">
+              <div class="card-content">
+                <div class="card-label">Hoy · EL CLUB</div>
+                <div class="card-name">Quedada en el piso</div>
+              </div>
+              <span class="pill pill-dark">Hoy</span>
+            </div>
+            <div class="card-row" onclick="openPlan('quedada')">
+              <div class="card-content">
+                <div class="card-label">10 May · EL CLUB</div>
+                <div class="card-name">Cumpleaños de Carlos</div>
+              </div>
+              <span class="pill pill-outline">Hist.</span>
+            </div>
+            <div class="card-row" onclick="openPlan('quedada')">
+              <div class="card-content">
+                <div class="card-label">2 May · EL CLUB</div>
+                <div class="card-name">Cena italiana</div>
+              </div>
+              <span class="pill pill-amber">MVP</span>
+            </div>
+            <div class="card-row" onclick="openPlan('quedada')">
+              <div class="card-content">
+                <div class="card-label">18 May · La Cuadrilla</div>
+                <div class="card-name">Fútbol y cañas</div>
+              </div>
+              <span class="pill pill-outline">Hist.</span>
+            </div>
+            <div class="card-row" onclick="openPlan('quedada')" style="border-bottom:0;">
+              <div class="card-content">
+                <div class="card-label">15 May · Equipo BBVA</div>
+                <div class="card-name">Comida de empresa</div>
+              </div>
+              <span class="pill pill-outline">Hist.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupos a los que pertenece -->
+    <div class="section" style="padding-bottom:28px;">
+      <div class="section-head"><span class="section-title">Grupos a los que pertenece</span><span style="font-size:10px;color:var(--ink3);">Privacidad configurable</span></div>
+      <div class="notice" style="margin-bottom:12px;font-size:11px;">La visibilidad de esta sección se configurará en los ajustes de privacidad próximamente.</div>
+      <div class="card" style="padding:0 14px;">
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content">
+            <div class="card-name" style="font-size:13px;">EL CLUB</div>
+            <div class="card-sub">9 miembros · Admin</div>
+          </div>
+          <span class="pill pill-dark">Admin</span>
+        </div>
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content">
+            <div class="card-name" style="font-size:13px;">La Cuadrilla</div>
+            <div class="card-sub">6 miembros</div>
+          </div>
+          <span class="pill pill-outline">Miembro</span>
+        </div>
+        <div class="card-row" style="cursor:default;border-bottom:0;">
+          <div class="card-content">
+            <div class="card-name" style="font-size:13px;">Equipo BBVA</div>
+            <div class="card-sub">12 miembros</div>
+          </div>
+          <span class="pill pill-outline">Miembro</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ SCREEN: CONVERSATION ═══════ -->
+  <section class="screen" id="s-conversation">
+    <div class="conv-header">
+      <div class="conv-back" onclick="backFromChat()">←</div>
+      <div class="conv-avatar" id="conv-avatar">CS</div>
+      <div class="conv-name">
+        <strong id="conv-name">Carlos</strong>
+        <span id="conv-sub">Activo ahora</span>
+      </div>
+    </div>
+    <div class="conv-body" id="conv-body">
+      <!-- llenado dinámicamente -->
+    </div>
+    <div class="conv-input-row">
+      <input type="text" class="text-input" placeholder="Mensaje…" id="conv-input" onkeypress="if(event.key==='Enter')sendChatMessage()">
+      <button class="send-btn" onclick="sendChatMessage()">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════ V6: SCREEN ACTIVIDAD ═══════ -->
+  <section class="screen" id="s-activity">
+    <div class="page-hero">
+      <div class="back-btn" onclick="goBack()" style="margin-bottom:14px;"><span class="back-arrow">←</span> Atrás</div>
+      <div class="hero-label">Actividad</div>
+      <div class="hero-title">Tu feed</div>
+      <div class="hero-sub">Todo lo que pasa en el grupo, organizado por categoría.</div>
+    </div>
+
+    <!-- Selector de sección -->
+    <div class="section" style="padding-top:16px;padding-bottom:8px;">
+      <div class="split-toggle" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="split-toggle-item active" onclick="switchActivityTab(this,'planes')">Planes</div>
+        <div class="split-toggle-item" onclick="switchActivityTab(this,'disciplina')">Disciplina</div>
+        <div class="split-toggle-item" onclick="switchActivityTab(this,'reclamaciones')">Reclamaciones</div>
+      </div>
+    </div>
+
+    <!-- ═════ SECCIÓN PLANES ═════ -->
+    <div id="activity-planes">
+      <div class="section" style="padding-top:6px;padding-bottom:24px;">
+        <div class="card" style="padding:0 14px;">
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 5m</div>
+            <div class="feed-body"><strong>Ana comentó en "Quedada en el piso"</strong><p>"¿Alguien trae las cervezas?"</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 18m</div>
+            <div class="feed-body"><strong>Lucas dio me gusta a "Quedada en el piso"</strong><p>El plan acumula 12 likes.</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 32m</div>
+            <div class="feed-body"><strong>Mario cambió su asistencia</strong><p>"Quedada en el piso" · Voy → Llego tarde</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 1h</div>
+            <div class="feed-body"><strong>Carlos confirmó asistencia</strong><p>"Quedada en el piso" · Voy</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 2h</div>
+            <div class="feed-body"><strong>Pablo propuso un plan</strong><p>"Escapada a Porto" · 29–31 May · 180€</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 3h</div>
+            <div class="feed-body"><strong>Carlos respondió a Mario</strong><p>"ok, te esperamos para el arroz entonces 😄"</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Ayer</div>
+            <div class="feed-body"><strong>Ana propuso un plan</strong><p>"Cena de mitad de semana" · Mié 27 · 20:00</p></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Ayer</div>
+            <div class="feed-body"><strong>Plan finalizado · "Cumpleaños de Carlos"</strong><p>9 asistentes · Votación MVP/Tardón disponible</p></div>
+          </div>
+          <div class="feed-item" style="border-bottom:0;">
+            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">2 días</div>
+            <div class="feed-body"><strong>Sergio comentó en "Cena italiana"</strong><p>"Buenísimas las pizzas, repetimos"</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════ SECCIÓN DISCIPLINA ═════ -->
+    <div id="activity-disciplina" style="display:none;">
+      <div class="section" style="padding-top:6px;padding-bottom:24px;">
+        <div class="notice" style="margin-bottom:14px;">
+          <strong>Tarjetas pendientes de validación.</strong> Si asististe al plan donde se propuso la sanción, vota a favor o en contra. La votación se cierra a las 24h de proponer la tarjeta y se resuelve por mayoría simple.
+        </div>
+
+        <!-- Tarjeta pendiente de validación -->
+        <div class="card" style="padding:14px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Mario · Amarilla</div>
+              <div style="font-size:11px;color:var(--ink3);">"Quedada en el piso" · Llegó 2h tarde · Propuesto por Carlos</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
+              <div style="width:62%;background:var(--green);"></div>
+              <div style="width:38%;background:var(--red);"></div>
+            </div>
+            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">5/8</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'favor')">A favor (5)</button>
+            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'contra')">En contra (3)</button>
+          </div>
+          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Pueden votar 8 asistentes · Faltan 0 votos</div>
+        </div>
+
+        <!-- Otra tarjeta pendiente -->
+        <div class="card" style="padding:14px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="referee-card referee-red" style="width:24px;height:34px;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Javi · Roja</div>
+              <div style="font-size:11px;color:var(--ink3);">"Fiesta del sábado" · Ofensa al grupo · Propuesto por Ana</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
+              <div style="width:80%;background:var(--green);"></div>
+              <div style="width:20%;background:var(--red);"></div>
+            </div>
+            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">4/5</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'favor')">A favor (4)</button>
+            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'contra')">En contra (1)</button>
+          </div>
+          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">No asististe a este plan · Solo asistentes pueden votar</div>
+        </div>
+
+        <!-- Tarjeta no votable (no asististe) -->
+        <div class="card" style="padding:14px;margin-bottom:10px;opacity:.55;pointer-events:none;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Lucas · Amarilla</div>
+              <div style="font-size:11px;color:var(--ink3);">"Concierto" · Faltó sin avisar · Propuesto por Pablo</div>
+            </div>
+            <span class="pill pill-outline">No asististe</span>
+          </div>
+        </div>
+
+        <!-- Tarjeta validada recientemente -->
+        <div class="section-head" style="margin-top:16px;"><span class="section-title" style="font-size:11px;">Validadas recientemente</span></div>
+        <div class="card" style="padding:0 14px;">
+          <div class="discipline-item">
+            <div class="disc-avatar" style="background:#C07000;">MR</div>
+            <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 1h</span></div><div class="disc-reason">Amarilla validada · 7 a favor, 1 en contra</div></div>
+            <span class="pill pill-amber">Amarilla</span>
+          </div>
+          <div class="discipline-item" style="border-bottom:0;">
+            <div class="disc-avatar" style="background:var(--red);">JV</div>
+            <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 4 días</span></div><div class="disc-reason">Roja validada · 6 a favor, 1 en contra</div></div>
+            <span class="pill pill-red">Roja</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════ SECCIÓN RECLAMACIONES ═════ -->
+    <div id="activity-reclamaciones" style="display:none;">
+      <div class="section" style="padding-top:6px;padding-bottom:24px;">
+        <div class="notice" style="margin-bottom:12px;" id="reclam-admin-hint">
+          Reclamaciones de gastos, pagos y tarjetas. Solo los administradores pueden validar o rechazar. El resto del grupo puede verlas.
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-bottom:12px;line-height:1.5;">
+          Las reclamaciones se inician desde cada plan: en sus pagos o en sus tarjetas.
+        </div>
+
+        <!-- Sub-selector Activas / Historial -->
+        <div class="split-toggle" style="margin-bottom:14px;">
+          <div class="split-toggle-item active" onclick="switchReclamTab(this,'activas')">Activas</div>
+          <div class="split-toggle-item" onclick="switchReclamTab(this,'historial')">Historial</div>
+        </div>
+
+        <!-- ACTIVAS -->
+        <div id="reclam-activas">
+          <div class="card" style="padding:14px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span class="pill pill-amber">Gasto</span>
+              <span style="font-size:10px;color:var(--ink3);">Hace 1h · por Lucas</span>
+            </div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:2px;">Revisar gasto "Cena conjunta" · 27€</div>
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Motivo: "Creo que el importe no corresponde, éramos menos personas."</div>
+            <div style="display:flex;gap:6px;" id="reclam-btns-1">
+              <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'validar')">Validar</button>
+              <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'rechazar')">Rechazar</button>
+            </div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:6px;text-align:center;" class="reclam-admin-only">Solo el admin puede resolver esta reclamación.</div>
+          </div>
+          <div class="card" style="padding:14px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span class="pill pill-red">Tarjeta</span>
+              <span style="font-size:10px;color:var(--ink3);">Hace 4h · por Mario</span>
+            </div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:2px;">Reclamación de amarilla</div>
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Motivo: "Avisé de que llegaría tarde con antelación, no debería contar."</div>
+            <div style="display:flex;gap:6px;" id="reclam-btns-2">
+              <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'validar')">Validar</button>
+              <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'rechazar')">Rechazar</button>
+            </div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:6px;text-align:center;" class="reclam-admin-only">Solo el admin puede resolver esta reclamación.</div>
+          </div>
+        </div>
+
+        <!-- HISTORIAL -->
+        <div id="reclam-historial" style="display:none;">
+          <div class="month-nav" style="margin-bottom:10px;">
+            <button class="month-nav-btn" onclick="reclamHistNav(-1)">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="month-nav-label" id="reclam-hist-month">Abril 2026</div>
+            <button class="month-nav-btn disabled" id="reclam-hist-next" onclick="reclamHistNav(1)">
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="card" style="padding:0 14px;">
+            <div class="expense-item">
+              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Gasto "Escapada Alicante"</div><div class="exp-sub">Reclamado por Ana · Resuelto</div></div></div>
+              <span class="pill pill-green">Validado</span>
+            </div>
+            <div class="expense-item" style="border-bottom:0;">
+              <div class="exp-left"><div class="exp-icon">🟥</div><div class="exp-info"><div class="exp-name">Roja de Javi</div><div class="exp-sub">Reclamada por Javi · Resuelto</div></div></div>
+              <span class="pill pill-outline">Rechazado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═══════ SCREEN: RULETA ═══════ -->
+  <section class="screen" id="s-roulette">
+    <div class="page-hero">
+      <div class="back-btn" onclick="goBack()" style="margin-bottom:14px;"><span class="back-arrow">←</span> Atrás</div>
+      <div class="hero-label">Decisiones</div>
+      <div class="hero-title">La ruleta</div>
+      <div class="hero-sub">Cuando el grupo no se decide, que elija el azar.</div>
+    </div>
+
+    <!-- Configuración de opciones -->
+    <div class="section" style="padding-top:16px;" id="roulette-setup">
+      <div class="section-head"><span class="section-title">Opciones</span><span style="font-size:10px;color:var(--ink3);" id="roulette-count">0 / 100</span></div>
+      <div id="roulette-options-list"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input type="text" class="text-input" id="roulette-input" placeholder="Escribe una opción…" style="flex:1;">
+        <button class="btn btn-secondary" style="font-size:12px;padding:0 14px;white-space:nowrap;" onclick="addRouletteOption()">Añadir</button>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Mínimo 2 opciones, máximo 100.</div>
+      <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="startRoulette()">Aceptar y crear ruleta</button>
+    </div>
+
+    <!-- Ruleta -->
+    <div class="section" id="roulette-wheel-section" style="display:none;">
+      <div class="section-head"><span class="section-title">Gira la ruleta</span><span class="section-action" onclick="resetRoulette()">Editar opciones</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0;">
+        <div style="position:relative;width:240px;height:240px;">
+          <div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:3;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:18px solid var(--ink);"></div>
+          <svg id="roulette-svg" viewBox="0 0 200 200" width="240" height="240" style="transition:transform 4s cubic-bezier(.17,.67,.2,1);">
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;background:var(--ink);border-radius:50%;z-index:2;border:3px solid var(--bg);"></div>
+        </div>
+        <button class="btn btn-primary" id="roulette-spin-btn" style="padding:12px 36px;" onclick="spinRoulette()">Girar</button>
+        <div id="roulette-result" style="font-size:15px;font-weight:800;letter-spacing:-.02em;min-height:22px;text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="section" style="padding-bottom:28px;">
+      <div class="section-head"><span class="section-title">Historial</span><span style="font-size:10px;color:var(--ink3);">Visible para el grupo</span></div>
+      <div class="month-nav" style="margin-bottom:10px;">
+        <button class="month-nav-btn" onclick="rouletteHistNav(-1)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-nav-label" id="roulette-hist-month">Mayo 2026</div>
+        <button class="month-nav-btn disabled" id="roulette-hist-next" onclick="rouletteHistNav(1)">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="card" style="padding:0 14px;" id="roulette-history">
+        <div class="expense-item" style="cursor:pointer;" onclick="openRouletteDetail('cena')">
+          <div class="exp-left"><div class="exp-icon">🎲</div><div class="exp-info"><div class="exp-name">¿Dónde cenamos?</div><div class="exp-sub">Hace 2 días · 4 opciones</div></div></div>
+          <span class="pill pill-dark">Pizzería</span>
+        </div>
+        <div class="expense-item" style="cursor:pointer;border-bottom:0;" onclick="openRouletteDetail('ronda')">
+          <div class="exp-left"><div class="exp-icon">🎲</div><div class="exp-info"><div class="exp-name">¿Quién paga la ronda?</div><div class="exp-sub">12 May · 6 opciones</div></div></div>
+          <span class="pill pill-dark">Mario</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ SCREEN: DETALLE DE DECISIÓN DE RULETA ═══════ -->
+  <section class="screen" id="s-roulette-detail">
+    <div class="page-hero">
+      <div class="back-btn" onclick="goBack()" style="margin-bottom:14px;"><span class="back-arrow">←</span> Ruleta</div>
+      <div class="hero-label">Decisión de la ruleta</div>
+      <div class="hero-title" id="rd-title">¿Dónde cenamos?</div>
+      <div class="hero-sub" id="rd-meta">Hace 2 días · 4 opciones</div>
+    </div>
+    <div class="section" style="padding-top:16px;">
+      <div style="text-align:center;margin-bottom:18px;">
+        <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Resultado</div>
+        <div style="font-size:30px;font-weight:900;letter-spacing:-.04em;" id="rd-winner">Pizzería</div>
+      </div>
+      <div class="section-head"><span class="section-title">Opciones que entraron</span></div>
+      <div class="card" style="padding:0 14px;" id="rd-options"></div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:10px;line-height:1.5;" id="rd-by">Lanzada por Carlos. El resultado lo eligió el azar.</div>
+    </div>
+  </section>
+
+  <div class="modal-overlay" id="modal-podium-picker">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="podium-picker-title">Elegir 1º <span class="modal-close" onclick="closeModal('modal-podium-picker')">Cancelar</span></div>
+      <div class="modal-body" id="podium-picker-body">
+        <!-- generado dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- NUEVA RECLAMACIÓN -->
+  <div class="modal-overlay" id="modal-new-reclam">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Reclamar <span class="modal-close" onclick="closeModal('modal-new-reclam')">Cancelar</span></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Qué reclamas</label>
+          <div id="reclam-context" style="padding:10px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r-sm);"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motivo (obligatorio)</label>
+          <textarea class="form-input" id="reclam-motivo" placeholder="Explica por qué reclamas esto…" style="min-height:80px;"></textarea>
+        </div>
+        <div class="notice" style="margin-bottom:14px;font-size:11px;">La reclamación la revisará un administrador del grupo.</div>
+        <button class="btn btn-primary btn-full" onclick="submitReclam()" style="margin-bottom:8px;">Enviar reclamación</button>
+        <button class="btn btn-secondary btn-full" onclick="closeModal('modal-new-reclam')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STANDINGS LEGEND -->
+  <div class="modal-overlay" id="modal-standings-legend">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Cómo se calculan los puntos <span class="modal-close" onclick="closeModal('modal-standings-legend')">Cerrar</span></div>
+      <div class="modal-body">
+        <div class="notice" style="margin-bottom:14px;">
+          La clasificación se resetea cada mes. Los 3 primeros se reparten el bote de sanciones.
+        </div>
+        <div class="card" style="padding:0 14px;margin-bottom:12px;">
+          <div class="card-row" style="cursor:default;">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">Asistencia (PJ)</div><div class="card-sub">Cada plan al que asistes</div></div>
+            <span class="pill pill-green">+1 pt</span>
+          </div>
+          <div class="card-row" style="cursor:default;">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">MVP del plan</div><div class="card-sub">Podio elegido por los asistentes</div></div>
+            <span class="pill pill-green">+3 / +2 / +1</span>
+          </div>
+          <div class="card-row" style="cursor:default;">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">Más tardón (TRD)</div><div class="card-sub">Penalización del plan</div></div>
+            <span class="pill pill-red">−3 / −2 / −1</span>
+          </div>
+          <div class="card-row" style="cursor:default;">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">Tarjeta amarilla</div><div class="card-sub">Cada amarilla activa</div></div>
+            <span class="pill pill-red">−2 pts</span>
+          </div>
+          <div class="card-row" style="cursor:default;">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">No confirmado (NC)</div><div class="card-sub">Asistencia no declarada antes del cierre</div></div>
+            <span class="pill pill-red">−1 pt</span>
+          </div>
+          <div class="card-row" style="cursor:default;border-bottom:0;">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">Tarjeta roja</div><div class="card-sub">Cada roja activa</div></div>
+            <span class="pill pill-red">−5 pts</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);line-height:1.5;text-align:center;">
+          PTS = PJ + MVP + TRD − NC − 2·AM − 5·RJ
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" style="grid-template-columns:1fr 1fr 1fr;">
+    <div class="nav-item active" id="nav-plans" onclick="showScreen('plans')">
+      <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      <span>Planes</span>
+    </div>
+    <div class="nav-item" id="nav-expenses" onclick="showScreen('expenses')">
+      <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Gastos</span>
+      <div class="badge" style="top:6px;right:calc(50% - 16px);">3</div>
+    </div>
+    <div class="nav-item" id="nav-group" onclick="showScreen('group')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Grupo</span>
+    </div>
+  </nav>
+
+  <!-- FAB Crear Plan -->
+  <button class="fab" id="fab-create" onclick="openCreatePlan()">+</button>
+
+</div>
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- USER SHEET (estilo Instagram) -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="sheet-profile-header">
+      <div class="sheet-profile-avatar" id="us-avatar">TU</div>
+      <div class="sheet-profile-info">
+        <div class="sheet-profile-name" id="us-name">Tu cuenta</div>
+        <div class="sheet-profile-handle" id="us-handle">@tu_usuario</div>
+      </div>
+    </div>
+    <div class="sheet-list">
+      <div class="sheet-item" onclick="openEditProfile()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="sheet-item-label">Editar perfil</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+      <div class="sheet-item" onclick="openMyStats()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+        <div class="sheet-item-label">Mis estadísticas</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+      <div class="sheet-item" onclick="openSettings()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+        <div class="sheet-item-label">Configuración</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+      <div class="sheet-item" onclick="openHelp()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg></div>
+        <div class="sheet-item-label">Ayuda y soporte</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+    </div>
+    <div class="sheet-divider"></div>
+    <div class="sheet-list">
+      <div class="sheet-item" onclick="openSwitchAccount()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+        <div class="sheet-item-label">Cambiar cuenta</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+      <div class="sheet-item danger" onclick="confirmLogout()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
+        <div class="sheet-item-label">Cerrar sesión</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SWITCH ACCOUNT SHEET (estilo Instagram) -->
+<div class="modal-overlay" id="modal-switch">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Cambiar de cuenta <span class="modal-close" onclick="closeModal('modal-switch')">Listo</span></div>
+    <div class="modal-body" style="padding:8px 0 16px;">
+      <div id="account-list">
+        <!-- llenado dinámicamente -->
+      </div>
+      <div class="sheet-divider" style="margin-top:8px;"></div>
+      <div class="sheet-item" onclick="openAddAccount()" style="padding-top:14px;padding-bottom:14px;">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+        <div class="sheet-item-label" style="font-weight:700;">Añadir cuenta</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ACCOUNT (login mock) -->
+<div class="modal-overlay" id="modal-add-account">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Iniciar sesión <span class="modal-close" onclick="closeModal('modal-add-account')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Inicia sesión en otra cuenta para añadirla. Podrás cambiar entre cuentas en cualquier momento.</div>
+      <div class="form-group">
+        <label class="form-label">Usuario o email</label>
+        <input type="text" class="form-input" id="add-acc-user" placeholder="@tu_usuario">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" class="form-input" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitAddAccount()" style="margin-bottom:8px;">Iniciar sesión</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-add-account')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGOUT CONFIRM -->
+<div class="modal-overlay" id="modal-logout">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Cerrar sesión</div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Cerrarás sesión de la cuenta actual. Tus otras cuentas guardadas seguirán disponibles.</div>
+      <button class="btn btn-danger btn-full" onclick="doLogout()" style="margin-bottom:8px;">Cerrar sesión</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-logout')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP SHEET -->
+<div class="modal-overlay" id="modal-group">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Mis grupos <span class="modal-close" onclick="closeModal('modal-group')">Listo</span></div>
+    <div class="modal-body" style="padding:0 0 16px;">
+      <div id="group-list">
+        <!-- llenado dinámicamente -->
+      </div>
+      <div class="sheet-divider"></div>
+      <div class="sheet-item" onclick="openSearchGroups()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <div class="sheet-item-label">Buscar grupos</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+      <div class="sheet-item" onclick="openJoinCode()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="sheet-item-label">Unirme con código</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
+      <div class="sheet-item" onclick="openCreateGroup()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+        <div class="sheet-item-label" style="font-weight:700;">Crear grupo nuevo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JOIN BY CODE -->
+<div class="modal-overlay" id="modal-join-code">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Unirme con código <span class="modal-close" onclick="closeModal('modal-join-code')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Introduce el código de 6 dígitos que te ha enviado un miembro del grupo.</div>
+      <div class="form-group">
+        <label class="form-label">Código de invitación</label>
+        <input type="text" class="form-input" placeholder="Ej: 7K3M2A" style="text-transform:uppercase;letter-spacing:.2em;font-family:'DM Mono',monospace;text-align:center;font-size:18px;font-weight:800;" maxlength="6">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitJoinCode()" style="margin-bottom:8px;">Unirme al grupo</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-join-code')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH GROUPS -->
+<div class="modal-overlay" id="modal-search-groups">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Buscar grupos públicos <span class="modal-close" onclick="closeModal('modal-search-groups')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="search-wrap">
+        <div class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <input type="text" class="search-input" placeholder="Buscar por nombre o categoría…">
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em;">Sugeridos</div>
+      <div class="card" style="padding:0;">
+        <div class="group-item" onclick="requestJoinGroup('Padel Murcia')">
+          <div class="group-avatar" style="background:var(--green);">PM</div>
+          <div class="group-info">
+            <div class="group-name-row"><span class="group-name">Padel Murcia</span></div>
+            <div class="group-meta">14 miembros · público · deporte</div>
+          </div>
+          <span class="pill pill-outline">Unirme</span>
+        </div>
+        <div class="group-item" onclick="requestJoinGroup('Ruta de los pinchos')">
+          <div class="group-avatar" style="background:#C07000;">RP</div>
+          <div class="group-info">
+            <div class="group-name-row"><span class="group-name">Ruta de los pinchos</span></div>
+            <div class="group-meta">8 miembros · público · gastronomía</div>
+          </div>
+          <span class="pill pill-outline">Unirme</span>
+        </div>
+        <div class="group-item" onclick="requestJoinGroup('Senderistas Sierra')">
+          <div class="group-avatar" style="background:var(--blue);">SS</div>
+          <div class="group-info">
+            <div class="group-name-row"><span class="group-name">Senderistas Sierra Espuña</span></div>
+            <div class="group-meta">23 miembros · público · naturaleza</div>
+          </div>
+          <span class="pill pill-outline">Unirme</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:12px;text-align:center;">Los grupos privados no aparecen aquí. Pide un código de invitación.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE GROUP -->
+<div class="modal-overlay" id="modal-create-group">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Crear grupo nuevo <span class="modal-close" onclick="closeModal('modal-create-group')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nombre del grupo</label>
+        <input type="text" class="form-input" id="cg-name" placeholder="Ej: La Cuadrilla">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Iniciales</label>
+          <input type="text" class="form-input" id="cg-initials" placeholder="LC" maxlength="2" style="text-transform:uppercase;text-align:center;font-weight:800;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Privacidad</label>
+          <select class="form-input" id="cg-privacy">
+            <option value="privado">Privado (con código)</option>
+            <option value="publico">Público</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción (opcional)</label>
+        <textarea class="form-input" id="cg-desc" placeholder="Breve descripción de tu grupo…"></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitCreateGroup()" style="margin-bottom:8px;">Crear grupo</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-create-group')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE SHEET -->
+<div class="modal-overlay" id="modal-invite">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Invitar al grupo <span class="modal-close" onclick="closeModal('modal-invite')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Comparte este código con quien quieras invitar. Lo introduce al unirse a un grupo en KOves.</div>
+      <div class="code-box">
+        <div class="code-label">Código de invitación</div>
+        <div class="code-value" id="invite-code">7K3M2A</div>
+        <span class="code-copy" onclick="copyInviteCode()">📋 Copiar código</span>
+      </div>
+      <div style="text-align:center;font-size:12px;color:var(--ink3);margin:14px 0;" id="invite-limits">9/20 miembros · sin caducidad</div>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-invite')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- AJUSTES DE INVITACIONES (solo admin) -->
+<!-- TRASPASO DE ADMIN AL SALIR -->
+<div class="modal-overlay" id="modal-transfer-admin">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nombrar nuevo admin <span class="modal-close" onclick="closeModal('modal-transfer-admin')">Cancelar</span></div>
+    <div class="modal-body" id="transfer-admin-body"></div>
+  </div>
+</div>
+
+<!-- VISIBILIDAD DEL GRUPO (público / privado) -->
+<div class="modal-overlay" id="modal-group-visibility">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Tipo de grupo <span class="modal-close" onclick="closeModal('modal-group-visibility')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Solo los administradores cambian la visibilidad del grupo.</div>
+
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">¿Quién puede unirse?</div>
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="card-row" style="cursor:pointer;" onclick="setGroupType(this,'publico')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Público</div><div class="card-sub">Cualquiera puede encontrarlo y unirse</div></div>
+          <span class="pill pill-outline" id="gtype-publico">Inactivo</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="setGroupType(this,'privado')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Privado</div><div class="card-sub">Solo se entra con código de invitación</div></div>
+          <span class="pill pill-dark" id="gtype-privado">Activo</span>
+        </div>
+      </div>
+
+      <!-- Subajuste: solo visible si el grupo es privado -->
+      <div id="group-info-visibility-block">
+        <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Información del grupo</div>
+        <div class="card" style="padding:14px;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="flex:1;padding-right:10px;">
+              <div style="font-size:13px;font-weight:700;">Información pública</div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:2px;">Aunque el grupo sea privado, otros usuarios podrán ver su clasificación, planes y actividad.</div>
+            </div>
+            <label class="switch-mini">
+              <input type="checkbox" id="group-info-public">
+              <span class="switch-mini-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="saveGroupVisibility()" style="margin-bottom:8px;">Guardar</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-group-visibility')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-invite-settings">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Invitaciones <span class="modal-close" onclick="closeModal('modal-invite-settings')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Solo los administradores configuran las invitaciones del grupo.</div>
+
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Quién puede ver el código</div>
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="card-row" style="cursor:pointer;" onclick="setInviteVisibility(this,'todos')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Cualquier miembro</div><div class="card-sub">Todos pueden invitar</div></div>
+          <span class="pill pill-dark" id="inv-vis-todos">Activo</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="setInviteVisibility(this,'admins')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Solo administradores</div><div class="card-sub">Solo los admin ven el código</div></div>
+          <span class="pill pill-outline" id="inv-vis-admins">Inactivo</span>
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Código actual</div>
+      <div class="card" style="padding:14px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:800;letter-spacing:.1em;" id="invite-settings-code">7K3M2A</div>
+          <button class="btn btn-secondary" style="font-size:11px;padding:7px 12px;" onclick="resetInviteCode()">Resetear</button>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Al resetear, el código anterior deja de funcionar inmediatamente.</div>
+      </div>
+
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Límites</div>
+      <div class="card" style="padding:0 14px;margin-bottom:18px;">
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Límite de personas</div><div class="card-sub">Máximo de miembros del grupo</div></div>
+          <input type="number" value="20" min="2" max="100" style="width:54px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px;font-family:'DM Mono',monospace;">
+        </div>
+        <div class="card-row" style="cursor:default;border-bottom:0;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Caducidad del código</div><div class="card-sub">Tras este tiempo se renueva solo</div></div>
+          <select style="border:1px solid var(--line);border-radius:var(--r-sm);padding:6px;font-size:12px;">
+            <option>Sin caducidad</option>
+            <option>24 horas</option>
+            <option>7 días</option>
+            <option>30 días</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="closeModal('modal-invite-settings');showToast('Ajustes de invitación guardados ✓')" style="margin-bottom:8px;">Guardar</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-invite-settings')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE PLAN -->
+<div class="modal-overlay" id="modal-create-plan">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Crear plan nuevo <span class="modal-close" onclick="closeModal('modal-create-plan')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Título del plan</label>
+        <input type="text" class="form-input" id="cp-title" placeholder="Ej: Cena en mi piso">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-input" id="cp-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora</label>
+          <input type="time" class="form-input" id="cp-time">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lugar</label>
+        <input type="text" class="form-input" id="cp-place" placeholder="Casa de Carlos / Bar X / …">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de plan</label>
+        <select class="form-input" id="cp-type">
+          <option>Quedada</option>
+          <option>Cena</option>
+          <option>Fiesta</option>
+          <option>Viaje</option>
+          <option>Escapada</option>
+          <option>Evento</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-input" id="cp-desc" placeholder="Detalles del plan, qué se trae, dress code…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">¿Crear como?</label>
+        <div class="action-grid" style="margin-top:2px;">
+          <div class="action-btn selected" onclick="selectCreateMode(this,'confirmado')">
+            <div class="action-title">Confirmado</div>
+            <div class="action-sub">Directo al calendario</div>
+          </div>
+          <div class="action-btn" onclick="selectCreateMode(this,'propuesto')">
+            <div class="action-title">Propuesto</div>
+            <div class="action-sub">Votación abierta</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitCreatePlan()" style="margin-bottom:8px;">Crear plan</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-create-plan')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar perfil <span class="modal-close" onclick="closeModal('modal-edit-profile')">Cancelar</span></div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div class="sheet-profile-avatar" id="ep-avatar" style="margin:0 auto 8px;width:72px;height:72px;font-size:22px;">TU</div>
+        <span style="font-size:12px;color:var(--ink3);cursor:pointer;text-decoration:underline;">Cambiar foto</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" class="form-input" id="ep-name" placeholder="Tu nombre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Usuario</label>
+        <input type="text" class="form-input" id="ep-handle" placeholder="@usuario">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bio</label>
+        <textarea class="form-input" id="ep-bio" placeholder="Una frase sobre ti…"></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitEditProfile()" style="margin-bottom:8px;">Guardar cambios</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-edit-profile')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MY STATS -->
+<div class="modal-overlay" id="modal-stats">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Mis estadísticas <span class="modal-close" onclick="closeModal('modal-stats')">Cerrar</span></div>
+    <div class="modal-body">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-align:center;">Métricas totales · todos los grupos en los que has estado · toca para ver detalle</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-bottom:14px;">
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('asistidos')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;">52/57</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Asistidos</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('mvps')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--green);">9</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">MVPs</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('trds')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);">2</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">TRDs</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('amarillas')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:#C07000;">1</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Amarillas</div>
+        </div>
+        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('rojas')">
+          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);">0</div>
+          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Rojas</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0 14px;">
+        <div class="rank-item">
+          <div class="rank-num gold">⭐</div>
+          <div class="rank-body"><div class="rank-name">Top 3 del grupo</div><div class="rank-detail">EL CLUB · puesto 3 de 9</div></div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-num" style="color:var(--green);font-size:14px;">€</div>
+          <div class="rank-body"><div class="rank-name">+14€ de balance</div><div class="rank-detail">Te deben más de lo que debes</div></div>
+        </div>
+        <div class="rank-item" style="border-bottom:0;">
+          <div class="rank-num" style="color:var(--ink3);font-size:14px;">●</div>
+          <div class="rank-body"><div class="rank-name">3 grupos activos</div><div class="rank-detail">EL CLUB · La Cuadrilla · Equipo BBVA</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="modal-overlay" id="modal-notif">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Notificaciones <span class="modal-close" onclick="closeModal('modal-notif')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="feed-item">
+          <div class="feed-num">●</div>
+          <div class="feed-body"><strong>Mario te ha mencionado</strong><p>"@tu, ¿llevas tú las cervezas?"</p></div>
+          <div class="feed-time">21:33</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-num">●</div>
+          <div class="feed-body"><strong>Ana propuso un plan</strong><p>Cena de mitad de semana · Miércoles 27</p></div>
+          <div class="feed-time">20:14</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-num" style="color:transparent;">○</div>
+          <div class="feed-body"><strong>Votación abierta</strong><p>Salida de fiesta · cierra a las 20:00</p></div>
+          <div class="feed-time">18:00</div>
+        </div>
+        <div class="feed-item">
+          <div class="feed-num" style="color:transparent;">○</div>
+          <div class="feed-body"><strong>Lucas te debe 6€</strong><p>Cena conjunta del viernes pasado</p></div>
+          <div class="feed-time">Ayer</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-notif')">Marcar todas como leídas</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Configuración <span class="modal-close" onclick="closeModal('modal-settings')">Cerrar</span></div>
+    <div class="modal-body" style="padding:8px 0 16px;">
+      <div class="sheet-list">
+        <div class="sheet-item" onclick="openSettingSub('idioma')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          <div class="sheet-item-label">Idioma</div>
+          <div style="font-size:12px;color:var(--ink3);margin-right:6px;">Español</div>
+          <div class="sheet-item-arrow">›</div>
+        </div>
+        <div class="sheet-item" onclick="openSettingSub('tema')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg></div>
+          <div class="sheet-item-label">Tema</div>
+          <div style="font-size:12px;color:var(--ink3);margin-right:6px;">Claro</div>
+          <div class="sheet-item-arrow">›</div>
+        </div>
+        <div class="sheet-item" onclick="openSettingSub('push')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          <div class="sheet-item-label">Notificaciones push</div>
+          <div class="sheet-item-arrow">›</div>
+        </div>
+        <div class="sheet-item" onclick="openSettingSub('privacidad')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="sheet-item-label">Privacidad</div>
+          <div class="sheet-item-arrow">›</div>
+        </div>
+        <div class="sheet-item" onclick="openSettingSub('cuenta')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div class="sheet-item-label">Cuenta</div>
+          <div class="sheet-item-arrow">›</div>
+        </div>
+        <div class="sheet-item" onclick="openSettingSub('datos')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <div class="sheet-item-label">Descargar mis datos</div>
+          <div class="sheet-item-arrow">›</div>
+        </div>
+      </div>
+      <div class="sheet-divider"></div>
+      <div class="sheet-list">
+        <div class="sheet-item" onclick="showToast('KOves · Alfa V11')">
+          <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+          <div class="sheet-item-label">Acerca de KOves</div>
+          <div style="font-size:12px;color:var(--ink3);margin-right:6px;">v11</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUB-MODAL DE CONFIGURACIÓN -->
+<div class="modal-overlay" id="modal-setting-sub">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="setting-sub-title">Ajuste <span class="modal-close" onclick="closeModal('modal-setting-sub')">Cerrar</span></div>
+    <div class="modal-body" id="setting-sub-body"></div>
+  </div>
+</div>
+
+<!-- HELP -->
+<div class="modal-overlay" id="modal-help">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Ayuda y soporte <span class="modal-close" onclick="closeModal('modal-help')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">
+        <strong>¿Necesitas ayuda?</strong> KOves es la app privada de tu grupo de amigos.
+      </div>
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Guías rápidas</div>
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="card-row" style="cursor:pointer;" onclick="openHelpSub('planes')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Cómo crear un plan</div><div class="card-sub">Guía paso a paso</div></div>
+          <span style="color:var(--ink3);">›</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;" onclick="openHelpSub('rankings')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Cómo funcionan los rankings</div><div class="card-sub">Votación anónima y MVPs</div></div>
+          <span style="color:var(--ink3);">›</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;" onclick="openHelpSub('gastos')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Sistema de gastos</div><div class="card-sub">Comprobantes y liquidaciones</div></div>
+          <span style="color:var(--ink3);">›</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="openHelpSub('disciplina')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Tarjetas y disciplina</div><div class="card-sub">Amarillas, rojas y el bote</div></div>
+          <span style="color:var(--ink3);">›</span>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Soporte</div>
+      <div class="card" style="padding:0 14px;">
+        <div class="card-row" style="cursor:pointer;" onclick="showToast('Abriendo correo de soporte…')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Contactar soporte</div><div class="card-sub">hola@koves.app</div></div>
+          <span style="color:var(--ink3);">›</span>
+        </div>
+        <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="showToast('Gracias por tu opinión ✓')">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Enviar sugerencia</div><div class="card-sub">Ayúdanos a mejorar KOves</div></div>
+          <span style="color:var(--ink3);">›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUB-MODAL DE AYUDA -->
+<div class="modal-overlay" id="modal-help-sub">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="help-sub-title">Guía <span class="modal-close" onclick="closeModal('modal-help-sub')">Cerrar</span></div>
+    <div class="modal-body" id="help-sub-body"></div>
+  </div>
+</div>
+
+<!-- EDIT RULES -->
+<div class="modal-overlay" id="modal-rules">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar reglas <span class="modal-close" onclick="closeModal('modal-rules')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">
+        <strong>Solo administradores.</strong> Los cambios se aplican al instante. Todos los miembros verán las nuevas reglas.
+      </div>
+
+      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Sanciones</div>
+      <div class="card" style="padding:0 14px;margin-bottom:18px;">
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Amarilla</div><div class="card-sub">Importe que va al bote del mes</div></div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input type="number" value="2" min="0" step="0.5" style="width:60px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px;font-family:'DM Mono',monospace;font-size:16px;">
+            <span style="font-size:12px;color:var(--ink3);font-weight:700;">€</span>
+          </div>
+        </div>
+        <div class="card-row" style="cursor:default;border-bottom:0;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Roja</div><div class="card-sub">Importe que va al bote del mes</div></div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input type="number" value="10" min="0" step="0.5" style="width:60px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px;font-family:'DM Mono',monospace;font-size:16px;">
+            <span style="font-size:12px;color:var(--ink3);font-weight:700;">€</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:14px;line-height:1.5;">
+        El resto de reglas son fijas: rankings anónimos, comprobante obligatorio, 2 amarillas activas = roja, tarjetas activas 7 días, amarilla −2 pts, roja −5 pts, bote repartido 50/30/20.
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="submitRules()" style="margin-bottom:8px;">Guardar reglas</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-rules')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPENSE DETAIL -->
+<div class="modal-overlay" id="modal-expense-detail">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="exd-title">Detalle del gasto <span class="modal-close" onclick="closeModal('modal-expense-detail')">Cerrar</span></div>
+    <div class="modal-body" id="exd-body">
+      <!-- llenado dinámicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- LIQUIDAR -->
+<div class="modal-overlay" id="modal-liquidar">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Liquidar deudas <span class="modal-close" onclick="closeModal('modal-liquidar')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Para liquidar una deuda debes adjuntar el comprobante de pago (Bizum, transferencia, etc.).</div>
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="expense-item">
+          <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">A Carlos</div><div class="exp-sub">Cena del 22 May · Bizum recomendado</div></div></div>
+          <div class="exp-amount negative">6€</div>
+        </div>
+        <div class="expense-item" style="border-bottom:0;">
+          <div class="exp-left"><div class="exp-icon">🥃</div><div class="exp-info"><div class="exp-name">A Ana</div><div class="exp-sub">Cubatas fiesta Javi</div></div></div>
+          <div class="exp-amount negative">8€</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comprobante (obligatorio)</label>
+        <div class="upload-zone" style="padding:16px;" onclick="showToast('Comprobante adjuntado ✓')">
+          <div class="upload-label">Adjuntar comprobante</div>
+          <div class="upload-sub">Captura del Bizum o transferencia</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="markPaid(null,'todos','14€')" style="margin-bottom:8px;">Marcar como pagado</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-liquidar')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MENÚ AÑADIR FOTO (estilo Instagram) -->
+<div class="modal-overlay" id="modal-photo-menu">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Añadir foto <span class="modal-close" onclick="closeModal('modal-photo-menu')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="sheet-item" onclick="pickPhotoSource('camara')">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div class="sheet-item-label">Sacar una foto</div>
+      </div>
+      <div class="sheet-item" style="border-bottom:0;" onclick="pickPhotoSource('biblioteca')">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+        <div class="sheet-item-label">Elegir de la biblioteca</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VER COMPROBANTE (confirmar recepción) -->
+<div class="modal-overlay" id="modal-proof">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="proof-from">Comprobante <span class="modal-close" onclick="closeModal('modal-proof')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:14px;">Revisa el comprobante de pago antes de confirmar que has recibido el dinero.</div>
+      <div style="background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:32px 14px;text-align:center;margin-bottom:14px;">
+        <div style="font-size:38px;margin-bottom:8px;">🧾</div>
+        <div style="font-size:13px;font-weight:700;">Comprobante de Bizum</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px;">Importe: <span id="proof-amount">14€</span></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="confirmReceived()" style="margin-bottom:8px;">Confirmar recepción</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-proof')">Aún no he recibido el pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIQUIDAR INDIVIDUAL -->
+<div class="modal-overlay" id="modal-liquidar-item">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Liquidar deuda <span class="modal-close" onclick="closeModal('modal-liquidar-item')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="expense-item" style="border-bottom:0;">
+          <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name" id="liq-item-name">Debes a Carlos</div><div class="exp-sub" id="liq-item-sub">Cena conjunta · Quedada en el piso</div></div></div>
+          <div class="exp-amount negative" id="liq-item-amount">−6€</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comprobante de pago (obligatorio)</label>
+        <div class="upload-zone" style="padding:16px;" id="liq-upload-zone" onclick="handleLiqUpload()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-label">Adjuntar comprobante</div>
+          <div class="upload-sub">Captura de Bizum o transferencia</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="confirmLiquidar()" style="margin-bottom:8px;" id="liq-confirm-btn">Marcar como pagado</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-liquidar-item')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vote Modal -->
+<div class="modal-overlay" id="modal-vote">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Votación · Salida de fiesta <span class="modal-close" onclick="closeModal('modal-vote')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="notice" style="margin-bottom:16px;">Propuesto por Mario para el sábado a las 00:30. Cierra a las 20:00.</div>
+      <div style="margin-bottom:16px;">
+        <div class="vote-row"><span class="vote-label">Sí voy</span><div class="vote-bar" style="flex:1;"><div class="vote-fill" style="width:57%;background:var(--green);"></div></div><span class="vote-count">4</span></div>
+        <div class="vote-row"><span class="vote-label">No voy</span><div class="vote-bar" style="flex:1;"><div class="vote-fill" style="width:28%;background:var(--red);"></div></div><span class="vote-count">2</span></div>
+        <div class="vote-row"><span class="vote-label">Quizás</span><div class="vote-bar" style="flex:1;"><div class="vote-fill" style="width:14%;background:var(--amber);"></div></div><span class="vote-count">1</span></div>
+      </div>
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:16px;">2 personas aún no han votado</div>
+      <div class="action-grid" style="margin-bottom:12px;">
+        <div class="action-btn" onclick="castVote('si',this)"><div class="action-title">✓ Sí voy</div><div class="action-sub">Confirmar</div></div>
+        <div class="action-btn" onclick="castVote('no',this)"><div class="action-title">✗ No voy</div><div class="action-sub">Declinar</div></div>
+      </div>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-vote')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Discipline Modal -->
+<div class="modal-overlay" id="modal-discipline">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="disc-modal-title">Sacar tarjeta <span class="modal-close" onclick="closeModal('modal-discipline')">Cancelar</span></div>
+    <div class="modal-body">
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px;">Seleccionar miembro</div>
+        <div style="display:flex;flex-direction:column;gap:6px;" id="disc-member-list">
+          <div class="card-row" style="border-radius:var(--r);border:1px solid var(--line);padding:10px 12px;" onclick="selectDiscMember(this,'Mario')">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">Mario</div><div class="card-sub">Asistente confirmado · 1 amarilla previa</div></div>
+            <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);"></div>
+          </div>
+          <div class="card-row" style="border-radius:var(--r);border:1px solid var(--line);padding:10px 12px;" onclick="selectDiscMember(this,'Lucas')">
+            <div class="card-content"><div class="card-name" style="font-size:13px;">Lucas</div><div class="card-sub">Asistente confirmado</div></div>
+            <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);"></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px;">Motivo (obligatorio)</div>
+        <textarea class="text-input" style="border-radius:var(--r);width:100%;height:72px;resize:none;padding:10px 12px;" placeholder="Describe el motivo de la sanción…"></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitSanction()" style="margin-bottom:8px;">Enviar para votación grupal</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-discipline')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo gasto <span class="modal-close" onclick="closeModal('modal-expense')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Concepto</label>
+          <input type="text" class="form-input" placeholder="Ej: Cena">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Importe</label>
+          <input type="text" class="form-input" placeholder="0€">
+        </div>
+      </div>
+      <div class="form-group" id="exp-plan-selector">
+        <label class="form-label">Asociado al plan</label>
+        <select class="form-input">
+          <option>Quedada en el piso · Hoy</option>
+          <option>Cena de mitad de semana · Mié 27</option>
+          <option>Escapada a Porto · Vie 29</option>
+          <option>Sin plan asociado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Participantes</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="exp-participants">
+          <div class="pill pill-dark" style="cursor:pointer;" onclick="toggleParticipant(this)">Carlos</div>
+          <div class="pill pill-dark" style="cursor:pointer;" onclick="toggleParticipant(this)">Mario</div>
+          <div class="pill pill-dark" style="cursor:pointer;" onclick="toggleParticipant(this)">Lucas</div>
+          <div class="pill pill-outline" style="cursor:pointer;" onclick="toggleParticipant(this)">Ana</div>
+          <div class="pill pill-outline" style="cursor:pointer;" onclick="toggleParticipant(this)">Pablo</div>
+          <div class="pill pill-outline" style="cursor:pointer;" onclick="toggleParticipant(this)">Sergio</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comprobante (obligatorio)</label>
+        <div class="upload-zone" style="padding:16px;">
+          <div class="upload-label">Adjuntar imagen</div>
+          <div class="upload-sub">Bizum, ticket o transferencia</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitExpense()" style="margin-bottom:8px;">Guardar gasto</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-expense')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar day Modal -->
+<div class="modal-overlay" id="modal-cal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="cal-modal-title">Planes del día <span class="modal-close" onclick="closeModal('modal-cal')">Cerrar</span></div>
+    <div class="modal-body">
+      <div id="cal-modal-content"></div>
+      <button class="btn btn-primary btn-full" id="cal-create-btn" style="margin-top:12px;" onclick="closeModal('modal-cal');openCreatePlan();">
+        Crear plan en este día
+      </button>
+      <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modal-cal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP DE KPI: planes pendientes / activos -->
+<div class="modal-overlay" id="modal-kpi">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="kpi-modal-title">Planes <span class="modal-close" onclick="closeModal('modal-kpi')">Cerrar</span></div>
+    <div class="modal-body">
+      <div id="kpi-modal-content"></div>
+      <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modal-kpi')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP DE ESTADÍSTICA DEL PERFIL -->
+<div class="modal-overlay" id="modal-stat">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="stat-modal-title">Detalle <span class="modal-close" onclick="closeModal('modal-stat')">Cerrar</span></div>
+    <div class="modal-body">
+      <div id="stat-modal-content"></div>
+      <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modal-stat')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-full);font-size:13px;font-weight:600;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:320px;text-align:center;"></div>
+
+<script type="module" src="/main.js"></script>
+</body>
+</html>
