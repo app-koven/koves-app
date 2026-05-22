@@ -227,7 +227,7 @@ let navStack = [];                      // pila de pantallas para "atrás"
 const MAIN_SCREENS = ['plans', 'expenses', 'group'];
 const DETAIL_SCREENS = ['plan-detail', 'member', 'conversation', 'activity', 'roulette', 'roulette-detail'];
 
-function showScreen(name, opts) {
+window.showScreen = function showScreen(name, opts) {
   opts = opts || {};
   const sEl = document.getElementById('s-' + name);
   if (!sEl) return;
@@ -264,7 +264,7 @@ function showScreen(name, opts) {
   window.scrollTo(0, 0);
 }
 
-function goBack() {
+window.goBack = function goBack() {
   // Sacar de la pila la última pantalla válida
   let target = null;
   while (navStack.length) {
@@ -278,7 +278,7 @@ function goBack() {
   showScreen(target, { isBack: true });
 }
 
-function openPlan(id) {
+window.openPlan = function openPlan(id) {
   const p = planData[id] || planData['quedada'];
   document.getElementById('pd-status').textContent = p.status;
   document.getElementById('pd-title').innerHTML = p.title;
@@ -292,18 +292,18 @@ function openPlan(id) {
   renderTardonList();
 }
 
-function openHistorial() {
+window.openHistorial = function openHistorial() {
   // Compatibilidad: el historial abre el detalle del plan
   openPlan('quedada');
 }
 
 // ── FECHA (deprecated en V6, queda como no-op para compatibilidad) ──
-function setHeaderDate() {
+window.setHeaderDate = function setHeaderDate() {
   // El header ya no muestra fecha en V6, lleva el botón de actividad
 }
 
 // ── TABS PLANES ──
-function switchPlansTab(el, name) {
+window.switchPlansTab = function switchPlansTab(el, name) {
   document.querySelectorAll('#s-plans .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   ['activos','historial'].forEach(t => {
@@ -313,7 +313,7 @@ function switchPlansTab(el, name) {
 }
 
 // ── ASISTENCIA ──
-function selectAttendance(btn) {
+window.selectAttendance = function selectAttendance(btn) {
   document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   // Al votar asistencia, el plan deja de estar pendiente: parar parpadeo
@@ -322,7 +322,7 @@ function selectAttendance(btn) {
 }
 
 // ── LIKE ──
-function toggleLike(btn) {
+window.toggleLike = function toggleLike(btn) {
   const span = document.getElementById('like-count');
   const count = parseInt(span.textContent);
   if (btn.dataset.liked) {
@@ -339,21 +339,21 @@ function toggleLike(btn) {
   }
 }
 
-function likeComment(el) {
+window.likeComment = function likeComment(el) {
   const parts = el.textContent.split(' ');
   const n = parseInt(parts[1]);
   el.textContent = '❤ ' + (n + 1);
   el.style.color = 'var(--red)';
 }
 
-function escapeHtml(s) {
+window.escapeHtml = function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // ── VOTE ──
-function showVoteModal() { document.getElementById('modal-vote').classList.add('open'); }
+window.showVoteModal = function showVoteModal() { document.getElementById('modal-vote').classList.add('open'); }
 
-function castVote(type, btn) {
+window.castVote = function castVote(type, btn) {
   document.querySelectorAll('#modal-vote .action-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   showToast(type === 'si' ? '✓ Voto registrado: Voy' : '✗ Voto registrado: No voy');
@@ -361,13 +361,13 @@ function castVote(type, btn) {
 }
 
 // ── DISCIPLINE ──
-function showDisciplineModal(type) {
+window.showDisciplineModal = function showDisciplineModal(type) {
   const titles = { amarilla: '🟡 Sacar amarilla', roja: '🔴 Sacar tarjeta roja', motivo: '📝 Añadir motivo', votar: '🗳️ Votar sanción' };
   document.getElementById('disc-modal-title').firstChild.textContent = titles[type] || 'Sanción';
   document.getElementById('modal-discipline').classList.add('open');
 }
 
-function selectDiscMember(row, name) {
+window.selectDiscMember = function selectDiscMember(row, name) {
   document.querySelectorAll('#disc-member-list .card-row').forEach(r => {
     r.style.borderColor = 'var(--line)';
     r.style.background = '';
@@ -376,15 +376,15 @@ function selectDiscMember(row, name) {
   row.style.background = 'var(--surface2)';
 }
 
-function submitSanction() {
+window.submitSanction = function submitSanction() {
   closeModal('modal-discipline');
   showToast('Sanción enviada a votación grupal ✓');
 }
 
 // ── EXPENSE ──
-function showAddExpenseLegacy() { document.getElementById('modal-expense').classList.add('open'); }
+window.showAddExpenseLegacy = function showAddExpenseLegacy() { document.getElementById('modal-expense').classList.add('open'); }
 
-function toggleParticipant(el) {
+window.toggleParticipant = function toggleParticipant(el) {
   if (el.classList.contains('pill-dark')) {
     el.classList.remove('pill-dark');
     el.classList.add('pill-outline');
@@ -394,12 +394,12 @@ function toggleParticipant(el) {
   }
 }
 
-function submitExpense() {
+window.submitExpense = function submitExpense() {
   closeModal('modal-expense');
   showToast('Gasto guardado. Pendiente de validación ✓');
 }
 
-function openExpenseDetail(id) {
+window.openExpenseDetail = function openExpenseDetail(id) {
   const d = expenseData[id];
   if (!d) return;
   const body = document.getElementById('exd-body');
@@ -440,7 +440,7 @@ function openExpenseDetail(id) {
 
 // Revisar un gasto/pago del plan: genera una reclamación para el admin.
 // Solo se puede reclamar un pago si asististe al plan.
-function reviewExpense(id) {
+window.reviewExpense = function reviewExpense(id) {
   closeModal('modal-expense-detail');
   // En esta demo el usuario asistió al plan actual; en real se comprobaría.
   const asististe = true;
@@ -451,11 +451,11 @@ function reviewExpense(id) {
   openReclamFor('pago', 'Pago del plan · ' + (id || 'gasto'));
 }
 
-function openLiquidar() {
+window.openLiquidar = function openLiquidar() {
   document.getElementById('modal-liquidar').classList.add('open');
 }
 
-function markPaid(btn, name, amount) {
+window.markPaid = function markPaid(btn, name, amount) {
   btn.textContent = '✓ Pagado';
   btn.classList.remove('btn-primary');
   btn.classList.add('btn-secondary');
@@ -473,7 +473,7 @@ const calPlanData = {
 };
 
 let calModalDay = null;
-function showCalModal(day, isFuture) {
+window.showCalModal = function showCalModal(day, isFuture) {
   calModalDay = day;
   const plans = calPlanData[day] || [];
   document.getElementById('cal-modal-title').firstChild.textContent = `Día ${day} de Mayo`;
@@ -498,13 +498,13 @@ function showCalModal(day, isFuture) {
 }
 
 // ── MODALS GENERAL ──
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+window.closeModal = function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
 // ── TOAST ──
-function showToast(msg) {
+window.showToast = function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.style.opacity = '1';
@@ -520,7 +520,7 @@ function showToast(msg) {
    USUARIO Y CUENTAS (estilo Instagram)
    ════════════════════════════════════════════════════════════════ */
 
-function openUserSheet() {
+window.openUserSheet = function openUserSheet() {
   // Actualizar header del sheet con el usuario actual
   const acc = state.accounts.find(a => a.id === state.currentUserId);
   if (acc) {
@@ -532,7 +532,7 @@ function openUserSheet() {
   document.getElementById('modal-user').classList.add('open');
 }
 
-function openSwitchAccount() {
+window.openSwitchAccount = function openSwitchAccount() {
   closeModal('modal-user');
   setTimeout(() => {
     renderAccountList();
@@ -540,7 +540,7 @@ function openSwitchAccount() {
   }, 200);
 }
 
-function renderAccountList() {
+window.renderAccountList = function renderAccountList() {
   const list = document.getElementById('account-list');
   list.innerHTML = state.accounts.map(a => `
     <div class="account-item" onclick="switchAccount('${a.id}')">
@@ -554,7 +554,7 @@ function renderAccountList() {
   `).join('');
 }
 
-function switchAccount(id) {
+window.switchAccount = function switchAccount(id) {
   if (id === state.currentUserId) {
     closeModal('modal-switch');
     return;
@@ -569,14 +569,14 @@ function switchAccount(id) {
   showToast(`Has cambiado a ${acc.name} ✓`);
 }
 
-function openAddAccount() {
+window.openAddAccount = function openAddAccount() {
   closeModal('modal-switch');
   setTimeout(() => {
     document.getElementById('modal-add-account').classList.add('open');
   }, 200);
 }
 
-function submitAddAccount() {
+window.submitAddAccount = function submitAddAccount() {
   const userInput = document.getElementById('add-acc-user').value.trim();
   if (!userInput) {
     showToast('Introduce un usuario');
@@ -604,14 +604,14 @@ function submitAddAccount() {
   showToast(`Cuenta ${newAcc.handle} añadida ✓`);
 }
 
-function confirmLogout() {
+window.confirmLogout = function confirmLogout() {
   closeModal('modal-user');
   setTimeout(() => {
     document.getElementById('modal-logout').classList.add('open');
   }, 200);
 }
 
-function doLogout() {
+window.doLogout = function doLogout() {
   // Quitar la cuenta actual
   state.accounts = state.accounts.filter(a => a.id !== state.currentUserId);
   if (state.accounts.length === 0) {
@@ -630,7 +630,7 @@ function doLogout() {
    PERFIL DE USUARIO
    ════════════════════════════════════════════════════════════════ */
 
-function openEditProfile() {
+window.openEditProfile = function openEditProfile() {
   closeModal('modal-user');
   setTimeout(() => {
     const acc = state.accounts.find(a => a.id === state.currentUserId);
@@ -644,7 +644,7 @@ function openEditProfile() {
   }, 200);
 }
 
-function submitEditProfile() {
+window.submitEditProfile = function submitEditProfile() {
   const acc = state.accounts.find(a => a.id === state.currentUserId);
   const newName = document.getElementById('ep-name').value.trim();
   const newHandle = document.getElementById('ep-handle').value.trim();
@@ -658,22 +658,22 @@ function submitEditProfile() {
   showToast('Perfil actualizado ✓');
 }
 
-function openMyStats() {
+window.openMyStats = function openMyStats() {
   closeModal('modal-user');
   setTimeout(() => document.getElementById('modal-stats').classList.add('open'), 200);
 }
 
-function openNotifications() {
+window.openNotifications = function openNotifications() {
   closeModal('modal-user');
   setTimeout(() => document.getElementById('modal-notif').classList.add('open'), 200);
 }
 
-function openSettings() {
+window.openSettings = function openSettings() {
   closeModal('modal-user');
   setTimeout(() => document.getElementById('modal-settings').classList.add('open'), 200);
 }
 
-function openHelp() {
+window.openHelp = function openHelp() {
   closeModal('modal-user');
   setTimeout(() => document.getElementById('modal-help').classList.add('open'), 200);
 }
@@ -682,12 +682,12 @@ function openHelp() {
    GRUPOS
    ════════════════════════════════════════════════════════════════ */
 
-function openGroupSheet() {
+window.openGroupSheet = function openGroupSheet() {
   renderGroupList();
   document.getElementById('modal-group').classList.add('open');
 }
 
-function renderGroupList() {
+window.renderGroupList = function renderGroupList() {
   const list = document.getElementById('group-list');
   list.innerHTML = state.myGroups.map(g => `
     <div class="group-item" onclick="switchGroup('${g.id}')">
@@ -704,7 +704,7 @@ function renderGroupList() {
   `).join('');
 }
 
-function switchGroup(id) {
+window.switchGroup = function switchGroup(id) {
   if (id === state.currentGroupId) {
     closeModal('modal-group');
     return;
@@ -723,17 +723,17 @@ function switchGroup(id) {
   showToast(`Cambiado a "${g.name}" ✓`);
 }
 
-function openSearchGroups() {
+window.openSearchGroups = function openSearchGroups() {
   closeModal('modal-group');
   setTimeout(() => document.getElementById('modal-search-groups').classList.add('open'), 200);
 }
 
-function openJoinCode() {
+window.openJoinCode = function openJoinCode() {
   closeModal('modal-group');
   setTimeout(() => document.getElementById('modal-join-code').classList.add('open'), 200);
 }
 
-function submitJoinCode() {
+window.submitJoinCode = function submitJoinCode() {
   const inp = document.querySelector('#modal-join-code .form-input');
   const code = (inp.value || '').toUpperCase().trim();
   if (code.length !== 6) {
@@ -745,17 +745,17 @@ function submitJoinCode() {
   showToast(`Solicitud enviada con código ${code} ✓`);
 }
 
-function requestJoinGroup(name) {
+window.requestJoinGroup = function requestJoinGroup(name) {
   closeModal('modal-search-groups');
   showToast(`Solicitud enviada a "${name}" ✓`);
 }
 
-function openCreateGroup() {
+window.openCreateGroup = function openCreateGroup() {
   closeModal('modal-group');
   setTimeout(() => document.getElementById('modal-create-group').classList.add('open'), 200);
 }
 
-function submitCreateGroup() {
+window.submitCreateGroup = function submitCreateGroup() {
   const name = document.getElementById('cg-name').value.trim();
   const initialsInput = document.getElementById('cg-initials').value.trim().toUpperCase();
   if (!name) {
@@ -783,13 +783,13 @@ function submitCreateGroup() {
   showToast(`Grupo "${name}" creado ✓`);
 }
 
-function openInviteSheet() {
+window.openInviteSheet = function openInviteSheet() {
   const g = state.myGroups.find(x => x.id === state.currentGroupId);
   if (g) document.getElementById('invite-code').textContent = g.code;
   document.getElementById('modal-invite').classList.add('open');
 }
 
-function copyInviteCode() {
+window.copyInviteCode = function copyInviteCode() {
   const code = document.getElementById('invite-code').textContent;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(code).then(() => showToast(`Código ${code} copiado ✓`));
@@ -798,7 +798,7 @@ function copyInviteCode() {
   }
 }
 
-function shareInviteLink() {
+window.shareInviteLink = function shareInviteLink() {
   const g = state.myGroups.find(x => x.id === state.currentGroupId);
   const link = `koves.app/join/${g.code}`;
   if (navigator.share) {
@@ -814,7 +814,7 @@ function shareInviteLink() {
    MEMBER PROFILE
    ════════════════════════════════════════════════════════════════ */
 
-function openMemberProfile(id) {
+window.openMemberProfile = function openMemberProfile(id) {
   const m = memberData[id];
   if (!m) return;
   currentMemberId = id;
@@ -851,7 +851,7 @@ function openMemberProfile(id) {
    CREAR PLAN
    ════════════════════════════════════════════════════════════════ */
 
-function openCreatePlan() {
+window.openCreatePlan = function openCreatePlan() {
   // Preset fecha de hoy
   const today = new Date();
   const dateStr = today.toISOString().split('T')[0];
@@ -860,13 +860,13 @@ function openCreatePlan() {
   document.getElementById('modal-create-plan').classList.add('open');
 }
 
-function selectCreateMode(btn, mode) {
+window.selectCreateMode = function selectCreateMode(btn, mode) {
   document.querySelectorAll('#modal-create-plan .action-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   btn.dataset.mode = mode;
 }
 
-function submitCreatePlan() {
+window.submitCreatePlan = function submitCreatePlan() {
   const title = document.getElementById('cp-title').value.trim();
   if (!title) {
     showToast('Pon un título al plan');
@@ -887,11 +887,11 @@ function submitCreatePlan() {
    REGLAS
    ════════════════════════════════════════════════════════════════ */
 
-function openEditRules() {
+window.openEditRules = function openEditRules() {
   document.getElementById('modal-rules').classList.add('open');
 }
 
-function submitRules() {
+window.submitRules = function submitRules() {
   closeModal('modal-rules');
   showToast('Cambios enviados a votación del grupo ✓');
 }
@@ -903,7 +903,7 @@ function submitRules() {
 /* ════════════════════════════════════════════════════════════════
    V6: VOTACIÓN DE TARJETAS DISCIPLINA
    ════════════════════════════════════════════════════════════════ */
-function voteDiscipline(btn, side) {
+window.voteDiscipline = function voteDiscipline(btn, side) {
   const card = btn.closest('.card');
   if (!card) return;
   // marcar card como votada
@@ -915,7 +915,7 @@ function voteDiscipline(btn, side) {
 /* ════════════════════════════════════════════════════════════════
    V6: BOTE DE SANCIONES
    ════════════════════════════════════════════════════════════════ */
-function renderBote() {
+window.renderBote = function renderBote() {
   const offset = state.boteMonthOffset;
   const data = state.boteHistory[offset];
   if (!data) return;
@@ -1048,7 +1048,7 @@ function renderBote() {
   }
 }
 
-function boteNav(delta) {
+window.boteNav = function boteNav(delta) {
   const newOffset = state.boteMonthOffset + delta;
   if (newOffset > 0) return;
   if (state.boteHistory[newOffset] === undefined) return;
@@ -1059,7 +1059,7 @@ function boteNav(delta) {
 /* ════════════════════════════════════════════════════════════════
    V5/V6: AGENDA TAB SWITCH (compatibilidad — pantalla agenda eliminada)
    ════════════════════════════════════════════════════════════════ */
-function switchAgendaTab(el, name) {
+window.switchAgendaTab = function switchAgendaTab(el, name) {
   // noop — la pantalla de agenda ya no existe en V6
 }
 
@@ -1078,7 +1078,7 @@ const planDays = {
   '2026-6': { 5: 'voy' },
 };
 
-function renderCalendar() {
+window.renderCalendar = function renderCalendar() {
   const grid = document.getElementById('cal-month-grid');
   const label = document.getElementById('cal-month-label');
   if (!grid || !label) return;
@@ -1123,7 +1123,7 @@ function renderCalendar() {
 }
 
 // Estado de mes compartido entre el calendario y los planes activos
-function syncMonthLabels() {
+window.syncMonthLabels = function syncMonthLabels() {
   const offset = state.calendarMonthOffset;
   const d = new Date(2026, 4 + offset, 1);
   const label = `${meses[d.getMonth()]} ${d.getFullYear()}`;
@@ -1133,7 +1133,7 @@ function syncMonthLabels() {
   if (planLbl) planLbl.textContent = label;
 }
 
-function calendarNav(delta) {
+window.calendarNav = function calendarNav(delta) {
   state.calendarMonthOffset += delta;
   renderCalendar();
   syncMonthLabels();
@@ -1141,7 +1141,7 @@ function calendarNav(delta) {
 }
 
 // Navegador de meses de planes activos — sincronizado con el calendario
-function plansMonthNav(delta) {
+window.plansMonthNav = function plansMonthNav(delta) {
   state.calendarMonthOffset += delta;
   renderCalendar();
   syncMonthLabels();
@@ -1149,7 +1149,7 @@ function plansMonthNav(delta) {
 }
 
 // Mantener la etiqueta del historial de planes alineada con el offset del calendario
-function syncHistPlansLabel() {
+window.syncHistPlansLabel = function syncHistPlansLabel() {
   histPlansOffset = state.calendarMonthOffset;
   const d = new Date(2026, 4 + histPlansOffset, 1);
   const lbl = document.getElementById('hist-plans-month');
@@ -1160,7 +1160,7 @@ function syncHistPlansLabel() {
 
 // Navegador de meses del historial de planes
 let histPlansOffset = 0;
-function histPlansNav(delta) {
+window.histPlansNav = function histPlansNav(delta) {
   const n = histPlansOffset + delta;
   if (n > 0) return;
   histPlansOffset = n;
@@ -1176,7 +1176,7 @@ function histPlansNav(delta) {
 }
 
 // Popup de detalle de estadística del perfil de miembro
-function openStatSheet(kind) {
+window.openStatSheet = function openStatSheet(kind) {
   const cfg = {
     asistidos: {
       title: 'Planes asistidos',
@@ -1240,7 +1240,7 @@ function openStatSheet(kind) {
 }
 
 // Popup de KPI: lista de planes pendientes o activos
-function openKpiSheet(kind) {
+window.openKpiSheet = function openKpiSheet(kind) {
   const title = document.getElementById('kpi-modal-title');
   const content = document.getElementById('kpi-modal-content');
   let planes = [];
@@ -1270,7 +1270,7 @@ function openKpiSheet(kind) {
 }
 
 // Expulsar miembro (solo admin)
-function kickMember(btn, name) {
+window.kickMember = function kickMember(btn, name) {
   const row = btn.closest('.member-row');
   if (row) {
     row.style.transition = 'opacity .25s, transform .25s';
@@ -1282,7 +1282,7 @@ function kickMember(btn, name) {
 }
 
 // Salir del grupo
-function leaveGroup() {
+window.leaveGroup = function leaveGroup() {
   if (state.isAdmin) {
     // Un grupo no puede quedarse sin administrador
     openTransferAdmin();
@@ -1292,7 +1292,7 @@ function leaveGroup() {
 }
 
 // Traspaso de admin obligatorio al salir
-function openTransferAdmin() {
+window.openTransferAdmin = function openTransferAdmin() {
   const body = document.getElementById('transfer-admin-body');
   // Miembros candidatos (todos menos tú y los que ya son admin distintos)
   const candidates = [
@@ -1315,7 +1315,7 @@ function openTransferAdmin() {
   `;
   document.getElementById('modal-transfer-admin').classList.add('open');
 }
-function confirmTransferAdmin(name) {
+window.confirmTransferAdmin = function confirmTransferAdmin(name) {
   closeModal('modal-transfer-admin');
   showToast(`${name} es el nuevo administrador · Has salido del grupo`);
 }
@@ -1331,7 +1331,7 @@ let commentSeq = 100;            // generador de IDs únicos
 // Si ese comentario es una respuesta, se sube hasta el comentario raíz para
 // que TODO el hilo quede bajo el comentario original (igual que Instagram),
 // pero la mención @ es la de la persona a la que realmente respondiste.
-function startReply(authorHandle, commentId) {
+window.startReply = function startReply(authorHandle, commentId) {
   pendingReplyTo = authorHandle;
   // Buscar el elemento exacto por su data-comment-id
   let el = document.querySelector(`[data-comment-id="${commentId}"]`);
@@ -1350,7 +1350,7 @@ function startReply(authorHandle, commentId) {
   }
 }
 
-function addComment() {
+window.addComment = function addComment() {
   const input = document.getElementById('comment-input');
   const val = input.value.trim();
   if (!val) { showToast('Escribe algo antes de enviar'); return; }
@@ -1430,7 +1430,7 @@ function addComment() {
    ════════════════════════════════════════════════════════════════ */
 let currentPodium = { type: 'mvp', position: 1 };
 
-function openPodiumPicker(type, pos) {
+window.openPodiumPicker = function openPodiumPicker(type, pos) {
   currentPodium = { type, position: pos };
   const title = type === 'mvp' ? `MVP · Elegir ${pos}º` : `Tardón · Elegir ${pos}º`;
   document.querySelector('#modal-podium-picker .modal-title').firstChild.textContent = title;
@@ -1451,7 +1451,7 @@ function openPodiumPicker(type, pos) {
   document.getElementById('modal-podium-picker').classList.add('open');
 }
 
-function pickPodium(name) {
+window.pickPodium = function pickPodium(name) {
   const { type, position } = currentPodium;
   state.ranking[type][position - 1] = name;
   // Actualizar UI
@@ -1464,14 +1464,14 @@ function pickPodium(name) {
   closeModal('modal-podium-picker');
 }
 
-function resetTardon() {
+window.resetTardon = function resetTardon() {
   state.ranking.tardon = [];
   renderTardonList();
   showToast('Lista de tardones vaciada');
 }
 
 // Lista dinámica de tardones (N personas, -2 pts cada una)
-function renderTardonList() {
+window.renderTardonList = function renderTardonList() {
   const wrap = document.getElementById('tardon-list');
   if (!wrap) return;
   const list = state.ranking.tardon || [];
@@ -1489,7 +1489,7 @@ function renderTardonList() {
   `).join('');
 }
 
-function openTardonPicker() {
+window.openTardonPicker = function openTardonPicker() {
   currentPodium = { type: 'tardon', position: 0 };
   document.querySelector('#modal-podium-picker .modal-title').firstChild.textContent = 'Añadir persona tardona ';
   const body = document.getElementById('podium-picker-body');
@@ -1509,19 +1509,19 @@ function openTardonPicker() {
   document.getElementById('modal-podium-picker').classList.add('open');
 }
 
-function addTardonPerson(name) {
+window.addTardonPerson = function addTardonPerson(name) {
   if (!state.ranking.tardon) state.ranking.tardon = [];
   if (!state.ranking.tardon.includes(name)) state.ranking.tardon.push(name);
   renderTardonList();
   closeModal('modal-podium-picker');
 }
 
-function removeTardonPerson(idx) {
+window.removeTardonPerson = function removeTardonPerson(idx) {
   state.ranking.tardon.splice(idx, 1);
   renderTardonList();
 }
 
-function submitRanking() {
+window.submitRanking = function submitRanking() {
   const mvpComplete = state.ranking.mvp.every(x => x !== null);
   if (!mvpComplete) {
     showToast('Debes elegir los 3 MVPs');
@@ -1533,7 +1533,7 @@ function submitRanking() {
 /* ════════════════════════════════════════════════════════════════
    V5: showAddExpense con flag para ocultar selector "Asociado al plan"
    ════════════════════════════════════════════════════════════════ */
-function showAddExpense(fromPlan = false) {
+window.showAddExpense = function showAddExpense(fromPlan = false) {
   const selector = document.getElementById('exp-plan-selector');
   if (selector) selector.style.display = fromPlan ? 'none' : 'block';
   document.getElementById('modal-expense').classList.add('open');
@@ -1542,7 +1542,7 @@ function showAddExpense(fromPlan = false) {
 /* ════════════════════════════════════════════════════════════════
    V5: CHATS
    ════════════════════════════════════════════════════════════════ */
-function openChat(chatId, name, initials, color, kind) {
+window.openChat = function openChat(chatId, name, initials, color, kind) {
   state.currentChat = chatId;
   document.getElementById('conv-avatar').textContent = initials;
   document.getElementById('conv-avatar').style.background = color;
@@ -1552,11 +1552,11 @@ function openChat(chatId, name, initials, color, kind) {
   showScreen('conversation');
 }
 
-function backFromChat() {
+window.backFromChat = function backFromChat() {
   goBack();
 }
 
-function renderConversation() {
+window.renderConversation = function renderConversation() {
   const body = document.getElementById('conv-body');
   const msgs = state.chatMessages[state.currentChat] || [];
   const isGroup = state.currentChat === 'group';
@@ -1578,7 +1578,7 @@ function renderConversation() {
   setTimeout(() => body.scrollIntoView({ block: 'end' }), 50);
 }
 
-function sendChatMessage() {
+window.sendChatMessage = function sendChatMessage() {
   const input = document.getElementById('conv-input');
   const val = input.value.trim();
   if (!val) return;
@@ -1589,7 +1589,7 @@ function sendChatMessage() {
   renderConversation();
 }
 
-function openChatWith(memberId) {
+window.openChatWith = function openChatWith(memberId) {
   // Mapeo de avatar
   const m = memberData[memberId];
   if (!m) return;
@@ -1599,7 +1599,7 @@ function openChatWith(memberId) {
 /* ════════════════════════════════════════════════════════════════
    V5: STANDINGS (CLASIFICACIÓN tipo Liga)
    ════════════════════════════════════════════════════════════════ */
-function renderStandings() {
+window.renderStandings = function renderStandings() {
   const offset = state.standingsMonthOffset;
   const today = new Date();
   const targetDate = new Date(today.getFullYear(), today.getMonth() + offset, 1);
@@ -1655,7 +1655,7 @@ function renderStandings() {
   }).join('');
 }
 
-function standingsNav(delta) {
+window.standingsNav = function standingsNav(delta) {
   const newOffset = state.standingsMonthOffset + delta;
   // No permitir ir al futuro
   if (newOffset > 0) return;
@@ -1665,14 +1665,14 @@ function standingsNav(delta) {
   renderStandings();
 }
 
-function showStandingsLegend() {
+window.showStandingsLegend = function showStandingsLegend() {
   document.getElementById('modal-standings-legend').classList.add('open');
 }
 
 /* ════════════════════════════════════════════════════════════════
    V6: SWITCHES DE PESTAÑAS NUEVAS
    ════════════════════════════════════════════════════════════════ */
-function switchPendientesTab(el, name) {
+window.switchPendientesTab = function switchPendientesTab(el, name) {
   const wrap = el.closest('.section');
   wrap.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -1680,7 +1680,7 @@ function switchPendientesTab(el, name) {
   document.getElementById('pendientes-tu-debes').style.display = name === 'tu-debes' ? 'block' : 'none';
 }
 
-function switchHistorialTab(el, name) {
+window.switchHistorialTab = function switchHistorialTab(el, name) {
   const wrap = el.closest('.section');
   wrap.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -1688,7 +1688,7 @@ function switchHistorialTab(el, name) {
   document.getElementById('historial-transferencias').style.display = name === 'transferencias' ? 'block' : 'none';
 }
 
-function switchDisciplinaTab(el, name) {
+window.switchDisciplinaTab = function switchDisciplinaTab(el, name) {
   const wrap = el.closest('.section');
   wrap.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -1696,7 +1696,7 @@ function switchDisciplinaTab(el, name) {
   document.getElementById('disciplina-historial').style.display = name === 'historial' ? 'block' : 'none';
 }
 
-function switchActivityTab(el, name) {
+window.switchActivityTab = function switchActivityTab(el, name) {
   el.parentElement.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('activity-planes').style.display = name === 'planes' ? 'block' : 'none';
@@ -1705,7 +1705,7 @@ function switchActivityTab(el, name) {
 }
 
 // Sub-selector Activas / Historial de reclamaciones
-function switchReclamTab(el, name) {
+window.switchReclamTab = function switchReclamTab(el, name) {
   el.parentElement.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('reclam-activas').style.display = name === 'activas' ? 'block' : 'none';
@@ -1714,7 +1714,7 @@ function switchReclamTab(el, name) {
 
 // Navegador de meses del historial de reclamaciones
 let reclamHistOffset = -1;
-function reclamHistNav(delta) {
+window.reclamHistNav = function reclamHistNav(delta) {
   const n = reclamHistOffset + delta;
   if (n >= 0) return;
   reclamHistOffset = n;
@@ -1724,7 +1724,7 @@ function reclamHistNav(delta) {
 }
 
 // Resolver una reclamación (solo admin)
-function resolveReclam(btn, action) {
+window.resolveReclam = function resolveReclam(btn, action) {
   if (!state.isAdmin) { showToast('Solo el administrador puede resolver reclamaciones'); return; }
   const card = btn.closest('.card');
   if (card) {
@@ -1739,7 +1739,7 @@ function resolveReclam(btn, action) {
 // Nueva reclamación — siempre se inicia desde un plan (un pago o una tarjeta)
 let newReclamType = 'gasto';
 let newReclamContext = '';
-function openReclamFor(type, contextLabel) {
+window.openReclamFor = function openReclamFor(type, contextLabel) {
   newReclamType = type;
   newReclamContext = contextLabel || '';
   const motivo = document.getElementById('reclam-motivo');
@@ -1752,7 +1752,7 @@ function openReclamFor(type, contextLabel) {
   }
   document.getElementById('modal-new-reclam').classList.add('open');
 }
-function submitReclam() {
+window.submitReclam = function submitReclam() {
   const motivo = document.getElementById('reclam-motivo').value.trim();
   if (!motivo) { showToast('Debes explicar el motivo de la reclamación'); return; }
   closeModal('modal-new-reclam');
@@ -1760,7 +1760,7 @@ function submitReclam() {
 }
 
 // Aplicar visibilidad de admin a las reclamaciones
-function applyReclamAdminVisibility() {
+window.applyReclamAdminVisibility = function applyReclamAdminVisibility() {
   const isAdmin = state.isAdmin;
   document.querySelectorAll('#activity-reclamaciones .btn-primary, #activity-reclamaciones .btn-secondary').forEach(b => {
     if (b.textContent === 'Validar' || b.textContent === 'Rechazar') {
@@ -1776,7 +1776,7 @@ function applyReclamAdminVisibility() {
 /* ════════════════════════════════════════════════════════════════
    V6: REGLAS — mostrar/ocultar editar según admin
    ════════════════════════════════════════════════════════════════ */
-function applyAdminVisibility() {
+window.applyAdminVisibility = function applyAdminVisibility() {
   const btn = document.getElementById('rules-edit-btn');
   const hint = document.getElementById('rules-admin-hint');
   if (!btn || !hint) return;
@@ -1794,12 +1794,12 @@ function applyAdminVisibility() {
    ════════════════════════════════════════════════════════════════ */
 
 // Abrir chat grupal directamente desde el header
-function openGroupChat() {
+window.openGroupChat = function openGroupChat() {
   openChat('group', 'EL CLUB', 'EL', '#0A0A0A', 'group');
 }
 
 // Liquidar deuda individual
-function openLiquidarItem(toId, amount) {
+window.openLiquidarItem = function openLiquidarItem(toId, amount) {
   const nameMap = { carlos: 'Carlos', mario: 'Mario', pablo: 'Pablo', ana: 'Ana', lucas: 'Lucas', javi: 'Javi', sergio: 'Sergio', marta: 'Marta' };
   liqCurrentTo = toId;
   document.getElementById('liq-item-name').textContent = 'Debes a ' + (nameMap[toId] || toId);
@@ -1809,12 +1809,12 @@ function openLiquidarItem(toId, amount) {
 
 let liqUploaded = false;
 let liqCurrentTo = null;
-function handleLiqUpload() {
+window.handleLiqUpload = function handleLiqUpload() {
   liqUploaded = true;
   const zone = document.getElementById('liq-upload-zone');
   if (zone) { zone.style.borderColor = 'var(--green)'; zone.innerHTML = '<div class="upload-label" style="color:var(--green)">✓ Comprobante adjuntado</div>'; }
 }
-function confirmLiquidar() {
+window.confirmLiquidar = function confirmLiquidar() {
   if (!liqUploaded) { showToast('Debes adjuntar el comprobante primero'); return; }
   closeModal('modal-liquidar-item');
   liqUploaded = false;
@@ -1833,7 +1833,7 @@ function confirmLiquidar() {
 }
 
 // Parpadeo de pendientes: activar/desactivar según número
-function initPendingBlink() {
+window.initPendingBlink = function initPendingBlink() {
   const numEl = document.getElementById('kpi-pending-num');
   const num = parseInt(numEl?.textContent || '0');
   const bar = document.getElementById('kpi-pending-bar');
@@ -1861,7 +1861,7 @@ function initPendingBlink() {
 
 // Navegación de planes del perfil de miembro por mes
 let memberPlansMonthOffset = 0;
-function memberPlansNav(delta) {
+window.memberPlansNav = function memberPlansNav(delta) {
   memberPlansMonthOffset += delta;
   const next = document.getElementById('mp-plans-next');
   if (next) next.classList.toggle('disabled', memberPlansMonthOffset >= 0);
@@ -1878,7 +1878,7 @@ function memberPlansNav(delta) {
 }
 
 // Subir foto a mejores momentos
-function uploadPlanPhoto() {
+window.uploadPlanPhoto = function uploadPlanPhoto() {
   const grid = document.getElementById('plan-photos-grid');
   if (!grid) return;
   const emojis = ['📸','🎊','🍾','🎶','🌟','💃','🕺','🎉'];
@@ -1891,7 +1891,7 @@ function uploadPlanPhoto() {
 }
 
 // Confirmar pago en bote (deudor)
-function confirmBoteDeudor(id, offset) {
+window.confirmBoteDeudor = function confirmBoteDeudor(id, offset) {
   const data = state.boteHistory[offset];
   if (!data) return;
   if (!data.confirmDeudores) data.confirmDeudores = {};
@@ -1901,7 +1901,7 @@ function confirmBoteDeudor(id, offset) {
 }
 
 // Confirmar cobro en bote (ganador)
-function confirmBoteGanador(id, offset) {
+window.confirmBoteGanador = function confirmBoteGanador(id, offset) {
   const data = state.boteHistory[offset];
   if (!data) return;
   if (!data.confirmGanadores) data.confirmGanadores = {};
@@ -1911,7 +1911,7 @@ function confirmBoteGanador(id, offset) {
 }
 
 // Finalizar reparto del bote
-function finalizeBote(offset) {
+window.finalizeBote = function finalizeBote(offset) {
   const data = state.boteHistory[offset];
   if (!data) return;
   data.finalized = true;
@@ -1925,7 +1925,7 @@ function finalizeBote(offset) {
    ════════════════════════════════════════════════════════════════ */
 
 // Votar tarjeta de disciplina dentro del propio plan
-function votePlanDiscipline(btn, side) {
+window.votePlanDiscipline = function votePlanDiscipline(btn, side) {
   const row = document.getElementById('plan-disc-vote-btns');
   if (!row) return;
   row.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '.5'; });
@@ -1936,14 +1936,14 @@ function votePlanDiscipline(btn, side) {
 
 // Marcar deuda como recibida (en "Te deben") — muestra comprobante primero
 let receivedCtx = null;
-function markReceived(btn, fromName, amount, hasProof) {
+window.markReceived = function markReceived(btn, fromName, amount, hasProof) {
   receivedCtx = { btn, fromName, amount };
   // Mostrar el comprobante que subió el otro
   document.getElementById('proof-from').textContent = `Comprobante de ${fromName}`;
   document.getElementById('proof-amount').textContent = amount;
   document.getElementById('modal-proof').classList.add('open');
 }
-function confirmReceived() {
+window.confirmReceived = function confirmReceived() {
   if (!receivedCtx) return;
   const { btn, fromName, amount } = receivedCtx;
   const item = btn.closest('.expense-item');
@@ -1972,10 +1972,10 @@ function confirmReceived() {
 }
 
 // Menú de añadir foto (estilo Instagram)
-function openPhotoMenu() {
+window.openPhotoMenu = function openPhotoMenu() {
   document.getElementById('modal-photo-menu').classList.add('open');
 }
-function pickPhotoSource(source) {
+window.pickPhotoSource = function pickPhotoSource(source) {
   closeModal('modal-photo-menu');
   const labels = {
     biblioteca: 'biblioteca',
@@ -1988,7 +1988,7 @@ function pickPhotoSource(source) {
 }
 
 // Parpadeo del título "Tu asistencia" si el plan está pendiente
-function updateAttendanceBlink(isPending) {
+window.updateAttendanceBlink = function updateAttendanceBlink(isPending) {
   const title = document.getElementById('pd-attendance-title');
   if (!title) return;
   if (isPending) title.classList.add('pending-blink');
@@ -2001,7 +2001,7 @@ function updateAttendanceBlink(isPending) {
 
 // Navegador de meses del historial de gastos
 let histExpOffset = 0;
-function histExpNav(delta) {
+window.histExpNav = function histExpNav(delta) {
   const n = histExpOffset + delta;
   if (n > 0) return;
   histExpOffset = n;
@@ -2014,7 +2014,7 @@ function histExpNav(delta) {
 
 // Navegador de meses del historial de disciplina del grupo
 let discHistOffset = -1;
-function discHistNav(delta) {
+window.discHistNav = function discHistNav(delta) {
   const n = discHistOffset + delta;
   if (n >= 0) return;
   discHistOffset = n;
@@ -2027,7 +2027,7 @@ function discHistNav(delta) {
 
 // Navegador de meses de disciplina del perfil de miembro
 let memberDiscOffset = -1;
-function memberDiscNav(delta) {
+window.memberDiscNav = function memberDiscNav(delta) {
   const n = memberDiscOffset + delta;
   if (n >= 0) return;
   memberDiscOffset = n;
@@ -2039,7 +2039,7 @@ function memberDiscNav(delta) {
 }
 
 // Selector Actual/Historial de disciplina en el perfil de miembro
-function switchMemberDiscTab(el, name) {
+window.switchMemberDiscTab = function switchMemberDiscTab(el, name) {
   el.parentElement.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('mp-disc-actual').style.display = name === 'actual' ? 'block' : 'none';
@@ -2049,11 +2049,11 @@ function switchMemberDiscTab(el, name) {
 // Ajustes de invitaciones del grupo
 // Visibilidad del grupo (público/privado)
 let groupType = 'privado';
-function openGroupVisibility() {
+window.openGroupVisibility = function openGroupVisibility() {
   document.getElementById('modal-group-visibility').classList.add('open');
   updateGroupInfoBlock();
 }
-function setGroupType(el, type) {
+window.setGroupType = function setGroupType(el, type) {
   groupType = type;
   const pub = document.getElementById('gtype-publico');
   const priv = document.getElementById('gtype-privado');
@@ -2066,12 +2066,12 @@ function setGroupType(el, type) {
   }
   updateGroupInfoBlock();
 }
-function updateGroupInfoBlock() {
+window.updateGroupInfoBlock = function updateGroupInfoBlock() {
   // El subajuste de "información pública" solo tiene sentido si el grupo es privado
   const block = document.getElementById('group-info-visibility-block');
   if (block) block.style.display = (groupType === 'privado') ? 'block' : 'none';
 }
-function saveGroupVisibility() {
+window.saveGroupVisibility = function saveGroupVisibility() {
   const infoPublic = document.getElementById('group-info-public').checked;
   const sub = document.getElementById('group-visibility-sub');
   if (sub) {
@@ -2085,10 +2085,10 @@ function saveGroupVisibility() {
   showToast('Visibilidad del grupo guardada ✓');
 }
 
-function openGroupInvitesSettings() {
+window.openGroupInvitesSettings = function openGroupInvitesSettings() {
   document.getElementById('modal-invite-settings').classList.add('open');
 }
-function setInviteVisibility(el, mode) {
+window.setInviteVisibility = function setInviteVisibility(el, mode) {
   const todos = document.getElementById('inv-vis-todos');
   const admins = document.getElementById('inv-vis-admins');
   if (mode === 'todos') {
@@ -2099,7 +2099,7 @@ function setInviteVisibility(el, mode) {
     todos.className = 'pill pill-outline'; todos.textContent = 'Inactivo';
   }
 }
-function resetInviteCode() {
+window.resetInviteCode = function resetInviteCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
@@ -2112,7 +2112,7 @@ function resetInviteCode() {
 /* ════════════════════════════════════════════════════════════════
    V11: SUBSECCIONES DE CONFIGURACIÓN Y AYUDA
    ════════════════════════════════════════════════════════════════ */
-function openSettingSub(kind) {
+window.openSettingSub = function openSettingSub(kind) {
   const cfg = {
     idioma: {
       title: 'Idioma',
@@ -2174,7 +2174,7 @@ function openSettingSub(kind) {
   document.getElementById('modal-setting-sub').classList.add('open');
 }
 
-function openHelpSub(kind) {
+window.openHelpSub = function openHelpSub(kind) {
   const cfg = {
     planes: {
       title: 'Cómo crear un plan',
@@ -2214,7 +2214,7 @@ let rouletteOptions = [];
 let rouletteSpinning = false;
 let rouletteAngle = 0;
 
-function renderRouletteOptions() {
+window.renderRouletteOptions = function renderRouletteOptions() {
   const list = document.getElementById('roulette-options-list');
   const count = document.getElementById('roulette-count');
   if (count) count.textContent = `${rouletteOptions.length} / 100`;
@@ -2231,7 +2231,7 @@ function renderRouletteOptions() {
   `).join('');
 }
 
-function addRouletteOption() {
+window.addRouletteOption = function addRouletteOption() {
   const input = document.getElementById('roulette-input');
   const val = input.value.trim();
   if (!val) { showToast('Escribe una opción'); return; }
@@ -2241,25 +2241,25 @@ function addRouletteOption() {
   renderRouletteOptions();
 }
 
-function removeRouletteOption(i) {
+window.removeRouletteOption = function removeRouletteOption(i) {
   rouletteOptions.splice(i, 1);
   renderRouletteOptions();
 }
 
-function startRoulette() {
+window.startRoulette = function startRoulette() {
   if (rouletteOptions.length < 2) { showToast('Necesitas al menos 2 opciones'); return; }
   document.getElementById('roulette-setup').style.display = 'none';
   document.getElementById('roulette-wheel-section').style.display = 'block';
   drawRouletteWheel();
 }
 
-function resetRoulette() {
+window.resetRoulette = function resetRoulette() {
   document.getElementById('roulette-setup').style.display = 'block';
   document.getElementById('roulette-wheel-section').style.display = 'none';
   document.getElementById('roulette-result').textContent = '';
 }
 
-function drawRouletteWheel() {
+window.drawRouletteWheel = function drawRouletteWheel() {
   const svg = document.getElementById('roulette-svg');
   const n = rouletteOptions.length;
   const cx = 100, cy = 100, r = 100;
@@ -2285,7 +2285,7 @@ function drawRouletteWheel() {
   rouletteAngle = 0;
 }
 
-function spinRoulette() {
+window.spinRoulette = function spinRoulette() {
   if (rouletteSpinning) return;
   rouletteSpinning = true;
   const svg = document.getElementById('roulette-svg');
@@ -2329,7 +2329,7 @@ function spinRoulette() {
 
 // Navegador de meses del historial de la ruleta
 let rouletteHistOffset = 0;
-function rouletteHistNav(delta) {
+window.rouletteHistNav = function rouletteHistNav(delta) {
   const n = rouletteHistOffset + delta;
   if (n > 0) return;
   rouletteHistOffset = n;
@@ -2348,7 +2348,7 @@ const rouletteDecisions = {
     options: ['Carlos', 'Mario', 'Pablo', 'Lucas', 'Ana', 'Sergio'], by: 'Lanzada por Ana. El resultado lo eligió el azar.' },
 };
 
-function openRouletteDetail(id) {
+window.openRouletteDetail = function openRouletteDetail(id) {
   const d = rouletteDecisions[id];
   if (!d) return;
   document.getElementById('rd-title').textContent = d.title;
@@ -2667,6 +2667,6 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
    INICIALIZACIÓN — al final, tras definir todas las funciones.
    Cada paso protegido para que un fallo no corte el resto.
    ════════════════════════════════════════════════════════════════ */
-function safeInit(label, fn) {
+window.safeInit = function safeInit(label, fn) {
   try { fn(); } catch (e) { console.error('Init error en ' + label + ':', e); }
 }
