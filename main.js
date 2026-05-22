@@ -1,8 +1,12 @@
+import { supabase } from './supabaseClient.js';
+
 /* ════════════════════════════════════════════════════════════════
    GROUPOS V4 — ESTADO Y LÓGICA
    ════════════════════════════════════════════════════════════════ */
 
 // ── ESTADO GLOBAL ──
+let isLoginMode = true; // Auth mode
+
 const state = {
   currentUserId: 'tu',
   currentGroupId: 'el-club',
@@ -2537,6 +2541,126 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   document.addEventListener('touchstart', onStart, { passive: true });
   document.addEventListener('touchmove', onMove, { passive: false });
   document.addEventListener('touchend', onEnd);
+
+  // ── INICIALIZACIÓN ──
+  async function initApp() {
+    // Configurar listeners de la pantalla de login
+    document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+
+    // Check current session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (session) {
+      await loadUserProfile(session.user);
+      document.getElementById('auth-screen').classList.remove('active');
+      window.renderAll();
+    } else {
+      document.getElementById('auth-screen').classList.add('active');
+    }
+
+    // Escuchar cambios de sesión
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        if (session) {
+          await loadUserProfile(session.user);
+          document.getElementById('auth-screen').classList.remove('active');
+          window.renderAll();
+        }
+      } else if (event === 'SIGNED_OUT') {
+        state.currentUserId = null;
+        document.getElementById('auth-screen').classList.add('active');
+      }
+    });
+  }
+
+  window.renderAll = function() {
+    safeInit('setHeaderDate', () => setHeaderDate());
+    safeInit('fab', () => { const f = document.getElementById('fab-create'); if (f) f.style.display = 'flex'; });
+    safeInit('renderCalendar', () => renderCalendar());
+    safeInit('renderStandings', () => renderStandings());
+    safeInit('renderBote', () => renderBote());
+    safeInit('applyAdminVisibility', () => applyAdminVisibility());
+    safeInit('initPendingBlink', () => initPendingBlink());
+    safeInit('renderRouletteOptions', () => renderRouletteOptions());
+    safeInit('applyReclamAdminVisibility', () => applyReclamAdminVisibility());
+  };
+
+  // ── AUTH LOGIC ──
+  window.toggleAuthMode = function() {
+    isLoginMode = !isLoginMode;
+    document.getElementById('auth-title').innerText = isLoginMode ? 'Iniciar Sesión' : 'Crear Cuenta';
+    document.getElementById('auth-submit-btn').innerText = isLoginMode ? 'Entrar' : 'Registrarse';
+    document.getElementById('auth-switch-text').innerText = isLoginMode ? 'Regístrate' : 'Inicia Sesión';
+    document.getElementById('auth-name-field').style.display = isLoginMode ? 'none' : 'block';
+    document.getElementById('auth-error').innerText = '';
+  };
+
+  window.handleAuthSubmit = async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    const name = document.getElementById('auth-name').value;
+    const errorEl = document.getElementById('auth-error');
+    
+    errorEl.innerText = '';
+    document.getElementById('auth-submit-btn').disabled = true;
+
+    try {
+      if (isLoginMode) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: { full_name: name, username: name.toLowerCase().replace(/\s/g, '') + Math.floor(Math.random()*1000) }
+          }
+        });
+        if (error) throw error;
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          errorEl.innerText = "El correo ya está registrado.";
+        }
+      }
+    } catch (err) {
+      errorEl.innerText = err.message;
+    } finally {
+      document.getElementById('auth-submit-btn').disabled = false;
+    }
+  };
+
+  window.logout = async function() {
+    await supabase.auth.signOut();
+  };
+
+  async function loadUserProfile(user) {
+    state.currentUserId = user.id;
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (data) {
+      // Añadir o actualizar la cuenta en el array mock por ahora
+      const existingIdx = state.accounts.findIndex(a => a.id === user.id);
+      const newAcc = { 
+        id: user.id, 
+        name: data.full_name || 'Sin nombre', 
+        handle: '@' + (data.username || 'usuario'), 
+        initials: (data.full_name || 'U').substring(0,2).toUpperCase(), 
+        avatarColor: '#0A0A0A' 
+      };
+      if (existingIdx >= 0) state.accounts[existingIdx] = newAcc;
+      else state.accounts.push(newAcc);
+    } else {
+      // Si acaba de registrarse y no le dio tiempo al trigger, simulamos
+      const newAcc = { 
+        id: user.id, 
+        name: user.user_metadata?.full_name || 'Tú', 
+        handle: '@' + (user.user_metadata?.username || 'usuario'), 
+        initials: (user.user_metadata?.full_name || 'T').substring(0,2).toUpperCase(), 
+        avatarColor: '#0A0A0A' 
+      };
+      state.accounts.push(newAcc);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initApp);
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -2546,12 +2670,3 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 function safeInit(label, fn) {
   try { fn(); } catch (e) { console.error('Init error en ' + label + ':', e); }
 }
-safeInit('setHeaderDate', () => setHeaderDate());
-safeInit('fab', () => { const f = document.getElementById('fab-create'); if (f) f.style.display = 'flex'; });
-safeInit('renderCalendar', () => renderCalendar());
-safeInit('renderStandings', () => renderStandings());
-safeInit('renderBote', () => renderBote());
-safeInit('applyAdminVisibility', () => applyAdminVisibility());
-safeInit('initPendingBlink', () => initPendingBlink());
-safeInit('renderRouletteOptions', () => renderRouletteOptions());
-safeInit('applyReclamAdminVisibility', () => applyReclamAdminVisibility());

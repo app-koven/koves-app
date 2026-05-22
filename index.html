@@ -12,6 +12,32 @@
 
 <div id="app">
 
+  <!-- ═══════ AUTH OVERLAY ═══════ -->
+  <div id="auth-screen" class="auth-overlay active">
+    <div class="auth-box">
+      <div class="auth-logo">KOves</div>
+      <h2 class="auth-title" id="auth-title">Iniciar Sesión</h2>
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="auth-email" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" class="form-input" id="auth-password" required>
+        </div>
+        <div class="form-group" id="auth-name-field" style="display:none;">
+          <label class="form-label">Nombre de usuario</label>
+          <input type="text" class="form-input" id="auth-name">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="auth-submit-btn" style="padding:14px; font-size:15px;">Entrar</button>
+      </form>
+      <div class="auth-switch" onclick="toggleAuthMode()">
+        ¿No tienes cuenta? <span id="auth-switch-text">Regístrate</span>
+      </div>
+      <div id="auth-error" class="auth-error"></div>
+    </div>
+  </div>
   <!-- ═══════ HEADER ═══════ -->
   <header class="app-header">
     <div class="header-logo">KOves</div>
