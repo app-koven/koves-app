@@ -8,6 +8,7 @@ import { supabase } from './supabaseClient.js';
 let isLoginMode = true; // Auth mode
 
 const state = {
+  isLoggedIn: false,
   currentUserId: 'tu',
   currentGroupId: 'el-club',
   // Cuentas guardadas (como Instagram: varias cuentas en el mismo dispositivo)
@@ -521,6 +522,10 @@ window.showToast = function showToast(msg) {
    ════════════════════════════════════════════════════════════════ */
 
 window.openUserSheet = function openUserSheet() {
+  if (!state.isLoggedIn) {
+    document.getElementById('modal-auth').classList.add('open');
+    return;
+  }
   // Actualizar header del sheet con el usuario actual
   const acc = state.accounts.find(a => a.id === state.currentUserId);
   if (acc) {
@@ -572,7 +577,7 @@ window.switchAccount = function switchAccount(id) {
 window.openAddAccount = function openAddAccount() {
   closeModal('modal-switch');
   setTimeout(() => {
-    document.getElementById('modal-add-account').classList.add('open');
+    document.getElementById('modal-auth').classList.add('open');
   }, 200);
 }
 
@@ -2550,24 +2555,27 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     // Check current session
     const { data: { session }, error } = await supabase.auth.getSession();
     if (session) {
+      state.isLoggedIn = true;
       await loadUserProfile(session.user);
-      document.getElementById('auth-screen').classList.remove('active');
-      window.renderAll();
     } else {
-      document.getElementById('auth-screen').classList.add('active');
+      state.isLoggedIn = false;
+      state.currentUserId = 'tu';
     }
+    window.renderAll();
 
     // Escuchar cambios de sesión
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         if (session) {
+          state.isLoggedIn = true;
           await loadUserProfile(session.user);
-          document.getElementById('auth-screen').classList.remove('active');
+          document.getElementById('modal-auth').classList.remove('open');
           window.renderAll();
         }
       } else if (event === 'SIGNED_OUT') {
-        state.currentUserId = null;
-        document.getElementById('auth-screen').classList.add('active');
+        state.isLoggedIn = false;
+        state.currentUserId = 'tu';
+        window.renderAll();
       }
     });
   }

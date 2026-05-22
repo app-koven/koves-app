@@ -12,32 +12,7 @@
 
 <div id="app">
 
-  <!-- ═══════ AUTH OVERLAY ═══════ -->
-  <div id="auth-screen" class="auth-overlay active">
-    <div class="auth-box">
-      <div class="auth-logo">KOves</div>
-      <h2 class="auth-title" id="auth-title">Iniciar Sesión</h2>
-      <form id="auth-form" onsubmit="handleAuthSubmit(event)">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-input" id="auth-email" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Contraseña</label>
-          <input type="password" class="form-input" id="auth-password" required>
-        </div>
-        <div class="form-group" id="auth-name-field" style="display:none;">
-          <label class="form-label">Nombre de usuario</label>
-          <input type="text" class="form-input" id="auth-name">
-        </div>
-        <button type="submit" class="btn btn-primary btn-full" id="auth-submit-btn" style="padding:14px; font-size:15px;">Entrar</button>
-      </form>
-      <div class="auth-switch" onclick="toggleAuthMode()">
-        ¿No tienes cuenta? <span id="auth-switch-text">Regístrate</span>
-      </div>
-      <div id="auth-error" class="auth-error"></div>
-    </div>
-  </div>
+
   <!-- ═══════ HEADER ═══════ -->
   <header class="app-header">
     <div class="header-logo">KOves</div>
@@ -1595,22 +1570,31 @@
 </div>
 
 <!-- ADD ACCOUNT (login mock) -->
-<div class="modal-overlay" id="modal-add-account">
+<div class="modal-overlay" id="modal-auth">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Iniciar sesión <span class="modal-close" onclick="closeModal('modal-add-account')">Cancelar</span></div>
+    <div class="modal-title" id="auth-title">Iniciar Sesión <span class="modal-close" onclick="closeModal('modal-auth')">Cerrar</span></div>
     <div class="modal-body">
-      <div class="notice" style="margin-bottom:14px;">Inicia sesión en otra cuenta para añadirla. Podrás cambiar entre cuentas en cualquier momento.</div>
-      <div class="form-group">
-        <label class="form-label">Usuario o email</label>
-        <input type="text" class="form-input" id="add-acc-user" placeholder="@tu_usuario">
+      <div class="notice" style="margin-bottom:14px;">Inicia sesión o regístrate para guardar tus datos en la nube.</div>
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="auth-email" placeholder="tu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" class="form-input" id="auth-password" placeholder="••••••••" required>
+        </div>
+        <div class="form-group" id="auth-name-field" style="display:none;">
+          <label class="form-label">Nombre de usuario</label>
+          <input type="text" class="form-input" id="auth-name" placeholder="@usuario">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="auth-submit-btn" style="margin-bottom:12px;">Entrar</button>
+      </form>
+      <div style="text-align:center;font-size:13px;color:var(--ink3);cursor:pointer;" onclick="toggleAuthMode()">
+        ¿No tienes cuenta? <span id="auth-switch-text" style="color:var(--ink);font-weight:700;text-decoration:underline;">Regístrate</span>
       </div>
-      <div class="form-group">
-        <label class="form-label">Contraseña</label>
-        <input type="password" class="form-input" placeholder="••••••••">
-      </div>
-      <button class="btn btn-primary btn-full" onclick="submitAddAccount()" style="margin-bottom:8px;">Iniciar sesión</button>
-      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-add-account')">Cancelar</button>
+      <div id="auth-error" style="color:var(--red);font-size:12px;text-align:center;margin-top:12px;font-weight:600;"></div>
     </div>
   </div>
 </div>
