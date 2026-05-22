@@ -2602,6 +2602,20 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     document.getElementById('auth-error').innerText = '';
   };
 
+  window.signInWithGoogle = async function() {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      document.getElementById('auth-error').innerText = err.message;
+    }
+  };
+
   window.handleAuthSubmit = async function(e) {
     e.preventDefault();
     const email = document.getElementById('auth-email').value;
