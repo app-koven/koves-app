@@ -277,16 +277,24 @@ window.goBack = function goBack() {
 }
 
 window.openPlan = function openPlan(id) {
-  const p = planData[id] || planData['quedada'];
-  document.getElementById('pd-status').textContent = p.status;
+  const p = state.plans.find(x => x.id === id);
+  if (!p) return;
+  
+  const statusStr = p.status === 'active' ? 'Confirmado' : 'Propuesto';
+  document.getElementById('pd-status').textContent = statusStr;
   document.getElementById('pd-title').innerHTML = p.title;
-  document.getElementById('pd-desc').textContent = p.desc;
+  document.getElementById('pd-desc').textContent = p.description || 'Sin descripción';
+  
   const cr = document.getElementById('pd-creator');
-  if (cr) cr.textContent = p.creator || '';
+  // We can look up the creator in state.accounts or group members if we have them, for now just placeholder
+  if (cr) cr.textContent = 'Organizador';
+  
   showScreen('plan-detail');
-  // Si el plan está pendiente de tu asistencia, parpadea el título y ningún botón seleccionado
+  
   document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
-  updateAttendanceBlink(!!p.pending);
+  
+  // TODO: Check if user attendance is pending by fetching plan_attendance
+  updateAttendanceBlink(true);
   renderTardonList();
 }
 
@@ -817,6 +825,8 @@ window.submitJoinCode = async function submitJoinCode() {
     closeModal('modal-join-code');
     inp.value = '';
     
+    // Reset to force UI refresh
+    state.currentGroupId = null;
     await loadUserGroups();
     if (window.switchGroup) window.switchGroup(invite.group_id);
     else window.renderAll();
@@ -850,29 +860,31 @@ window.submitCreateGroup = async function submitCreateGroup() {
   
   try {
     // 1. Insert Group
-    const { data: group, error: gError } = await supabase.from('groups').insert([{
+    const groupId = crypto.randomUUID();
+    const { error: gError } = await supabase.from('groups').insert([{
+      id: groupId,
       name: name,
       initials: initials,
       color: color,
       created_by: state.currentUserId
-    }]).select().single();
+    }]);
     if (gError) throw gError;
 
     // 2. Insert Admin Member
     const { error: mError } = await supabase.from('group_members').insert([{
-      group_id: group.id,
+      group_id: groupId,
       user_id: state.currentUserId,
       role: 'admin'
     }]);
     if (mError) throw mError;
 
     // 3. Insert Settings
-    await supabase.from('group_settings').insert([{ group_id: group.id }]);
+    await supabase.from('group_settings').insert([{ group_id: groupId }]);
 
     // 4. Generate & Insert Invite Code
     const code = Math.random().toString(36).substring(2,8).toUpperCase();
     await supabase.from('group_invites').insert([{
-      group_id: group.id,
+      group_id: groupId,
       code: code,
       created_by: state.currentUserId
     }]);
@@ -882,8 +894,10 @@ window.submitCreateGroup = async function submitCreateGroup() {
     document.getElementById('cg-initials').value = '';
     closeModal('modal-create-group');
     
+    // Reset currentGroupId so switchGroup forces a refresh
+    state.currentGroupId = null;
     await loadUserGroups();
-    if (window.switchGroup) window.switchGroup(group.id);
+    if (window.switchGroup) window.switchGroup(groupId);
     else window.renderAll();
 
   } catch (error) {
@@ -1001,7 +1015,9 @@ window.submitCreatePlan = async function submitCreatePlan() {
   const isoDate = new Date(`${date}T${time}`).toISOString();
 
   try {
-    const { data: plan, error } = await supabase.from('plans').insert([{
+    const planId = crypto.randomUUID();
+    const { error } = await supabase.from('plans').insert([{
+      id: planId,
       group_id: state.currentGroupId,
       title: title,
       description: desc,
@@ -1011,13 +1027,13 @@ window.submitCreatePlan = async function submitCreatePlan() {
       status: status,
       mode: modeDb,
       created_by: state.currentUserId
-    }]).select().single();
+    }]);
 
     if (error) throw error;
     
     // Auto-confirm attendance for creator
     await supabase.from('plan_attendance').insert([{
-      plan_id: plan.id,
+      plan_id: planId,
       user_id: state.currentUserId,
       status: 'voy'
     }]);
@@ -2920,6 +2936,8 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
         state.currentGroupId = null; // force update in switchGroup
         if (window.switchGroup) window.switchGroup(firstId);
       }
+      
+      if (window.renderGroupList) window.renderGroupList();
     } else {
       // Empty groups state
       state.currentGroupId = null;
