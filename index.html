@@ -72,38 +72,9 @@
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div class="month-nav-label" id="plans-act-month">Mayo 2026</div>
-          <button class="month-nav-btn" id="plans-act-next" onclick="plansMonthNav(1)">
-            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-        <div class="card pending-border">
-          <div class="card-row" onclick="openPlan('quedada')">
-            <div class="card-content">
-              <div class="card-label">Hoy · 22:30</div>
-              <div class="card-name">Quedada en el piso</div>
-              <div class="card-sub card-sub-1line">Cena, música y después se decide si salir. Trae algo de beber si puedes.</div>
-            </div>
-            <div class="card-right">
-              <span class="attendance-tag pendiente">Pendiente</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-row" onclick="openPlan('fiesta-ana')">
-            <div class="card-content">
-              <div class="card-label">Sáb 14 Jun · 23:00</div>
-              <div class="card-name">Fiesta en casa de Ana</div>
-              <div class="card-sub card-sub-1line">Fiesta temática, llevar bebida. Empezamos sobre las 23:00 en su casa.</div>
-            </div>
-            <div class="card-right">
-              <span class="attendance-tag voy">✓ Voy</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Historial (planes a los que TÚ has asistido) -->
-      <div id="plans-historial" style="display:none;">
+<div id="plans-activos-list"></div>
+</div>
+<div id="plans-historial" style="display:none;">
         <div class="month-nav" style="margin-bottom:10px;">
           <button class="month-nav-btn" onclick="histPlansNav(-1)">
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>

@@ -10,18 +10,15 @@ let isLoginMode = true; // Auth mode
 const state = {
   isLoggedIn: false,
   currentUserId: 'tu',
-  currentGroupId: 'el-club',
+  currentGroupId: null,
+  plans: [],
   // Cuentas guardadas (como Instagram: varias cuentas en el mismo dispositivo)
   accounts: [
     { id: 'tu', name: 'Tu cuenta', handle: '@tu_usuario', initials: 'TU', avatarColor: '#0A0A0A' },
     { id: 'carlos', name: 'Carlos Sánchez', handle: '@carlossanz', initials: 'CS', avatarColor: '#1A6B3A' },
   ],
   // Grupos del usuario actual
-  myGroups: [
-    { id: 'el-club', name: 'EL CLUB', initials: 'EL', members: 9, plans: 23, color: '#0A0A0A', desc: 'Creado en enero 2025', code: '7K3M2A' },
-    { id: 'cuadrilla', name: 'La Cuadrilla', initials: 'LC', members: 6, plans: 11, color: '#1A4B8A', desc: '6 miembros · Creado en marzo 2025 · 11 planes realizados.', code: '9N2P4B' },
-    { id: 'trabajo', name: 'Equipo BBVA', initials: 'BB', members: 12, plans: 4, color: '#7A5800', desc: '12 miembros · Grupo profesional · 4 planes realizados.', code: '5R8L1C' },
-  ],
+  myGroups: [],
   // V5: Votación de ranking del plan actual
   ranking: { mvp: [null, null, null], tardon: [] },
   // V5: Cuál es el miembro actualmente en perfil (para chat)
@@ -726,6 +723,9 @@ window.switchGroup = function switchGroup(id) {
   document.getElementById('group-meta-hero').textContent = g.desc;
   closeModal('modal-group');
   showToast(`Cambiado a "${g.name}" ✓`);
+  
+  // Refrescar planes del nuevo grupo
+  if (window.loadPlans) window.loadPlans();
 }
 
 window.openSearchGroups = function openSearchGroups() {
@@ -738,16 +738,65 @@ window.openJoinCode = function openJoinCode() {
   setTimeout(() => document.getElementById('modal-join-code').classList.add('open'), 200);
 }
 
-window.submitJoinCode = function submitJoinCode() {
+window.submitJoinCode = async function submitJoinCode() {
   const inp = document.querySelector('#modal-join-code .form-input');
   const code = (inp.value || '').toUpperCase().trim();
   if (code.length !== 6) {
     showToast('El código debe tener 6 caracteres');
     return;
   }
-  closeModal('modal-join-code');
-  inp.value = '';
-  showToast(`Solicitud enviada con código ${code} ✓`);
+  
+  try {
+    // 1. Buscar el código en group_invites
+    const { data: invite, error: inviteErr } = await supabase
+      .from('group_invites')
+      .select('group_id')
+      .eq('code', code)
+      .eq('is_active', true)
+      .single();
+      
+    if (inviteErr || !invite) {
+      showToast('Código inválido o caducado');
+      return;
+    }
+    
+    // 2. Comprobar si ya es miembro
+    const { data: member } = await supabase
+      .from('group_members')
+      .select('id')
+      .eq('group_id', invite.group_id)
+      .eq('user_id', state.currentUserId)
+      .single();
+      
+    if (member) {
+      showToast('Ya eres miembro de este grupo');
+      closeModal('modal-join-code');
+      return;
+    }
+
+    // 3. Unirse al grupo
+    const { error: joinErr } = await supabase
+      .from('group_members')
+      .insert([{
+        group_id: invite.group_id,
+        user_id: state.currentUserId,
+        role: 'member'
+      }]);
+      
+    if (joinErr) throw joinErr;
+    
+    showToast(`¡Te has unido al grupo! ✓`);
+    closeModal('modal-join-code');
+    inp.value = '';
+    
+    await loadUserGroups();
+    if (window.switchGroup) window.switchGroup(invite.group_id);
+    else window.renderAll();
+    
+  } catch (error) {
+    console.error(error);
+    showToast('Error al unirse al grupo');
+  }
 }
 
 window.requestJoinGroup = function requestJoinGroup(name) {
@@ -760,7 +809,7 @@ window.openCreateGroup = function openCreateGroup() {
   setTimeout(() => document.getElementById('modal-create-group').classList.add('open'), 200);
 }
 
-window.submitCreateGroup = function submitCreateGroup() {
+window.submitCreateGroup = async function submitCreateGroup() {
   const name = document.getElementById('cg-name').value.trim();
   const initialsInput = document.getElementById('cg-initials').value.trim().toUpperCase();
   if (!name) {
@@ -769,23 +818,50 @@ window.submitCreateGroup = function submitCreateGroup() {
   }
   const initials = initialsInput || name.substring(0,2).toUpperCase();
   const colors = ['#1A4B8A','#7A5800','#991B1B','#1A6B3A','#C07000'];
-  const newGroup = {
-    id: 'grp_' + Date.now(),
-    name: name,
-    initials: initials,
-    members: 1,
-    plans: 0,
-    color: colors[state.myGroups.length % colors.length],
-    desc: `1 miembro · Creado hoy.`,
-    code: Math.random().toString(36).substring(2,8).toUpperCase(),
-  };
-  state.myGroups.push(newGroup);
-  switchGroup(newGroup.id);
-  document.getElementById('cg-name').value = '';
-  document.getElementById('cg-initials').value = '';
-  document.getElementById('cg-desc').value = '';
-  closeModal('modal-create-group');
-  showToast(`Grupo "${name}" creado ✓`);
+  const color = colors[state.myGroups.length % colors.length];
+  
+  try {
+    // 1. Insert Group
+    const { data: group, error: gError } = await supabase.from('groups').insert([{
+      name: name,
+      initials: initials,
+      color: color,
+      created_by: state.currentUserId
+    }]).select().single();
+    if (gError) throw gError;
+
+    // 2. Insert Admin Member
+    const { error: mError } = await supabase.from('group_members').insert([{
+      group_id: group.id,
+      user_id: state.currentUserId,
+      role: 'admin'
+    }]);
+    if (mError) throw mError;
+
+    // 3. Insert Settings
+    await supabase.from('group_settings').insert([{ group_id: group.id }]);
+
+    // 4. Generate & Insert Invite Code
+    const code = Math.random().toString(36).substring(2,8).toUpperCase();
+    await supabase.from('group_invites').insert([{
+      group_id: group.id,
+      code: code,
+      created_by: state.currentUserId
+    }]);
+
+    showToast('Grupo creado correctamente');
+    document.getElementById('cg-name').value = '';
+    document.getElementById('cg-initials').value = '';
+    closeModal('modal-create-group');
+    
+    await loadUserGroups();
+    if (window.switchGroup) window.switchGroup(group.id);
+    else window.renderAll();
+
+  } catch (error) {
+    console.error(error);
+    showToast('Error al crear el grupo');
+  }
 }
 
 window.openInviteSheet = function openInviteSheet() {
@@ -871,7 +947,7 @@ window.selectCreateMode = function selectCreateMode(btn, mode) {
   btn.dataset.mode = mode;
 }
 
-window.submitCreatePlan = function submitCreatePlan() {
+window.submitCreatePlan = async function submitCreatePlan() {
   const title = document.getElementById('cp-title').value.trim();
   if (!title) {
     showToast('Pon un título al plan');
@@ -879,13 +955,61 @@ window.submitCreatePlan = function submitCreatePlan() {
   }
   const date = document.getElementById('cp-date').value;
   const time = document.getElementById('cp-time').value;
-  const mode = document.querySelector('#modal-create-plan .action-btn.selected')?.dataset.mode || 'confirmado';
-  closeModal('modal-create-plan');
-  // Limpiar form
-  document.getElementById('cp-title').value = '';
-  document.getElementById('cp-place').value = '';
-  document.getElementById('cp-desc').value = '';
-  showToast(`Plan "${title}" creado como ${mode} ✓`);
+  const place = document.getElementById('cp-place').value.trim();
+  const desc = document.getElementById('cp-desc').value.trim();
+  const typeStr = document.getElementById('cp-type').value.toLowerCase();
+  
+  const modeBtn = document.querySelector('#modal-create-plan .action-btn.selected');
+  const mode = modeBtn ? modeBtn.dataset.mode : 'confirmado'; 
+  
+  if (!date || !time) {
+    showToast('La fecha y la hora son obligatorias');
+    return;
+  }
+
+  const status = mode === 'confirmado' ? 'active' : 'pending';
+  const modeDb = mode === 'confirmado' ? 'confirmed' : 'proposed';
+  
+  const isoDate = new Date(`${date}T${time}`).toISOString();
+
+  try {
+    const { data: plan, error } = await supabase.from('plans').insert([{
+      group_id: state.currentGroupId,
+      title: title,
+      description: desc,
+      location: place,
+      type: typeStr,
+      event_date: isoDate,
+      status: status,
+      mode: modeDb,
+      created_by: state.currentUserId
+    }]).select().single();
+
+    if (error) throw error;
+    
+    // Auto-confirm attendance for creator
+    await supabase.from('plan_attendance').insert([{
+      plan_id: plan.id,
+      user_id: state.currentUserId,
+      status: 'voy'
+    }]);
+
+    showToast(`Plan "${title}" creado ✓`);
+    closeModal('modal-create-plan');
+    
+    // Limpiar form
+    document.getElementById('cp-title').value = '';
+    document.getElementById('cp-date').value = '';
+    document.getElementById('cp-time').value = '';
+    document.getElementById('cp-place').value = '';
+    document.getElementById('cp-desc').value = '';
+    
+    if (window.loadPlans) await window.loadPlans();
+
+  } catch(error) {
+    console.error(error);
+    showToast('Error al crear el plan');
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2583,6 +2707,8 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   window.renderAll = function() {
     safeInit('setHeaderDate', () => setHeaderDate());
     safeInit('fab', () => { const f = document.getElementById('fab-create'); if (f) f.style.display = 'flex'; });
+    safeInit('renderGroupList', () => renderGroupList());
+    if (window.loadPlans) loadPlans();
     safeInit('renderCalendar', () => renderCalendar());
     safeInit('renderStandings', () => renderStandings());
     safeInit('renderBote', () => renderBote());
@@ -2679,6 +2805,87 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
         avatarColor: '#0A0A0A' 
       };
       state.accounts.push(newAcc);
+    }
+    await loadUserGroups();
+  }
+
+  window.loadPlans = async function loadPlans() {
+    if (!state.currentGroupId) {
+      const list = document.getElementById('plans-activos-list');
+      if (list) list.innerHTML = '<div class="notice" style="margin-bottom:16px;">No tienes grupos. Crea uno o únete para ver los planes.</div>';
+      return;
+    }
+    
+    const { data: plans, error } = await supabase
+      .from('plans')
+      .select('*')
+      .eq('group_id', state.currentGroupId)
+      .order('event_date', { ascending: true });
+      
+    if (error) {
+      console.error(error);
+      return;
+    }
+    
+    state.plans = plans || [];
+    
+    const activosHTML = state.plans.map(p => {
+      const d = new Date(p.event_date);
+      const dateStr = d.toLocaleString('es-ES', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+      return `
+        <div class="card pending-border">
+          <div class="card-row" onclick="openPlan('${p.id}')">
+            <div class="card-content">
+              <div class="card-label">${dateStr}</div>
+              <div class="card-name">${p.title}</div>
+              <div class="card-sub card-sub-1line">${p.description || 'Sin descripción'}</div>
+            </div>
+            <div class="card-right">
+              <span class="attendance-tag pendiente">${p.status === 'active' ? 'Confirmado' : 'Propuesto'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    const list = document.getElementById('plans-activos-list');
+    if (list) {
+      list.innerHTML = activosHTML || '<div class="notice" style="margin-bottom:16px;">No hay planes en este grupo. ¡Crea el primero!</div>';
+    }
+  }
+
+  async function loadUserGroups() {
+    state.myGroups = [];
+    const { data, error } = await supabase
+      .from('group_members')
+      .select('groups(*)')
+      .eq('user_id', state.currentUserId);
+      
+    if (data && data.length > 0) {
+      for (const item of data) {
+        if (!item.groups) continue;
+        const g = item.groups;
+        
+        // Fetch counts and invite
+        const { count: mCount } = await supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id);
+        const { count: pCount } = await supabase.from('plans').select('*', { count: 'exact', head: true }).eq('group_id', g.id);
+        const { data: invite } = await supabase.from('group_invites').select('code').eq('group_id', g.id).limit(1).maybeSingle();
+
+        state.myGroups.push({
+          id: g.id,
+          name: g.name,
+          initials: g.initials || g.name.substring(0, 2).toUpperCase(),
+          color: g.color || '#0A0A0A',
+          members: mCount || 1,
+          plans: pCount || 0,
+          desc: g.description || 'Sin descripción',
+          code: invite ? invite.code : '------'
+        });
+      }
+      
+      if (!state.currentGroupId && state.myGroups.length > 0) {
+        state.currentGroupId = state.myGroups[0].id;
+      }
     }
   }
 
