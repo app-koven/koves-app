@@ -640,24 +640,52 @@ window.openEditProfile = function openEditProfile() {
       document.getElementById('ep-avatar').textContent = acc.initials;
       document.getElementById('ep-avatar').style.background = acc.avatarColor;
       document.getElementById('ep-name').value = acc.name === 'Tu cuenta' ? '' : acc.name;
-      document.getElementById('ep-handle').value = acc.handle;
+      document.getElementById('ep-handle').value = acc.handle.replace('@', '');
+      document.getElementById('ep-phone').value = acc.phone || '';
+      document.getElementById('ep-bio').value = acc.bio || '';
     }
     document.getElementById('modal-edit-profile').classList.add('open');
   }, 200);
 }
 
-window.submitEditProfile = function submitEditProfile() {
+window.submitEditProfile = async function submitEditProfile() {
   const acc = state.accounts.find(a => a.id === state.currentUserId);
   const newName = document.getElementById('ep-name').value.trim();
-  const newHandle = document.getElementById('ep-handle').value.trim();
-  if (newName) acc.name = newName;
-  if (newHandle) acc.handle = newHandle.startsWith('@') ? newHandle : '@' + newHandle;
-  if (newName) {
-    acc.initials = newName.substring(0,2).toUpperCase();
-    document.getElementById('hdr-user-avatar').textContent = acc.initials;
+  const newHandle = document.getElementById('ep-handle').value.trim().replace('@', '');
+  const newPhone = document.getElementById('ep-phone').value.trim();
+  const newBio = document.getElementById('ep-bio').value.trim();
+  
+  if (!newName) {
+    showToast('El nombre es obligatorio');
+    return;
   }
-  closeModal('modal-edit-profile');
-  showToast('Perfil actualizado ✓');
+  
+  try {
+    const { error } = await supabase.from('profiles').update({
+      full_name: newName,
+      username: newHandle || 'user_' + state.currentUserId.substring(0,8),
+      phone: newPhone || null,
+      bio: newBio || null
+    }).eq('id', state.currentUserId);
+    
+    if (error) throw error;
+    
+    // Update local state
+    if (acc) {
+      acc.name = newName;
+      acc.handle = '@' + (newHandle || 'user_' + state.currentUserId.substring(0,8));
+      acc.phone = newPhone;
+      acc.bio = newBio;
+      acc.initials = newName.substring(0,2).toUpperCase();
+      document.getElementById('hdr-user-avatar').textContent = acc.initials;
+    }
+    
+    closeModal('modal-edit-profile');
+    showToast('Perfil actualizado ✓');
+  } catch (error) {
+    console.error(error);
+    showToast('Error al guardar el perfil');
+  }
 }
 
 window.openMyStats = function openMyStats() {
@@ -2793,6 +2821,10 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
         initials: (data.full_name || 'U').substring(0,2).toUpperCase(), 
         avatarColor: '#0A0A0A' 
       };
+      if (existingIdx >= 0) {
+        state.accounts[existingIdx].phone = data.phone;
+        state.accounts[existingIdx].bio = data.bio;
+      }
       if (existingIdx >= 0) state.accounts[existingIdx] = newAcc;
       else state.accounts.push(newAcc);
     } else {
@@ -2884,8 +2916,21 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       }
       
       if (!state.currentGroupId && state.myGroups.length > 0) {
-        state.currentGroupId = state.myGroups[0].id;
+        const firstId = state.myGroups[0].id;
+        state.currentGroupId = null; // force update in switchGroup
+        if (window.switchGroup) window.switchGroup(firstId);
       }
+    } else {
+      // Empty groups state
+      state.currentGroupId = null;
+      document.getElementById('hdr-group-name').textContent = 'Sin grupos';
+      document.getElementById('hdr-group-avatar').textContent = '+';
+      document.getElementById('hdr-group-avatar').style.background = 'var(--ink)';
+      document.getElementById('group-name-hero').textContent = 'Bienvenido a KOves';
+      document.getElementById('group-meta-hero').textContent = 'Crea tu primer grupo para empezar';
+      
+      const list = document.getElementById('plans-activos-list');
+      if (list) list.innerHTML = '<div class="notice" style="margin-bottom:16px;">No tienes grupos. Crea uno o únete para ver los planes.</div>';
     }
   }
 
