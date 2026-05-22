@@ -289,6 +289,9 @@ window.toggleParticipant = function toggleParticipant(el) {
   } else {
     el.classList.remove('pill-outline');
     el.classList.add('pill-dark');
+  }
+}
+
 window.openAddExpense = null;
 
 window.submitExpense = async function submitExpense() {
