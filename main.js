@@ -12,6 +12,7 @@ const state = {
   currentUserId: 'tu',
   currentGroupId: null,
   plans: [],
+  members: [],
   // Cuentas guardadas (como Instagram: varias cuentas en el mismo dispositivo)
   accounts: [
     { id: 'tu', name: 'Tu cuenta', handle: '@tu_usuario', initials: 'TU', avatarColor: '#0A0A0A' },
@@ -67,116 +68,7 @@ const state = {
   planAttendees: ['Carlos', 'Mario', 'Pablo', 'Lucas', 'Ana', 'Sergio'],
   // V6: Historial de standings por mes (offset → array de jugadores)
   // pts = pj + mvp + trd - 2*am - 5*rj
-  standingsHistory: {
-    0: [ // Mayo 2026 (actual) — prevPos = posición antes del último plan
-      { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',    pj: 4, mvp: 8, trd: 0,  am: 0, rj: 0, prevPos: 2 },
-      { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)',  pj: 5, mvp: 5, trd: 0,  am: 0, rj: 0, prevPos: 1 },
-      { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',    pj: 4, mvp: 5, trd: -1, am: 0, rj: 0, prevPos: 3 },
-      { id: 'sergio', name: 'Sergio', initials: 'SR', color: 'var(--ink)',    pj: 4, mvp: 2, trd: 0,  am: 0, rj: 0, prevPos: 6 },
-      { id: 'tu',     name: 'Tú',     initials: 'TU', color: 'var(--blue)',   pj: 3, mvp: 2, trd: 0,  am: 0, rj: 0, prevPos: 4 },
-      { id: 'marta',  name: 'Marta',  initials: 'MT', color: 'var(--ink)',    pj: 3, mvp: 1, trd: 0,  am: 0, rj: 0, prevPos: 5 },
-      { id: 'lucas',  name: 'Lucas',  initials: 'LC', color: 'var(--line2)',  pj: 3, mvp: 0, trd: -1, am: 1, rj: 0, prevPos: 7 },
-      { id: 'mario',  name: 'Mario',  initials: 'MR', color: '#C07000',       pj: 3, mvp: 0, trd: -5, am: 1, rj: 0, prevPos: 8 },
-      { id: 'javi',   name: 'Javi',   initials: 'JV', color: 'var(--line2)',  pj: 1, mvp: 0, trd: -3, am: 0, rj: 1, prevPos: 9 },
-    ],
-    [-1]: [ // Abril 2026
-      { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)',  pj: 6, mvp: 9, trd: 0,  am: 0, rj: 0 },
-      { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',    pj: 6, mvp: 6, trd: 0,  am: 0, rj: 0 },
-      { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',    pj: 5, mvp: 4, trd: -1, am: 0, rj: 0 },
-      { id: 'lucas',  name: 'Lucas',  initials: 'LC', color: 'var(--line2)',  pj: 5, mvp: 3, trd: 0,  am: 0, rj: 0 },
-      { id: 'tu',     name: 'Tú',     initials: 'TU', color: 'var(--blue)',   pj: 5, mvp: 1, trd: 0,  am: 0, rj: 0 },
-      { id: 'sergio', name: 'Sergio', initials: 'SR', color: 'var(--ink)',    pj: 5, mvp: 1, trd: 0,  am: 0, rj: 0 },
-      { id: 'marta',  name: 'Marta',  initials: 'MT', color: 'var(--ink)',    pj: 4, mvp: 1, trd: 0,  am: 0, rj: 0 },
-      { id: 'mario',  name: 'Mario',  initials: 'MR', color: '#C07000',       pj: 4, mvp: 0, trd: -3, am: 1, rj: 0 },
-      { id: 'javi',   name: 'Javi',   initials: 'JV', color: 'var(--line2)',  pj: 3, mvp: 0, trd: -4, am: 0, rj: 1 },
-    ],
-    [-2]: [ // Marzo 2026
-      { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',    pj: 5, mvp: 7, trd: 0,  am: 0, rj: 0 },
-      { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)',  pj: 5, mvp: 5, trd: 0,  am: 0, rj: 0 },
-      { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',    pj: 4, mvp: 4, trd: 0,  am: 0, rj: 0 },
-      { id: 'tu',     name: 'Tú',     initials: 'TU', color: 'var(--blue)',   pj: 4, mvp: 3, trd: 0,  am: 0, rj: 0 },
-      { id: 'sergio', name: 'Sergio', initials: 'SR', color: 'var(--ink)',    pj: 4, mvp: 2, trd: 0,  am: 0, rj: 0 },
-      { id: 'marta',  name: 'Marta',  initials: 'MT', color: 'var(--ink)',    pj: 3, mvp: 1, trd: 0,  am: 0, rj: 0 },
-      { id: 'mario',  name: 'Mario',  initials: 'MR', color: '#C07000',       pj: 4, mvp: 1, trd: -2, am: 1, rj: 0 },
-      { id: 'lucas',  name: 'Lucas',  initials: 'LC', color: 'var(--line2)',  pj: 3, mvp: 0, trd: -1, am: 0, rj: 0 },
-      { id: 'javi',   name: 'Javi',   initials: 'JV', color: 'var(--line2)',  pj: 2, mvp: 0, trd: -2, am: 0, rj: 1 },
-    ],
-    [-3]: [ // Febrero 2026
-      { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',    pj: 5, mvp: 8, trd: 0,  am: 0, rj: 0 },
-      { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)',  pj: 5, mvp: 4, trd: 0,  am: 0, rj: 0 },
-      { id: 'tu',     name: 'Tú',     initials: 'TU', color: 'var(--blue)',   pj: 5, mvp: 3, trd: 0,  am: 0, rj: 0 },
-      { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',    pj: 4, mvp: 3, trd: 0,  am: 0, rj: 0 },
-      { id: 'sergio', name: 'Sergio', initials: 'SR', color: 'var(--ink)',    pj: 4, mvp: 2, trd: 0,  am: 0, rj: 0 },
-      { id: 'lucas',  name: 'Lucas',  initials: 'LC', color: 'var(--line2)',  pj: 4, mvp: 1, trd: 0,  am: 0, rj: 0 },
-      { id: 'marta',  name: 'Marta',  initials: 'MT', color: 'var(--ink)',    pj: 3, mvp: 0, trd: 0,  am: 0, rj: 0 },
-      { id: 'mario',  name: 'Mario',  initials: 'MR', color: '#C07000',       pj: 3, mvp: 0, trd: -2, am: 1, rj: 0 },
-      { id: 'javi',   name: 'Javi',   initials: 'JV', color: 'var(--line2)',  pj: 2, mvp: 0, trd: -1, am: 0, rj: 0 },
-    ],
-  },
-  // V6: Bote de sanciones por mes
-  boteHistory: {
-    0: {
-      label: 'Mayo 2026 · Mes actual',
-      status: 'En curso',
-      total: 14,
-      closed: false,
-      deudores: [
-        { id: 'mario', name: 'Mario', initials: 'MR', color: '#C07000', amount: 2, reason: '1 amarilla' },
-        { id: 'lucas', name: 'Lucas', initials: 'LC', color: 'var(--line2)', amount: 2, reason: '1 amarilla' },
-        { id: 'javi',  name: 'Javi',  initials: 'JV', color: 'var(--line2)', amount: 10, reason: '1 roja' },
-      ],
-      reparto: [
-        { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',   amount: 7, pct: '50%' },
-        { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)', amount: 4.2, pct: '30%' },
-        { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',   amount: 2.8, pct: '20%' },
-      ],
-    },
-    [-1]: {
-      label: 'Abril 2026',
-      status: 'Repartido',
-      total: 18,
-      closed: true,
-      deudores: [
-        { id: 'mario', name: 'Mario', initials: 'MR', color: '#C07000', amount: 2, reason: '1 amarilla' },
-        { id: 'javi',  name: 'Javi',  initials: 'JV', color: 'var(--line2)', amount: 10, reason: '1 roja' },
-        { id: 'sergio', name: 'Sergio', initials: 'SR', color: 'var(--ink)', amount: 6, reason: '3 amarillas' },
-      ],
-      reparto: [
-        { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)', amount: 9, pct: '50%' },
-        { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',   amount: 5.4, pct: '30%' },
-        { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',   amount: 3.6, pct: '20%' },
-      ],
-    },
-    [-2]: {
-      label: 'Marzo 2026',
-      status: 'Repartido',
-      total: 12,
-      closed: true,
-      deudores: [
-        { id: 'mario', name: 'Mario', initials: 'MR', color: '#C07000', amount: 2, reason: '1 amarilla' },
-        { id: 'javi',  name: 'Javi',  initials: 'JV', color: 'var(--line2)', amount: 10, reason: '1 roja' },
-      ],
-      reparto: [
-        { id: 'ana',    name: 'Ana',    initials: 'AN', color: 'var(--ink)',   amount: 6, pct: '50%' },
-        { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)', amount: 3.6, pct: '30%' },
-        { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',   amount: 2.4, pct: '20%' },
-      ],
-    },
-    [-3]: {
-      label: 'Febrero 2026',
-      status: 'Repartido',
-      total: 4,
-      closed: true,
-      deudores: [
-        { id: 'mario', name: 'Mario', initials: 'MR', color: '#C07000', amount: 4, reason: '2 amarillas' },
-      ],
-      reparto: [
-        { id: 'pablo',  name: 'Pablo',  initials: 'PB', color: 'var(--ink)',   amount: 2, pct: '50%' },
-        { id: 'carlos', name: 'Carlos', initials: 'CS', color: 'var(--green)', amount: 1.2, pct: '30%' },
-        { id: 'tu',     name: 'Tú',     initials: 'TU', color: 'var(--blue)',  amount: 0.8, pct: '20%' },
-      ],
-    },
-  },
+  // (Mock data de standingsHistory y boteHistory eliminados)
   // V6: Offset del mes mostrado en el bote
   boteMonthOffset: 0,
   // V6: ¿Eres admin del grupo actual? (controla la edición de reglas)
@@ -397,12 +289,68 @@ window.toggleParticipant = function toggleParticipant(el) {
   } else {
     el.classList.remove('pill-outline');
     el.classList.add('pill-dark');
-  }
-}
+window.openAddExpense = null;
 
-window.submitExpense = function submitExpense() {
+window.submitExpense = async function submitExpense() {
+  const title = document.getElementById('exp-title-input').value.trim();
+  const amountStr = document.getElementById('exp-amount-input').value.trim();
+  const amount = parseFloat(amountStr);
+  const planId = document.getElementById('exp-plan-input').value;
+  
+  if (!title || !amount || isNaN(amount)) {
+    showToast('Faltan datos o el importe no es válido');
+    return;
+  }
+
+  const selectedPills = Array.from(document.querySelectorAll('#exp-participants .pill-dark'));
+  if (selectedPills.length === 0) {
+    showToast('Debes seleccionar al menos 1 participante');
+    return;
+  }
+
+  const splitAmount = amount / selectedPills.length;
+  
+  // Create expense
+  const { data: exp, error: err1 } = await supabase
+    .from('expenses')
+    .insert([{
+      group_id: state.currentGroupId,
+      payer_id: state.currentUserId,
+      title: title,
+      amount: amount,
+      plan_id: planId || null,
+      status: 'validated' // Auto-validate for MVP
+    }])
+    .select()
+    .single();
+
+  if (err1) {
+    console.error(err1);
+    showToast('Error al guardar el gasto');
+    return;
+  }
+
+  // Create splits
+  const splits = selectedPills.map(p => {
+    return {
+      expense_id: exp.id,
+      debtor_id: p.getAttribute('data-id'),
+      amount: splitAmount,
+      status: p.getAttribute('data-id') === state.currentUserId ? 'paid' : 'pending' // payer is already paid
+    }
+  });
+
+  const { error: err2 } = await supabase.from('expense_splits').insert(splits);
+  
+  if (err2) {
+    console.error(err2);
+    showToast('Error al dividir el gasto');
+    return;
+  }
+
   closeModal('modal-expense');
-  showToast('Gasto guardado. Pendiente de validación ✓');
+  showToast('Gasto guardado ✓');
+  if (window.loadExpenses) window.loadExpenses();
 }
 
 window.openExpenseDetail = function openExpenseDetail(id) {
@@ -938,26 +886,37 @@ window.shareInviteLink = function shareInviteLink() {
    ════════════════════════════════════════════════════════════════ */
 
 window.openMemberProfile = function openMemberProfile(id) {
-  const m = memberData[id];
-  if (!m) return;
+  const memberRecord = state.members.find(m => m.profiles && m.profiles.id === id);
+  if (!memberRecord) return;
+  const m = memberRecord.profiles;
   currentMemberId = id;
   state.currentMemberId = id;
   const setText = (elId, val) => { const e = document.getElementById(elId); if (e) e.textContent = val; };
   const setHtml = (elId, val) => { const e = document.getElementById(elId); if (e) e.innerHTML = val; };
 
+  const fullName = m.full_name || m.username || 'Usuario';
+  const initials = (fullName.substring(0, 2)).toUpperCase();
+  const avatarBg = m.avatar_url || '#0A0A0A';
+  const handle = m.username ? `@${m.username}` : '';
+  const isAdmin = memberRecord.role === 'admin';
+
   const av = document.getElementById('mp-avatar');
-  if (av) { av.textContent = m.initials; av.style.background = m.avatarBg; }
-  setText('mp-name', m.name);
-  setText('mp-handle', m.handle);
+  if (av) { av.textContent = initials; av.style.background = avatarBg; }
+  setText('mp-name', fullName);
+  setText('mp-handle', handle);
   setText('mp-bio', m.bio || '');
-  setText('mp-phone', '📱 ' + (m.phone || '—'));
-  setHtml('mp-pills', m.pills.map(p => `<span class="pill ${p.cls}">${p.txt}</span>`).join(''));
-  // KPI ampliado
-  setText('mp-attended', m.stats.attended);
-  setText('mp-mvps', m.stats.mvps);
-  setText('mp-trds', m.stats.trds);
-  setText('mp-yellows', m.stats.yellows);
-  setText('mp-reds', m.stats.reds);
+  setText('mp-phone', m.phone ? '📱 ' + m.phone : '📱 —');
+  
+  let pillsHtml = '';
+  if (isAdmin) pillsHtml += `<span class="pill pill-outline">Admin</span>`;
+  setHtml('mp-pills', pillsHtml);
+  
+  // KPI ampliado (Por ahora simulado a 0 hasta implementar las consultas de stats)
+  setText('mp-attended', '0');
+  setText('mp-mvps', '0');
+  setText('mp-trds', '0');
+  setText('mp-yellows', '0');
+  setText('mp-reds', '0');
   // Reset navegación de planes del perfil
   memberPlansMonthOffset = 0;
   const mpNext = document.getElementById('mp-plans-next');
@@ -1088,136 +1047,201 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 /* ════════════════════════════════════════════════════════════════
    V6: BOTE DE SANCIONES
    ════════════════════════════════════════════════════════════════ */
-window.renderBote = function renderBote() {
-  const offset = state.boteMonthOffset;
-  const data = state.boteHistory[offset];
-  if (!data) return;
+  window.loadExpenses = async function loadExpenses() {
+    if (!state.currentGroupId) return;
+    const { data: expenses, error: err1 } = await supabase
+      .from('expenses')
+      .select('*, expense_splits(*)')
+      .eq('group_id', state.currentGroupId);
+      
+    if (err1) {
+      console.error(err1);
+      return;
+    }
+    
+    state.expenses = expenses || [];
+    renderBote();
+  }
 
-  document.getElementById('bote-month-label').textContent = data.label;
-  document.getElementById('bote-total').textContent = (data.total || 0).toFixed(2).replace('.00','') + '€';
-  document.getElementById('bote-status').textContent = data.status;
-  document.getElementById('bote-status').style.color = data.closed ? 'var(--green)' : 'var(--ink)';
+  // ════════════════════════════════════════════════════════════════
+  // TIEMPO REAL (WEBSOCKETS)
+  // ════════════════════════════════════════════════════════════════
+  let realtimeChannel = null;
+  window.initRealtime = function initRealtime() {
+    if (!state.currentGroupId) return;
+    if (realtimeChannel) return; // Ya está suscrito
 
-  document.getElementById('bote-next').classList.toggle('disabled', offset >= 0);
-  const hasOlder = state.boteHistory[offset - 1] !== undefined;
-  document.getElementById('bote-prev').classList.toggle('disabled', !hasOlder);
+    realtimeChannel = supabase.channel(`group_${state.currentGroupId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `group_id=eq.${state.currentGroupId}` }, payload => {
+        if (window.loadFeed) window.loadFeed();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses', filter: `group_id=eq.${state.currentGroupId}` }, payload => {
+        if (window.loadExpenses) window.loadExpenses();
+        if (window.loadFeed) window.loadFeed();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'plans', filter: `group_id=eq.${state.currentGroupId}` }, payload => {
+        if (window.loadPlans) window.loadPlans();
+        if (window.loadFeed) window.loadFeed();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('🔗 Suscrito en tiempo real al grupo', state.currentGroupId);
+        }
+      });
+  }
 
-  // Inicializar confirmaciones si no existen
-  if (!data.confirmDeudores) data.confirmDeudores = {};
-  if (!data.confirmGanadores) data.confirmGanadores = {};
+  // Carga paralela de componentes al cambiar de contexto o iniciar
+  window.renderBote = function renderBote() {
+  const deudores = document.getElementById('bote-deudores');
+  const reparto = document.getElementById('bote-reparto');
+  
+  if (!state.expenses || state.expenses.length === 0) {
+    if (deudores) deudores.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay gastos registrados.</div>';
+    if (reparto) reparto.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Nadie debe nada.</div>';
+    const totalEl = document.getElementById('bote-total');
+    if (totalEl) totalEl.textContent = '0€';
+    const repWrap = document.getElementById('bote-reparto-wrap');
+    if (repWrap) repWrap.style.display = 'none';
+    return;
+  }
 
-  // ── DEUDORES ──
-  const deudoresEl = document.getElementById('bote-deudores');
-  if (!data.deudores || data.deudores.length === 0) {
-    deudoresEl.innerHTML = '<div style="padding:14px 0;text-align:center;font-size:12px;color:var(--ink3);">Nadie debe al bote este mes</div>';
-  } else {
-    const confirmedD = Object.values(data.confirmDeudores).filter(Boolean).length;
-    const totalD = data.deudores.length;
-    const pendingNamesD = data.deudores.filter(d => !data.confirmDeudores[d.id]).map(d => d.name);
-    deudoresEl.innerHTML = data.deudores.map((d, idx) => {
-      const isConfirmed = data.confirmDeudores[d.id];
+  // 1. Calcular balances netos
+  const balances = {};
+  state.members.forEach(m => {
+    if (m.profiles) balances[m.profiles.id] = 0;
+  });
+
+  let totalExpenses = 0;
+
+  state.expenses.forEach(ex => {
+    if (ex.status !== 'validated') return;
+    totalExpenses += Number(ex.amount);
+    if (balances[ex.payer_id] !== undefined) {
+      balances[ex.payer_id] += Number(ex.amount);
+    }
+    if (ex.expense_splits) {
+      ex.expense_splits.forEach(sp => {
+        if (balances[sp.debtor_id] !== undefined) {
+          balances[sp.debtor_id] -= Number(sp.amount);
+        }
+      });
+    }
+  });
+
+  const totalEl = document.getElementById('bote-total');
+  if (totalEl) totalEl.textContent = totalExpenses.toFixed(2).replace('.00','') + '€';
+
+  // 2. Separar acreedores y deudores
+  const creditors = [];
+  const debtors = [];
+  
+  for (const [id, bal] of Object.entries(balances)) {
+    if (bal > 0.01) creditors.push({ id, bal });
+    else if (bal < -0.01) debtors.push({ id, bal: -bal });
+  }
+
+  // Ordenar de mayor a menor
+  creditors.sort((a,b) => b.bal - a.bal);
+  debtors.sort((a,b) => b.bal - a.bal);
+
+  // 3. Emparejar deudas
+  const transfers = [];
+  let i = 0, j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    const d = debtors[i];
+    const c = creditors[j];
+    const amount = Math.min(d.bal, c.bal);
+    
+    transfers.push({
+      from: d.id,
+      to: c.id,
+      amount: amount
+    });
+    
+    d.bal -= amount;
+    c.bal -= amount;
+    
+    if (d.bal < 0.01) i++;
+    if (c.bal < 0.01) j++;
+  }
+
+  // 4. Renderizar UI
+  const getProfile = (id) => {
+    const mem = state.members.find(m => m.profiles && m.profiles.id === id);
+    if (mem && mem.profiles) return mem.profiles;
+    return { id, full_name: 'Usuario', avatar_url: '#0A0A0A', username: '' };
+  };
+
+  if (transfers.length === 0) {
+    if (deudores) deudores.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Las cuentas están saldadas.</div>';
+    if (reparto) reparto.innerHTML = '';
+    const repWrap = document.getElementById('bote-reparto-wrap');
+    if (repWrap) repWrap.style.display = 'none';
+    return;
+  }
+
+  // Agrupar cuánto debe cada uno en total
+  const whoOwesWhat = {};
+  transfers.forEach(t => {
+    whoOwesWhat[t.from] = (whoOwesWhat[t.from] || 0) + t.amount;
+  });
+
+  if (deudores) {
+    const arr = Object.keys(whoOwesWhat).map(id => ({ id, amount: whoOwesWhat[id] }));
+    deudores.innerHTML = arr.map((d, idx) => {
+      const p = getProfile(d.id);
+      const name = p.full_name || p.username || 'Usuario';
+      const init = name.substring(0,2).toUpperCase();
+      const col = p.avatar_url || '#0A0A0A';
       return `
-        <div class="expense-item" ${idx === data.deudores.length - 1 ? 'style="border-bottom:0;"' : ''}>
+        <div class="expense-item" ${idx === arr.length - 1 ? 'style="border-bottom:0;"' : ''}>
           <div class="exp-left">
-            <div class="exp-icon" style="background:${d.color};color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${d.initials}</div>
+            <div class="exp-icon" style="background:${col};color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${init}</div>
             <div class="exp-info">
-              <div class="exp-name">${d.name}</div>
-              <div class="exp-sub">${d.reason}</div>
+              <div class="exp-name">${name}</div>
+              <div class="exp-sub">Debe al bote</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <div class="exp-amount negative">${d.amount}€</div>
-            <button class="btn ${isConfirmed ? 'btn-secondary' : 'btn-primary'}" style="font-size:10px;padding:4px 8px;white-space:nowrap;" onclick="confirmBoteDeudor('${d.id}', ${offset})">${isConfirmed ? '✓ Pagado' : 'Confirmar'}</button>
+            <div class="exp-amount negative">-${d.amount.toFixed(2).replace('.00','')}€</div>
+            <!-- Botón pagar TODO: falta implementación de pago real -->
           </div>
         </div>
       `;
-    }).join('') + `
-      <div style="padding:10px 0 4px;border-top:1px solid var(--line);margin-top:4px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;">
-            <div style="width:${Math.round(confirmedD/totalD*100)}%;height:100%;background:var(--green);border-radius:3px;transition:width .3s;"></div>
-          </div>
-          <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);white-space:nowrap;">${confirmedD}/${totalD}</span>
-        </div>
-        ${pendingNamesD.length ? `<div style="font-size:10px;color:var(--ink3);">Faltan: ${pendingNamesD.join(', ')}</div>` : ''}
-      </div>
-    `;
+    }).join('');
   }
 
-  // ── REPARTO ──
-  const repartoWrap = document.getElementById('bote-reparto-wrap');
-  if (data.reparto) {
-    repartoWrap.style.display = 'block';
-    const confirmedG = Object.values(data.confirmGanadores).filter(Boolean).length;
-    const totalG = data.reparto.length;
-    const pendingNamesG = data.reparto.filter(r => !data.confirmGanadores[r.id]).map(r => r.name);
-    const allDone = confirmedG === totalG && (Object.values(data.confirmDeudores).filter(Boolean).length === (data.deudores||[]).length);
-
-    document.getElementById('bote-reparto').innerHTML = data.reparto.map((r, idx) => {
-      const pos = idx + 1;
-      const medal = pos === 1 ? '🥇' : (pos === 2 ? '🥈' : '🥉');
-      const isConfirmed = data.confirmGanadores[r.id];
+  const repWrap = document.getElementById('bote-reparto-wrap');
+  if (repWrap) repWrap.style.display = 'block';
+  
+  if (reparto) {
+    // Agrupar cuánto recibe cada uno
+    const whoReceivesWhat = {};
+    transfers.forEach(t => {
+      whoReceivesWhat[t.to] = (whoReceivesWhat[t.to] || 0) + t.amount;
+    });
+    
+    const arr2 = Object.keys(whoReceivesWhat).map(id => ({ id, amount: whoReceivesWhat[id] }));
+    reparto.innerHTML = arr2.map((r, idx) => {
+      const p = getProfile(r.id);
+      const name = p.full_name || p.username || 'Usuario';
+      const init = name.substring(0,2).toUpperCase();
+      const col = p.avatar_url || '#0A0A0A';
       return `
-        <div class="expense-item" ${idx === data.reparto.length - 1 ? 'style="border-bottom:0;"' : ''}>
+        <div class="expense-item" ${idx === arr2.length - 1 ? 'style="border-bottom:0;"' : ''}>
           <div class="exp-left">
-            <div class="exp-icon" style="background:${r.color};color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${r.initials}</div>
+            <div class="exp-icon" style="background:${col};color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${init}</div>
             <div class="exp-info">
-              <div class="exp-name">${medal} ${r.name}</div>
-              <div class="exp-sub">${r.pct} del bote</div>
+              <div class="exp-name">${name}</div>
+              <div class="exp-sub">A cobrar</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div class="exp-amount positive">+${r.amount.toFixed(2).replace('.00','')}€</div>
-            <button class="btn ${isConfirmed ? 'btn-secondary' : 'btn-primary'}" style="font-size:10px;padding:4px 8px;white-space:nowrap;" onclick="confirmBoteGanador('${r.id}', ${offset})">${isConfirmed ? '✓ Cobrado' : 'Confirmar'}</button>
           </div>
         </div>
       `;
-    }).join('') + `
-      <div style="padding:10px 0 4px;border-top:1px solid var(--line);margin-top:4px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;">
-            <div style="width:${Math.round(confirmedG/totalG*100)}%;height:100%;background:var(--green);border-radius:3px;transition:width .3s;"></div>
-          </div>
-          <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);white-space:nowrap;">${confirmedG}/${totalG}</span>
-        </div>
-        ${pendingNamesG.length ? `<div style="font-size:10px;color:var(--ink3);margin-bottom:6px;">Faltan: ${pendingNamesG.join(', ')}</div>` : ''}
-        <button class="btn ${allDone ? 'btn-primary' : 'btn-secondary'} btn-full" style="font-size:11px;" onclick="finalizeBote(${offset})" ${allDone ? '' : 'disabled'}>
-          ${data.finalized ? '✓ Reparto finalizado' : 'Dar por finalizado el reparto'}
-        </button>
-        ${!allDone ? '<div style="font-size:10px;color:var(--ink3);margin-top:4px;text-align:center;">Disponible cuando todos confirmen</div>' : ''}
-      </div>
-    `;
-
-    // ── ESTADO DEL REPARTO EN LA TABLA (deudores + ganadores) ──
-    const statusRow = document.getElementById('bote-reparto-status-row');
-    if (statusRow) {
-      statusRow.style.display = 'flex';
-      const confirmedD2 = Object.values(data.confirmDeudores).filter(Boolean).length;
-      const totalD2 = (data.deudores || []).length;
-      const totalAll = totalD2 + totalG;
-      const confirmedAll = confirmedD2 + confirmedG;
-      const pendingAll = [
-        ...(data.deudores || []).filter(d => !data.confirmDeudores[d.id]).map(d => d.name),
-        ...data.reparto.filter(r => !data.confirmGanadores[r.id]).map(r => r.name),
-      ];
-      document.getElementById('bote-reparto-status-count').textContent = `${confirmedAll}/${totalAll}`;
-      document.getElementById('bote-reparto-status-bar').style.width = totalAll ? Math.round(confirmedAll / totalAll * 100) + '%' : '0%';
-      const pendEl = document.getElementById('bote-reparto-status-pending');
-      if (data.finalized) {
-        pendEl.textContent = 'Reparto finalizado · todos han confirmado';
-        pendEl.style.color = 'var(--green)';
-      } else if (pendingAll.length) {
-        pendEl.textContent = 'Faltan: ' + pendingAll.join(', ');
-        pendEl.style.color = 'var(--ink3)';
-      } else {
-        pendEl.textContent = 'Todos han confirmado · listo para finalizar';
-        pendEl.style.color = 'var(--green)';
-      }
-    }
-  } else {
-    repartoWrap.style.display = 'none';
-    const statusRow = document.getElementById('bote-reparto-status-row');
-    if (statusRow) statusRow.style.display = 'none';
+    }).join('');
   }
 }
 
@@ -1707,8 +1731,37 @@ window.submitRanking = function submitRanking() {
    V5: showAddExpense con flag para ocultar selector "Asociado al plan"
    ════════════════════════════════════════════════════════════════ */
 window.showAddExpense = function showAddExpense(fromPlan = false) {
+  document.getElementById('exp-title-input').value = '';
+  document.getElementById('exp-amount-input').value = '';
+
   const selector = document.getElementById('exp-plan-selector');
   if (selector) selector.style.display = fromPlan ? 'none' : 'block';
+
+  // Populate plans
+  const planSelect = document.getElementById('exp-plan-input');
+  if (planSelect && !fromPlan) {
+    planSelect.innerHTML = '<option value="">Sin plan asociado</option>';
+    if (state.plans) {
+      state.plans.forEach(p => {
+        const d = new Date(p.event_date);
+        const dateStr = d.toLocaleString('es-ES', {month:'short', day:'numeric'});
+        planSelect.innerHTML += `<option value="${p.id}">${p.title} · ${dateStr}</option>`;
+      });
+    }
+  }
+
+  // Populate participants
+  const partContainer = document.getElementById('exp-participants');
+  if (partContainer) {
+    partContainer.innerHTML = '';
+    state.members.forEach(m => {
+      if (m.profiles) {
+        const name = m.profiles.full_name || m.profiles.username || 'Usuario';
+        partContainer.innerHTML += `<div class="pill pill-dark" data-id="${m.profiles.id}" style="cursor:pointer;" onclick="toggleParticipant(this)">${name}</div>`;
+      }
+    });
+  }
+
   document.getElementById('modal-expense').classList.add('open');
 }
 
@@ -1840,6 +1893,162 @@ window.standingsNav = function standingsNav(delta) {
 
 window.showStandingsLegend = function showStandingsLegend() {
   document.getElementById('modal-standings-legend').classList.add('open');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V6: ESTADISTICAS Y RANKINGS
+   ════════════════════════════════════════════════════════════════ */
+window.loadRankings = async function loadRankings() {
+    if (!state.currentGroupId) return;
+
+    // Fetch plan attendance
+    const { data: attendance, error: e1 } = await supabase
+      .from('plan_attendance')
+      .select('*, plans!inner(*)')
+      .eq('plans.group_id', state.currentGroupId)
+      .eq('status', 'going');
+      
+    // Fetch plan rankings
+    const { data: rankings, error: e2 } = await supabase
+      .from('plan_rankings')
+      .select('*, plans!inner(*)')
+      .eq('plans.group_id', state.currentGroupId);
+
+    // Fetch sanctions
+    const { data: sanctions, error: e3 } = await supabase
+      .from('sanctions')
+      .select('*, plans!inner(*)')
+      .eq('plans.group_id', state.currentGroupId)
+      .eq('status', 'validated');
+
+    const stats = {};
+    state.members.forEach(m => {
+      if (m.profiles) {
+        stats[m.profiles.id] = { pj: 0, mvp: 0, trd: 0, am: 0, rj: 0, nc: 0 };
+      }
+    });
+
+    if (attendance) {
+      attendance.forEach(a => {
+        if (stats[a.user_id]) stats[a.user_id].pj++;
+      });
+    }
+
+    if (rankings) {
+      rankings.forEach(r => {
+        if (r.ranking_type === 'mvp' && stats[r.voted_user_id]) stats[r.voted_user_id].mvp++;
+        if (r.ranking_type === 'tardon' && stats[r.voted_user_id]) stats[r.voted_user_id].trd++;
+      });
+    }
+
+    if (sanctions) {
+      sanctions.forEach(s => {
+        if (s.type === 'yellow' && stats[s.user_id]) stats[s.user_id].am++;
+        if (s.type === 'red' && stats[s.user_id]) stats[s.user_id].rj++;
+      });
+    }
+
+    state.rankings = stats;
+    renderStandings();
+  }
+
+  window.loadFeed = async function loadFeed() {
+    if (!state.currentGroupId) return;
+
+    // Fetch messages (simplest feed implementation)
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*, profiles(full_name, username, avatar_url)')
+      .eq('group_id', state.currentGroupId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+      
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const feedList = document.getElementById('feed-list');
+    if (!feedList) return;
+
+    if (!messages || messages.length === 0) {
+      feedList.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay actividad reciente.</div>';
+      return;
+    }
+
+    feedList.innerHTML = messages.map((m, idx) => {
+      const p = m.profiles || {};
+      const name = p.full_name || p.username || 'Usuario';
+      
+      const d = new Date(m.created_at);
+      const diffMs = Date.now() - d.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      
+      let timeStr = '';
+      if (diffMins < 60) timeStr = `Hace ${diffMins}m`;
+      else if (diffHours < 24) timeStr = `Hace ${diffHours}h`;
+      else timeStr = `Hace ${diffDays}d`;
+
+      return `
+        <div class="feed-item" ${idx === messages.length - 1 ? 'style="border-bottom:0;"' : ''}>
+          <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">${timeStr}</div>
+          <div class="feed-body">
+            <strong>${name} comentó</strong>
+            <p>"${m.text}"</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+window.renderStandings = function renderStandings() {
+  const rows = document.getElementById('standings-rows');
+  if (!state.rankings) {
+    if (rows) rows.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Cargando estadísticas...</div>';
+    return;
+  }
+
+  const data = [];
+  for (const [id, st] of Object.entries(state.rankings)) {
+    const p = state.members.find(m => m.profiles && m.profiles.id === id);
+    if (!p) continue;
+    const prof = p.profiles;
+    data.push({
+      id: id,
+      name: prof.full_name || prof.username || 'Usuario',
+      initials: (prof.full_name || prof.username || 'U').substring(0,2).toUpperCase(),
+      color: prof.avatar_url || '#0A0A0A',
+      handle: prof.username ? `@${prof.username}` : '',
+      pj: st.pj, mvp: st.mvp, trd: st.trd, am: st.am, rj: st.rj,
+      pts: st.pj + st.mvp + st.trd - 2 * st.am - 5 * st.rj
+    });
+  }
+
+  data.sort((a,b) => b.pts - a.pts || b.mvp - a.mvp || b.pj - a.pj);
+
+  if (rows) {
+    if (data.length === 0) {
+      rows.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay estadísticas.</div>';
+    } else {
+      rows.innerHTML = data.map((p, idx) => {
+        const pos = idx + 1;
+        const posCls = pos === 1 ? 'gold' : (pos === 2 ? 'silver' : (pos === 3 ? 'bronze' : ''));
+        const isYou = p.id === state.currentUserId;
+        return `
+          <div class="standings-row" onclick="openMemberProfile('${p.id}')" style="${isYou ? 'background:var(--surface2);' : ''}">
+            <div class="standings-pos ${posCls}">${pos}</div>
+            <div class="standings-name">
+              <div class="standings-avatar" style="background:${p.color};">${p.initials}</div>
+              <div class="standings-namelabel">${p.name} <span style="color:var(--ink3);font-weight:500;font-size:9px;">(${p.handle})</span></div>
+            </div>
+            <div class="standings-pts">${p.pts} <span style="font-size:9px;color:var(--ink3);font-weight:500;">pts</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2695,6 +2904,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
         activeScreen.style.transform = `translateX(${w}px)`;
         setTimeout(() => {
           activeScreen.style.transition = 'none';
+
           activeScreen.style.transform = '';
           showScreen(prev);
         }, 270);
@@ -2752,9 +2962,13 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     safeInit('setHeaderDate', () => setHeaderDate());
     safeInit('fab', () => { const f = document.getElementById('fab-create'); if (f) f.style.display = 'flex'; });
     safeInit('renderGroupList', () => renderGroupList());
-    if (window.loadPlans) loadPlans();
+    if (window.loadMembers) window.loadMembers();
+    if (window.loadPlans) window.loadPlans();
+    if (window.loadRankings) window.loadRankings();
+    if (window.loadFeed) window.loadFeed();
+    if (window.loadExpenses) window.loadExpenses();
+    if (window.initRealtime) window.initRealtime();
     safeInit('renderCalendar', () => renderCalendar());
-    safeInit('renderStandings', () => renderStandings());
     safeInit('renderBote', () => renderBote());
     safeInit('applyAdminVisibility', () => applyAdminVisibility());
     safeInit('initPendingBlink', () => initPendingBlink());
@@ -2855,6 +3069,77 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       state.accounts.push(newAcc);
     }
     await loadUserGroups();
+  }
+
+  window.loadMembers = async function() {
+    if (!state.currentGroupId) {
+      state.members = [];
+      renderMembersList();
+      return;
+    }
+    const { data, error } = await supabase
+      .from('group_members')
+      .select('*, profiles(*)')
+      .eq('group_id', state.currentGroupId);
+    
+    if (error) {
+      console.error('Error fetching members:', error);
+      showToast('Error al cargar los miembros', 'error');
+      return;
+    }
+    state.members = data || [];
+    renderMembersList();
+  };
+
+  function renderMembersList() {
+    const list = document.getElementById('group-members-list');
+    if (!list) return;
+    
+    // Update count in header
+    const titleEl = list.previousElementSibling.querySelector('.section-title');
+    if (titleEl) {
+      titleEl.innerText = `Miembros · ${state.members.length}`;
+    }
+
+    if (state.members.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay miembros.</div>';
+      return;
+    }
+
+    // Check if I am admin
+    const myMemberRecord = state.members.find(m => m.profiles && m.profiles.id === state.currentUserId);
+    const iAmAdmin = myMemberRecord && myMemberRecord.role === 'admin';
+
+    list.innerHTML = state.members.map(m => {
+      const p = m.profiles || {};
+      const fullName = p.full_name || p.username || 'Usuario';
+      const handle = p.username ? `@${p.username}` : '';
+      const initials = (fullName.substring(0, 2)).toUpperCase();
+      const color = p.avatar_url || '#0A0A0A'; // using avatar_url as color for now
+      const isAdmin = m.role === 'admin';
+      const isMe = p.id === state.currentUserId;
+      
+      let badges = '';
+      if (isAdmin) badges += ` <span class="pill pill-outline" style="font-size:8px;padding:1px 5px;">Admin</span>`;
+
+      let kickBtn = '';
+      if (iAmAdmin && !isMe) {
+        kickBtn = `<button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this, '${p.id}')">Expulsar</button>`;
+      }
+
+      return `
+        <div class="member-row">
+          <div class="avatar" style="background:${color};color:#fff;">${initials}</div>
+          <div class="member-info" onclick="openMemberProfile('${p.id}')" style="cursor:pointer;">
+            <div class="member-name">${isMe ? 'Tú' : fullName} <span style="color:var(--ink3);font-weight:500;font-size:10px;">(${handle})</span>${badges}</div>
+          </div>
+          ${kickBtn}
+        </div>
+      `;
+    }).join('');
+    
+    const kickHint = document.getElementById('kick-hint');
+    if (kickHint) kickHint.style.display = iAmAdmin ? 'block' : 'none';
   }
 
   window.loadPlans = async function loadPlans() {

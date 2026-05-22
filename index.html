@@ -199,39 +199,16 @@
 
       <!-- Te deben -->
       <div id="pendientes-te-deben">
-        <div class="card" style="padding:0 14px;">
-          <!-- Caso 1: el otro YA liquidó → puedes confirmar Recibido -->
-          <div class="expense-item">
-            <div class="exp-left"><div class="exp-icon">🎂</div><div class="exp-info"><div class="exp-name">Javi te debe</div><div class="exp-sub">Tarta cumpleaños · ✓ Comprobante adjuntado</div></div></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-              <div class="exp-amount positive">+14€</div>
-              <button class="btn btn-primary" style="font-size:10px;padding:5px 10px;white-space:nowrap;" onclick="markReceived(this,'Javi','14€',true)">Recibido</button>
-            </div>
-          </div>
-          <!-- Caso 2: el otro AÚN no ha liquidado → Recibido bloqueado -->
-          <div class="expense-item" style="border-bottom:0;">
-            <div class="exp-left"><div class="exp-icon">🍕</div><div class="exp-info"><div class="exp-name">Sergio te debe</div><div class="exp-sub">Pizzas cena italiana · Esperando su pago</div></div></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-              <div class="exp-amount positive">+11€</div>
-              <button class="btn btn-secondary" style="font-size:10px;padding:5px 10px;white-space:nowrap;opacity:.55;" disabled>Recibido</button>
-            </div>
-          </div>
+        <div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">
+          No hay pagos pendientes a tu favor.
         </div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">El botón "Recibido" se activa cuando la otra persona haya liquidado el pago y subido su comprobante.</div>
       </div>
 
-      <!-- Tú debes: cada deuda con botón Liquidar individual -->
+      <!-- Tú debes -->
       <div id="pendientes-tu-debes" style="display:none;">
-        <div class="card" style="padding:0 14px;">
-          <div class="expense-item" style="border-bottom:0;">
-            <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">Debes a Carlos</div><div class="exp-sub">Cena conjunta · Quedada en el piso</div></div></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-              <div class="exp-amount negative">−6€</div>
-              <button class="btn btn-primary" id="liq-btn-carlos" style="font-size:10px;padding:5px 10px;white-space:nowrap;" onclick="openLiquidarItem('carlos','6€')">Liquidar</button>
-            </div>
-          </div>
+        <div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">
+          No tienes deudas pendientes.
         </div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Pulsa "Liquidar" para subir el comprobante de tu pago.</div>
       </div>
     </div>
 
@@ -254,71 +231,13 @@
 
       <!-- Gastos -->
       <div id="historial-gastos">
-        <div class="card" style="padding:0 14px;">
-          <div class="scroll-y">
-            <div class="expense-item" onclick="openExpenseDetail('cena-conjunta')">
-              <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">Cena conjunta</div><div class="exp-sub">Carlos · 5 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">27€</div>
-            </div>
-            <div class="expense-item" onclick="openExpenseDetail('tarta')">
-              <div class="exp-left"><div class="exp-icon">🎂</div><div class="exp-info"><div class="exp-name">Tarta cumpleaños</div><div class="exp-sub">Tú · 9 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">42€</div>
-            </div>
-            <div class="expense-item" onclick="openExpenseDetail('pizzas')">
-              <div class="exp-left"><div class="exp-icon">🍕</div><div class="exp-info"><div class="exp-name">Pizzas cena italiana</div><div class="exp-sub">Ana · 6 personas · <span class="pill pill-amber" style="font-size:10px;padding:2px 6px;">Pendiente</span></div></div></div>
-              <div class="exp-amount">67€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">🍻</div><div class="exp-info"><div class="exp-name">Copas concierto</div><div class="exp-sub">Lucas · 7 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">38€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">🚕</div><div class="exp-info"><div class="exp-name">Taxi vuelta</div><div class="exp-sub">Mario · 4 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">18€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">🏨</div><div class="exp-info"><div class="exp-name">Hotel Alicante</div><div class="exp-sub">Carlos · 8 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">340€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">⛽</div><div class="exp-info"><div class="exp-name">Gasolina viaje</div><div class="exp-sub">Pablo · 4 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">62€</div>
-            </div>
-            <div class="expense-item" style="border-bottom:0;">
-              <div class="exp-left"><div class="exp-icon">🥃</div><div class="exp-info"><div class="exp-name">Cubatas fiesta Javi</div><div class="exp-sub">Ana · 6 personas · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div></div>
-              <div class="exp-amount">48€</div>
-            </div>
-          </div>
+        <div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;" id="gastos-list">
+          No hay gastos en este grupo todavía.
         </div>
       </div>
 
       <!-- Transferencias (pendientes liquidados) -->
       <div id="historial-transferencias" style="display:none;">
-        <div class="card" style="padding:0 14px;">
-          <div class="scroll-y" id="transferencias-list">
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Pagaste a Carlos</div><div class="exp-sub">18 May · Cena anterior · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
-              <div class="exp-amount negative">−12€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name">Ana te pagó</div><div class="exp-sub">15 May · Tarta cumpleaños · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
-              <div class="exp-amount positive">+8€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Pagaste a Pablo</div><div class="exp-sub">12 May · Gasolina · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
-              <div class="exp-amount negative">−15€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name">Lucas te pagó</div><div class="exp-sub">3 May · Concierto · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
-              <div class="exp-amount positive">+9€</div>
-            </div>
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Pagaste a Carlos</div><div class="exp-sub">28 Abr · Hotel Alicante · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
-              <div class="exp-amount negative">−42€</div>
-            </div>
-            <div class="expense-item" style="border-bottom:0;">
-              <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name">Mario te pagó</div><div class="exp-sub">22 Abr · Cena italiana · <span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Confirmado</span></div></div></div>
-              <div class="exp-amount positive">+11€</div>
             </div>
           </div>
         </div>
@@ -521,26 +440,13 @@
       <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;" id="rules-admin-hint">
         Solo los administradores pueden modificar las reglas. Tú eres admin en este grupo.
       </div>
-      <div class="card" style="padding:0 14px;">
+      <div class="card" style="padding:0 14px;" id="rules-list">
         <div class="card-row" style="cursor:default;">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Amarilla</div><div class="card-sub">Importe que va al bote del mes</div></div>
-          <span class="pill pill-dark">2€</span>
-        </div>
-        <div class="card-row" style="cursor:default;">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Roja</div><div class="card-sub">Importe que va al bote del mes</div></div>
-          <span class="pill pill-dark">10€</span>
-        </div>
-        <div class="card-row" style="cursor:pointer;" onclick="openGroupVisibility()">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Tipo de grupo</div><div class="card-sub" id="group-visibility-sub">Privado · información no visible</div></div>
-          <span class="section-action">Configurar</span>
-        </div>
-        <div class="card-row" style="cursor:default;border-bottom:0;" onclick="openGroupInvitesSettings()">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Invitaciones</div><div class="card-sub">Quién ve el código, reseteo, límites</div></div>
-          <span class="section-action">Configurar</span>
+          <div class="card-content"><div class="card-name" style="font-size:13px;color:var(--ink3);">Cargando reglas...</div></div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--ink3);margin-top:8px;line-height:1.5;">
-        Reglas fijas: rankings siempre anónimos · comprobante siempre obligatorio · 2 amarillas activas = roja · tarjetas activas 7 días · amarilla −2 pts, roja −5 pts · bote repartido 50/30/20 al top 3.
+      <div style="font-size:10px;color:var(--ink3);margin-top:8px;line-height:1.5;" id="rules-static-hint">
+        Reglas fijas: rankings siempre anónimos · comprobante obligatorio · 2 amarillas = roja.
       </div>
     </div>
 
@@ -548,48 +454,7 @@
     <div class="section">
       <div class="section-head"><span class="section-title">Miembros · 9</span></div>
       <div id="group-members-list">
-        <div class="member-row">
-          <div class="avatar green">CS</div>
-          <div class="member-info" onclick="openMemberProfile('carlos')" style="cursor:pointer;"><div class="member-name">Carlos <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@carlossanz)</span> <span class="pill pill-outline" style="font-size:8px;padding:1px 5px;">Admin</span></div></div>
-        </div>
-        <div class="member-row">
-          <div class="avatar amber">MR</div>
-          <div class="member-info" onclick="openMemberProfile('mario')" style="cursor:pointer;"><div class="member-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@mariorz)</span></div></div>
-          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Mario')">Expulsar</button>
-        </div>
-        <div class="member-row">
-          <div class="avatar">PB</div>
-          <div class="member-info" onclick="openMemberProfile('pablo')" style="cursor:pointer;"><div class="member-name">Pablo <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@pablobc)</span></div></div>
-          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Pablo')">Expulsar</button>
-        </div>
-        <div class="member-row">
-          <div class="avatar away">LC</div>
-          <div class="member-info" onclick="openMemberProfile('lucas')" style="cursor:pointer;"><div class="member-name">Lucas <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@lucascv)</span></div></div>
-          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Lucas')">Expulsar</button>
-        </div>
-        <div class="member-row">
-          <div class="avatar">AN</div>
-          <div class="member-info" onclick="openMemberProfile('ana')" style="cursor:pointer;"><div class="member-name">Ana <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@anam)</span> <span class="pill pill-outline" style="font-size:8px;padding:1px 5px;">Admin</span></div></div>
-        </div>
-        <div class="member-row">
-          <div class="avatar away">JV</div>
-          <div class="member-info" onclick="openMemberProfile('javi')" style="cursor:pointer;"><div class="member-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@javiv)</span></div></div>
-          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Javi')">Expulsar</button>
-        </div>
-        <div class="member-row">
-          <div class="avatar">SR</div>
-          <div class="member-info" onclick="openMemberProfile('sergio')" style="cursor:pointer;"><div class="member-name">Sergio <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@sergiog)</span></div></div>
-          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Sergio')">Expulsar</button>
-        </div>
-        <div class="member-row">
-          <div class="avatar">MT</div>
-          <div class="member-info" onclick="openMemberProfile('marta')" style="cursor:pointer;"><div class="member-name">Marta <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@martal)</span></div></div>
-          <button class="btn btn-secondary" style="font-size:10px;padding:4px 9px;" onclick="kickMember(this,'Marta')">Expulsar</button>
-        </div>
-        <div class="member-row">
-          <div class="avatar" style="background:var(--blue);color:#fff;">TU</div>
-          <div class="member-info" onclick="openMemberProfile('tu')" style="cursor:pointer;"><div class="member-name">Tú <span style="color:var(--ink3);font-weight:500;font-size:10px;">(@tu_usuario)</span></div></div>
-        </div>
+        <div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Cargando miembros...</div>
       </div>
       <div style="font-size:10px;color:var(--ink3);margin-top:8px;" id="kick-hint">Como administrador puedes expulsar a cualquier miembro del grupo.</div>
     </div>
@@ -1103,43 +968,8 @@
     <!-- ═════ SECCIÓN PLANES ═════ -->
     <div id="activity-planes">
       <div class="section" style="padding-top:6px;padding-bottom:24px;">
-        <div class="card" style="padding:0 14px;">
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 5m</div>
-            <div class="feed-body"><strong>Ana comentó en "Quedada en el piso"</strong><p>"¿Alguien trae las cervezas?"</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 18m</div>
-            <div class="feed-body"><strong>Lucas dio me gusta a "Quedada en el piso"</strong><p>El plan acumula 12 likes.</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 32m</div>
-            <div class="feed-body"><strong>Mario cambió su asistencia</strong><p>"Quedada en el piso" · Voy → Llego tarde</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 1h</div>
-            <div class="feed-body"><strong>Carlos confirmó asistencia</strong><p>"Quedada en el piso" · Voy</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 2h</div>
-            <div class="feed-body"><strong>Pablo propuso un plan</strong><p>"Escapada a Porto" · 29–31 May · 180€</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Hace 3h</div>
-            <div class="feed-body"><strong>Carlos respondió a Mario</strong><p>"ok, te esperamos para el arroz entonces 😄"</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Ayer</div>
-            <div class="feed-body"><strong>Ana propuso un plan</strong><p>"Cena de mitad de semana" · Mié 27 · 20:00</p></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">Ayer</div>
-            <div class="feed-body"><strong>Plan finalizado · "Cumpleaños de Carlos"</strong><p>9 asistentes · Votación MVP/Tardón disponible</p></div>
-          </div>
-          <div class="feed-item" style="border-bottom:0;">
-            <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">2 días</div>
-            <div class="feed-body"><strong>Sergio comentó en "Cena italiana"</strong><p>"Buenísimas las pizzas, repetimos"</p></div>
-          </div>
+        <div class="card" style="padding:0 14px;" id="feed-list">
+          <div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Cargando actividad...</div>
         </div>
       </div>
     </div>
@@ -1160,66 +990,11 @@
               <div style="font-size:11px;color:var(--ink3);">"Quedada en el piso" · Llegó 2h tarde · Propuesto por Carlos</div>
             </div>
           </div>
-          <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
-              <div style="width:62%;background:var(--green);"></div>
-              <div style="width:38%;background:var(--red);"></div>
-            </div>
-            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">5/8</span>
-          </div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'favor')">A favor (5)</button>
-            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'contra')">En contra (3)</button>
-          </div>
-          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Pueden votar 8 asistentes · Faltan 0 votos</div>
+        <div id="tribunal-activas">
+          <div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay votaciones activas en este grupo.</div>
         </div>
 
-        <!-- Otra tarjeta pendiente -->
-        <div class="card" style="padding:14px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div class="referee-card referee-red" style="width:24px;height:34px;"></div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:700;">Javi · Roja</div>
-              <div style="font-size:11px;color:var(--ink3);">"Fiesta del sábado" · Ofensa al grupo · Propuesto por Ana</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
-              <div style="width:80%;background:var(--green);"></div>
-              <div style="width:20%;background:var(--red);"></div>
-            </div>
-            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">4/5</span>
-          </div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'favor')">A favor (4)</button>
-            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="voteDiscipline(this,'contra')">En contra (1)</button>
-          </div>
-          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">No asististe a este plan · Solo asistentes pueden votar</div>
-        </div>
-
-        <!-- Tarjeta no votable (no asististe) -->
-        <div class="card" style="padding:14px;margin-bottom:10px;opacity:.55;pointer-events:none;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:700;">Lucas · Amarilla</div>
-              <div style="font-size:11px;color:var(--ink3);">"Concierto" · Faltó sin avisar · Propuesto por Pablo</div>
-            </div>
-            <span class="pill pill-outline">No asististe</span>
-          </div>
-        </div>
-
-        <!-- Tarjeta validada recientemente -->
         <div class="section-head" style="margin-top:16px;"><span class="section-title" style="font-size:11px;">Validadas recientemente</span></div>
-        <div class="card" style="padding:0 14px;">
-          <div class="discipline-item">
-            <div class="disc-avatar" style="background:#C07000;">MR</div>
-            <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 1h</span></div><div class="disc-reason">Amarilla validada · 7 a favor, 1 en contra</div></div>
-            <span class="pill pill-amber">Amarilla</span>
-          </div>
-          <div class="discipline-item" style="border-bottom:0;">
-            <div class="disc-avatar" style="background:var(--red);">JV</div>
-            <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 4 días</span></div><div class="disc-reason">Roja validada · 6 a favor, 1 en contra</div></div>
             <span class="pill pill-red">Roja</span>
           </div>
         </div>
@@ -1244,54 +1019,13 @@
 
         <!-- ACTIVAS -->
         <div id="reclam-activas">
-          <div class="card" style="padding:14px;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <span class="pill pill-amber">Gasto</span>
-              <span style="font-size:10px;color:var(--ink3);">Hace 1h · por Lucas</span>
-            </div>
-            <div style="font-size:13px;font-weight:700;margin-bottom:2px;">Revisar gasto "Cena conjunta" · 27€</div>
-            <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Motivo: "Creo que el importe no corresponde, éramos menos personas."</div>
-            <div style="display:flex;gap:6px;" id="reclam-btns-1">
-              <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'validar')">Validar</button>
-              <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'rechazar')">Rechazar</button>
-            </div>
-            <div style="font-size:10px;color:var(--ink3);margin-top:6px;text-align:center;" class="reclam-admin-only">Solo el admin puede resolver esta reclamación.</div>
-          </div>
-          <div class="card" style="padding:14px;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <span class="pill pill-red">Tarjeta</span>
-              <span style="font-size:10px;color:var(--ink3);">Hace 4h · por Mario</span>
-            </div>
-            <div style="font-size:13px;font-weight:700;margin-bottom:2px;">Reclamación de amarilla</div>
-            <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Motivo: "Avisé de que llegaría tarde con antelación, no debería contar."</div>
-            <div style="display:flex;gap:6px;" id="reclam-btns-2">
-              <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'validar')">Validar</button>
-              <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="resolveReclam(this,'rechazar')">Rechazar</button>
-            </div>
-            <div style="font-size:10px;color:var(--ink3);margin-top:6px;text-align:center;" class="reclam-admin-only">Solo el admin puede resolver esta reclamación.</div>
-          </div>
+          <div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay reclamaciones activas.</div>
         </div>
 
         <!-- HISTORIAL -->
         <div id="reclam-historial" style="display:none;">
-          <div class="month-nav" style="margin-bottom:10px;">
-            <button class="month-nav-btn" onclick="reclamHistNav(-1)">
-              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="month-nav-label" id="reclam-hist-month">Abril 2026</div>
-            <button class="month-nav-btn disabled" id="reclam-hist-next" onclick="reclamHistNav(1)">
-              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-          <div class="card" style="padding:0 14px;">
-            <div class="expense-item">
-              <div class="exp-left"><div class="exp-icon">💸</div><div class="exp-info"><div class="exp-name">Gasto "Escapada Alicante"</div><div class="exp-sub">Reclamado por Ana · Resuelto</div></div></div>
-              <span class="pill pill-green">Validado</span>
-            </div>
-            <div class="expense-item" style="border-bottom:0;">
-              <div class="exp-left"><div class="exp-icon">🟥</div><div class="exp-info"><div class="exp-name">Roja de Javi</div><div class="exp-sub">Reclamada por Javi · Resuelto</div></div></div>
-              <span class="pill pill-outline">Rechazado</span>
-            </div>
+          <div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;" id="reclam-historial-list">
+            No hay reclamaciones resueltas.
           </div>
         </div>
       </div>
@@ -2322,31 +2056,23 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Concepto</label>
-          <input type="text" class="form-input" placeholder="Ej: Cena">
+          <input type="text" id="exp-title-input" class="form-input" placeholder="Ej: Cena">
         </div>
         <div class="form-group">
           <label class="form-label">Importe</label>
-          <input type="text" class="form-input" placeholder="0€">
+          <input type="number" id="exp-amount-input" class="form-input" placeholder="0€">
         </div>
       </div>
       <div class="form-group" id="exp-plan-selector">
         <label class="form-label">Asociado al plan</label>
-        <select class="form-input">
-          <option>Quedada en el piso · Hoy</option>
-          <option>Cena de mitad de semana · Mié 27</option>
-          <option>Escapada a Porto · Vie 29</option>
-          <option>Sin plan asociado</option>
+        <select class="form-input" id="exp-plan-input">
+          <option value="">Sin plan asociado</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Participantes</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;" id="exp-participants">
-          <div class="pill pill-dark" style="cursor:pointer;" onclick="toggleParticipant(this)">Carlos</div>
-          <div class="pill pill-dark" style="cursor:pointer;" onclick="toggleParticipant(this)">Mario</div>
-          <div class="pill pill-dark" style="cursor:pointer;" onclick="toggleParticipant(this)">Lucas</div>
-          <div class="pill pill-outline" style="cursor:pointer;" onclick="toggleParticipant(this)">Ana</div>
-          <div class="pill pill-outline" style="cursor:pointer;" onclick="toggleParticipant(this)">Pablo</div>
-          <div class="pill pill-outline" style="cursor:pointer;" onclick="toggleParticipant(this)">Sergio</div>
+          <!-- Participantes dinámicos -->
         </div>
       </div>
       <div class="form-group">
