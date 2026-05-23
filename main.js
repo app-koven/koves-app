@@ -2321,16 +2321,16 @@ window.handleRealPhotoUpload = async function handleRealPhotoUpload(event) {
     const fileName = `${state.currentPlanId}_${Date.now()}.${fileExt}`;
     const filePath = `${state.currentUserId}/${fileName}`;
 
-    // Subir a Storage (bucket 'plan_photos')
+    // Subir a Storage (bucket 'plan-photos')
     const { error: uploadError } = await supabase.storage
-      .from('plan_photos')
+      .from('plan-photos')
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
     // Obtener la URL pública
     const { data: publicUrlData } = supabase.storage
-      .from('plan_photos')
+      .from('plan-photos')
       .getPublicUrl(filePath);
 
     const publicUrl = publicUrlData.publicUrl;
