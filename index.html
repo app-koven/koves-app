@@ -45,16 +45,16 @@
       <div class="hero-title">Todo lo que<br>se mueve</div>
       <div class="kpi-row">
         <div class="kpi" id="kpi-pending-box" onclick="openKpiSheet('pendientes')" style="cursor:pointer;">
-          <strong id="kpi-pending-num">2</strong><span>Pendientes</span>
-          <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-pending-bar"><div class="kpi-bar-fill" style="width:100%;background:var(--ink);"></div></div><span class="kpi-bar-pct" id="kpi-pending-pct">&nbsp;</span></div>
+          <strong id="kpi-pending-num">-</strong><span>Pendientes</span>
+          <div class="kpi-bar-wrap"><div class="kpi-bar" id="kpi-pending-bar"><div class="kpi-bar-fill" id="kpi-pending-fill" style="width:0%;background:var(--ink);"></div></div><span class="kpi-bar-pct" id="kpi-pending-pct">&nbsp;</span></div>
         </div>
-        <div class="kpi" onclick="openKpiSheet('activos')" style="cursor:pointer;">
-          <strong>1/5</strong><span>Activos</span>
-          <div class="kpi-bar-wrap"><div class="kpi-bar"><div class="kpi-bar-fill" style="width:20%;"></div></div><span class="kpi-bar-pct">20%</span></div>
+        <div class="kpi" id="kpi-active-box" onclick="openKpiSheet('activos')" style="cursor:pointer;">
+          <strong id="kpi-active-num">-/-</strong><span>Activos</span>
+          <div class="kpi-bar-wrap"><div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-active-fill" style="width:0%;"></div></div><span class="kpi-bar-pct" id="kpi-active-pct">0%</span></div>
         </div>
         <div class="kpi">
-          <strong>18/23</strong><span>Histórico</span>
-          <div class="kpi-bar-wrap"><div class="kpi-bar"><div class="kpi-bar-fill" style="width:78%;"></div></div><span class="kpi-bar-pct">78%</span></div>
+          <strong id="kpi-hist-num">-/-</strong><span>Histórico</span>
+          <div class="kpi-bar-wrap"><div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-hist-fill" style="width:0%;"></div></div><span class="kpi-bar-pct" id="kpi-hist-pct">0%</span></div>
         </div>
       </div>
     </div>
@@ -180,11 +180,11 @@
 
     <div class="section" style="padding-top:16px;">
       <div class="spend-summary light">
-        <div class="spend-row"><span class="spend-label">Total gastado <span style="font-size:9px;opacity:.6;">(planes en los que estás)</span></span><span class="spend-value">498€</span></div>
-        <div class="spend-row"><span class="spend-label">Tú has pagado</span><span class="spend-value">312€</span></div>
-        <div class="spend-row"><span class="spend-label">Te deben</span><span class="spend-value" style="color:var(--green);">+25€</span></div>
-        <div class="spend-row"><span class="spend-label">Tú debes</span><span class="spend-value" style="color:var(--red);">−6€</span></div>
-        <div class="spend-row total"><span class="spend-label" style="font-weight:700;">Tu balance</span><span class="spend-value" style="color:var(--green);">+19€</span></div>
+        <div class="spend-row"><span class="spend-label">Gastos totales del grupo</span><span class="spend-value" id="kpi-exp-total">0€</span></div>
+        <div class="spend-row"><span class="spend-label">Tú has pagado</span><span class="spend-value" id="kpi-exp-paid">0€</span></div>
+        <div class="spend-row"><span class="spend-label">Te deben</span><span class="spend-value" id="kpi-exp-owed" style="color:var(--green);">0€</span></div>
+        <div class="spend-row"><span class="spend-label">Tú debes</span><span class="spend-value" id="kpi-exp-owe" style="color:var(--red);">0€</span></div>
+        <div class="spend-row total"><span class="spend-label" style="font-weight:700;">Tu balance</span><span class="spend-value" id="kpi-exp-balance" style="color:var(--ink);">0€</span></div>
       </div>
     </div>
 
@@ -323,22 +323,8 @@
 
       <!-- Activas (≤7 días) -->
       <div id="disciplina-activas">
-        <div class="card" style="padding:0 14px;">
-          <div class="discipline-item">
-            <div class="disc-avatar" style="background:#C07000;">MR</div>
-            <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 2 días</span></div><div class="disc-reason">Quedada en el piso · Llegó 2h tarde</div></div>
-            <span class="pill pill-amber">Amarilla</span>
-          </div>
-          <div class="discipline-item">
-            <div class="disc-avatar" style="background:var(--red);">JV</div>
-            <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 4 días</span></div><div class="disc-reason">Fiesta del sábado · Expulsado 7 días</div></div>
-            <span class="pill pill-red">Roja</span>
-          </div>
-          <div class="discipline-item" style="border-bottom:0;">
-            <div class="disc-avatar" style="background:#C07000;">LC</div>
-            <div class="disc-body"><div class="disc-name">Lucas <span style="color:var(--ink3);font-weight:500;font-size:10px;">· hace 6 días</span></div><div class="disc-reason">Cena italiana · No pagó su parte</div></div>
-            <span class="pill pill-amber">Amarilla</span>
-          </div>
+        <div class="card" style="padding:0 14px;" id="disciplina-activas-list">
+          <!-- Generado dinámicamente -->
         </div>
       </div>
 
@@ -1112,6 +1098,7 @@
       <div style="font-size:10px;color:var(--ink3);margin-top:10px;line-height:1.5;" id="rd-by">Lanzada por Carlos. El resultado lo eligió el azar.</div>
     </div>
   </section>
+</div> <!-- Fin de #app -->
 
   <div class="modal-overlay" id="modal-podium-picker">
     <div class="modal-sheet">

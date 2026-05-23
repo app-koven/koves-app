@@ -1102,6 +1102,9 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
   const deudores = document.getElementById('bote-deudores');
   const reparto = document.getElementById('bote-reparto');
   
+  const formatCur = (num) => (num > 0 ? '+' : '') + num.toFixed(2).replace('.00','') + '€';
+  const el = (id) => document.getElementById(id);
+
   if (!state.expenses || state.expenses.length === 0) {
     if (deudores) deudores.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay gastos registrados.</div>';
     if (reparto) reparto.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Nadie debe nada.</div>';
@@ -1109,6 +1112,16 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
     if (totalEl) totalEl.textContent = '0€';
     const repWrap = document.getElementById('bote-reparto-wrap');
     if (repWrap) repWrap.style.display = 'none';
+    
+    // Limpiar KPIs superiores
+    if (el('kpi-exp-total')) el('kpi-exp-total').textContent = '0€';
+    if (el('kpi-exp-paid')) el('kpi-exp-paid').textContent = '0€';
+    if (el('kpi-exp-owed')) el('kpi-exp-owed').textContent = '0€';
+    if (el('kpi-exp-owe')) el('kpi-exp-owe').textContent = '0€';
+    if (el('kpi-exp-balance')) {
+      el('kpi-exp-balance').textContent = '0€';
+      el('kpi-exp-balance').style.color = 'var(--ink)';
+    }
     return;
   }
 
@@ -1137,6 +1150,30 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 
   const totalEl = document.getElementById('bote-total');
   if (totalEl) totalEl.textContent = totalExpenses.toFixed(2).replace('.00','') + '€';
+
+  // 1.5. Actualizar KPIs superiores de Gastos
+  let userPaid = 0;
+  state.expenses.forEach(ex => {
+    if (ex.status !== 'validated') return;
+    if (ex.payer_id === state.currentUserId) userPaid += Number(ex.amount);
+  });
+  
+  const userBalance = balances[state.currentUserId] || 0;
+  let userOwed = userBalance > 0.01 ? userBalance : 0;
+  let userOwes = userBalance < -0.01 ? Math.abs(userBalance) : 0;
+
+  if (el('kpi-exp-total')) el('kpi-exp-total').textContent = totalExpenses.toFixed(2).replace('.00','') + '€';
+  if (el('kpi-exp-paid')) el('kpi-exp-paid').textContent = userPaid.toFixed(2).replace('.00','') + '€';
+  if (el('kpi-exp-owed')) el('kpi-exp-owed').textContent = '+' + userOwed.toFixed(2).replace('.00','') + '€';
+  if (el('kpi-exp-owe')) el('kpi-exp-owe').textContent = '-' + userOwes.toFixed(2).replace('.00','') + '€';
+  if (el('kpi-exp-balance')) {
+    el('kpi-exp-balance').textContent = formatCur(userBalance);
+    el('kpi-exp-balance').style.color = userBalance >= 0 ? 'var(--green)' : 'var(--red)';
+    if (Math.abs(userBalance) < 0.01) {
+      el('kpi-exp-balance').textContent = '0€';
+      el('kpi-exp-balance').style.color = 'var(--ink)';
+    }
+  }
 
   // 2. Separar acreedores y deudores
   const creditors = [];
@@ -1962,6 +1999,46 @@ window.loadRankings = async function loadRankings() {
 
     state.rankings = stats;
     renderStandings();
+
+    // 4. Render Disciplina Activas (last 7 days)
+    const discList = document.getElementById('disciplina-activas-list');
+    if (discList) {
+      if (!sanctions || sanctions.length === 0) {
+        discList.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay sanciones recientes.</div>';
+      } else {
+        const now = new Date();
+        const activeSanctions = sanctions.filter(s => {
+          const d = new Date(s.created_at || Date.now());
+          const diffDays = (now - d) / (1000 * 60 * 60 * 24);
+          return diffDays <= 7;
+        });
+
+        if (activeSanctions.length === 0) {
+          discList.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay sanciones recientes.</div>';
+        } else {
+          discList.innerHTML = activeSanctions.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map((s, idx) => {
+            const m = state.members.find(x => x.profiles && x.profiles.id === s.target_user_id);
+            const name = m && m.profiles ? (m.profiles.full_name || m.profiles.username) : 'Usuario';
+            const init = name.substring(0,2).toUpperCase();
+            const col = m && m.profiles && m.profiles.avatar_url ? m.profiles.avatar_url : (s.type === 'roja' ? 'var(--red)' : '#C07000');
+            const d = new Date(s.created_at || Date.now());
+            const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+            const timeStr = diffDays === 0 ? 'hoy' : `hace ${diffDays} días`;
+            const pillClass = s.type === 'roja' ? 'pill-red' : 'pill-amber';
+            const pillText = s.type === 'roja' ? 'Roja' : 'Amarilla';
+            const reasonText = s.reason || 'Falta disciplinaria';
+            
+            return `
+              <div class="discipline-item" ${idx === activeSanctions.length - 1 ? 'style="border-bottom:0;"' : ''}>
+                <div class="disc-avatar" style="background:${col};color:#fff;">${init}</div>
+                <div class="disc-body"><div class="disc-name">${name} <span style="color:var(--ink3);font-weight:500;font-size:10px;">· ${timeStr}</span></div><div class="disc-reason">${reasonText}</div></div>
+                <span class="pill ${pillClass}">${pillText}</span>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
   }
 
   window.loadFeed = async function loadFeed() {
@@ -3248,6 +3325,42 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     }
     
     state.plans = plans || [];
+    
+    // Calcular KPIs
+    const now = new Date();
+    let pendingCount = 0;
+    let activeCount = 0;
+    let historicCount = 0;
+    let totalFuture = 0;
+    let totalAll = state.plans.length;
+
+    state.plans.forEach(p => {
+      const isPast = new Date(p.event_date) < now;
+      if (isPast) {
+        historicCount++;
+      } else {
+        totalFuture++;
+        if (p.status === 'active') activeCount++;
+        else pendingCount++;
+      }
+    });
+
+    const pendingPct = totalFuture ? Math.round((pendingCount / totalFuture) * 100) : 0;
+    const activePct = totalFuture ? Math.round((activeCount / totalFuture) * 100) : 0;
+    const histPct = totalAll ? Math.round((historicCount / totalAll) * 100) : 0;
+
+    const el = (id) => document.getElementById(id);
+    if (el('kpi-pending-num')) el('kpi-pending-num').textContent = pendingCount;
+    if (el('kpi-pending-pct')) el('kpi-pending-pct').textContent = pendingPct + '%';
+    if (el('kpi-pending-fill')) el('kpi-pending-fill').style.width = pendingPct + '%';
+
+    if (el('kpi-active-num')) el('kpi-active-num').textContent = `${activeCount}/${totalFuture}`;
+    if (el('kpi-active-pct')) el('kpi-active-pct').textContent = activePct + '%';
+    if (el('kpi-active-fill')) el('kpi-active-fill').style.width = activePct + '%';
+
+    if (el('kpi-hist-num')) el('kpi-hist-num').textContent = `${historicCount}/${totalAll}`;
+    if (el('kpi-hist-pct')) el('kpi-hist-pct').textContent = histPct + '%';
+    if (el('kpi-hist-fill')) el('kpi-hist-fill').style.width = histPct + '%';
     
     const activosHTML = state.plans.map(p => {
       const d = new Date(p.event_date);
