@@ -14,10 +14,7 @@ const state = {
   plans: [],
   members: [],
   // Cuentas guardadas (como Instagram: varias cuentas en el mismo dispositivo)
-  accounts: [
-    { id: 'tu', name: 'Tu cuenta', handle: '@tu_usuario', initials: 'TU', avatarColor: '#0A0A0A' },
-    { id: 'carlos', name: 'Carlos Sánchez', handle: '@carlossanz', initials: 'CS', avatarColor: '#1A6B3A' },
-  ],
+  accounts: [],
   // Grupos del usuario actual
   myGroups: [],
   // V5: Votación de ranking del plan actual
@@ -29,43 +26,9 @@ const state = {
   // V5: Selector de mes en standings (0 = actual, -1 = mes anterior, etc)
   standingsMonthOffset: 0,
   // V5: Mensajes simulados por chat
-  chatMessages: {
-    'group': [
-      { from: 'ana', text: '¿Alguien trae las cervezas para esta noche?', time: '21:30' },
-      { from: 'mario', text: 'Yo llevo el vino tinto', time: '21:31' },
-      { from: 'me', text: 'Yo traigo el postre', time: '21:32' },
-      { from: 'carlos', text: 'Sois grandes 🙌', time: '21:33' },
-    ],
-    'carlos': [
-      { from: 'carlos', text: 'Oye, ¿a qué hora venís hoy?', time: '20:42' },
-      { from: 'me', text: 'Sobre las 22:00 más o menos', time: '20:43' },
-      { from: 'carlos', text: 'Perfecto', time: '20:44' },
-      { from: 'me', text: 'Vale, te esperamos para el arroz', time: '20:45' },
-    ],
-    'mario': [
-      { from: 'mario', text: 'Llego a las 22:45, tengo lío en el curro', time: '19:11' },
-      { from: 'me', text: 'Tranquilo, te guardamos sitio', time: '19:12' },
-      { from: 'mario', text: 'gracias crack', time: '19:12' },
-    ],
-    'pablo': [
-      { from: 'pablo', text: 'Te paso los detalles del hotel de Porto', time: 'Ayer 18:00' },
-      { from: 'pablo', text: '180€ por noche, desayuno incluido', time: 'Ayer 18:01' },
-      { from: 'me', text: 'Buena pinta, lo veo bien', time: 'Ayer 18:30' },
-    ],
-    'ana': [
-      { from: 'ana', text: 'Gracias por la tarta del cumple 🎂', time: 'Ayer 12:00' },
-      { from: 'me', text: 'De nada, me alegro de que gustara', time: 'Ayer 12:05' },
-    ],
-    'lucas': [
-      { from: 'lucas', text: 'Te debo 6€, te lo paso esta noche por Bizum', time: 'Lun 22:00' },
-      { from: 'me', text: 'Sin prisa', time: 'Lun 22:01' },
-    ],
-    'javi': [
-      { from: 'javi', text: 'Estoy castigado 4 días más, ya os contaré', time: '15 May 23:00' },
-    ],
-  },
+  chatMessages: {},
   // V5: Members para podium picker (asistentes al plan actual)
-  planAttendees: ['Carlos', 'Mario', 'Pablo', 'Lucas', 'Ana', 'Sergio'],
+  planAttendees: [],
   // V6: Historial de standings por mes (offset → array de jugadores)
   // pts = pj + mvp + trd - 2*am - 5*rj
   // (Mock data de standingsHistory y boteHistory eliminados)
@@ -79,36 +42,7 @@ const state = {
 
 let currentMemberId = 'carlos'; // accesible globalmente para chat desde perfil
 
-// Datos de planes para abrir detalle (mock)
-const planData = {
-  'quedada': { status: 'Plan confirmado · Hoy 22:30', title: 'Quedada<br>en el piso', desc: 'Cena, música y después se decide si salir.', creator: 'Creado por Carlos', pending: true },
-  'fiesta-ana': { status: 'Plan confirmado · Sáb 14 Jun', title: 'Fiesta<br>en casa de Ana', desc: 'Fiesta temática. Llevar bebida.', creator: 'Creado por Ana · hace 3 días', pending: false },
-  'cena-miercoles': { status: 'Plan propuesto · Mié 27 May 20:00', title: 'Cena de<br>mitad de semana', desc: 'Cena tranquila para descansar antes del fin de semana.', creator: 'Creado por Ana', pending: false },
-  'porto': { status: 'Plan propuesto · 29–31 Mayo', title: 'Escapada<br>a Porto', desc: 'Tres días en Porto. Pendiente confirmar alojamiento.', creator: 'Creado por Pablo', pending: true },
-};
-
-// Datos de miembros para ficha
-const memberData = {
-  'carlos': { name: 'Carlos', handle: '@carlossanz · Admin de EL CLUB', initials: 'CS', avatarBg: 'var(--green)', bio: 'Siempre el primero en organizar, el último en irse 🎉', phone: '+34 612 345 678', pills: [{cls:'pill-dark',txt:'MVP global'},{cls:'pill-green',txt:'Admin'}], stats: {attended:'21/23', mvps:5, trds:1, yellows:2, reds:0}, discipline:{ icon:'★', bg:'var(--ink3)', name:'Sin sanciones', reason:'Historial limpio en EL CLUB', pill:{cls:'pill-green',txt:'Limpio'} } },
-  'mario': { name: 'Mario', handle: '@mariorz · Miembro de EL CLUB', initials: 'MR', avatarBg: '#C07000', bio: 'El que siempre llega tarde pero con buena excusa 😅', phone: '+34 622 111 222', pills: [{cls:'pill-amber',txt:'1 amarilla'},{cls:'pill-outline',txt:'Más tardón'}], stats: {attended:'18/23', mvps:1, trds:4, yellows:3, reds:0}, discipline:{ icon:'MR', bg:'#C07000', name:'Amarilla activa', reason:'Llegó 2h tarde a la quedada del piso', pill:{cls:'pill-amber',txt:'Amarilla'} } },
-  'pablo': { name: 'Pablo', handle: '@pablobc · Miembro de EL CLUB', initials: 'PB', avatarBg: 'var(--ink)', bio: 'Logística y viajes. Si hay escapada, la monto yo ✈️', phone: '+34 633 444 555', pills: [{cls:'pill-green',txt:'Mejor organizador'},{cls:'pill-outline',txt:'Top ranking'}], stats: {attended:'20/23', mvps:3, trds:0, yellows:0, reds:0}, discipline:{ icon:'★', bg:'var(--ink3)', name:'Sin sanciones', reason:'Historial limpio', pill:{cls:'pill-green',txt:'Limpio'} } },
-  'lucas': { name: 'Lucas', handle: '@lucascv · Miembro de EL CLUB', initials: 'LC', avatarBg: 'var(--line2)', bio: 'Aquí para pasarlo bien 🍻', phone: '+34 644 777 888', pills: [{cls:'pill-red',txt:'Debe 6€'}], stats: {attended:'14/23', mvps:0, trds:1, yellows:1, reds:0}, discipline:{ icon:'LC', bg:'#C07000', name:'Amarilla activa', reason:'Cena italiana · No pagó su parte', pill:{cls:'pill-amber',txt:'Amarilla'} } },
-  'ana': { name: 'Ana', handle: '@anam · Admin de EL CLUB', initials: 'AN', avatarBg: 'var(--ink)', bio: 'Organizadora oficial de cumpleaños del grupo 🎂', phone: '+34 655 999 000', pills: [{cls:'pill-green',txt:'Mejor organizadora'},{cls:'pill-dark',txt:'Admin'}], stats: {attended:'19/23', mvps:4, trds:1, yellows:0, reds:0}, discipline:{ icon:'★', bg:'var(--ink3)', name:'Sin sanciones', reason:'Historial limpio', pill:{cls:'pill-green',txt:'Limpio'} } },
-  'javi': { name: 'Javi', handle: '@javiv · Miembro de EL CLUB', initials: 'JV', avatarBg: 'var(--line2)', bio: 'De vuelta tras el parón 😎', phone: '+34 666 222 333', pills: [{cls:'pill-red',txt:'Expulsado 4 días'}], stats: {attended:'11/23', mvps:0, trds:3, yellows:0, reds:1}, discipline:{ icon:'JV', bg:'var(--red)', name:'Roja activa', reason:'Fiesta del sábado · Expulsión 7 días', pill:{cls:'pill-red',txt:'Roja'} } },
-  'sergio': { name: 'Sergio', handle: '@sergiog · Miembro de EL CLUB', initials: 'SR', avatarBg: 'var(--ink)', bio: 'El fotógrafo del grupo 📸', phone: '+34 677 888 999', pills: [{cls:'pill-green',txt:'Sin sanciones'}], stats: {attended:'16/23', mvps:2, trds:0, yellows:0, reds:0}, discipline:{ icon:'★', bg:'var(--ink3)', name:'Sin sanciones', reason:'Historial limpio', pill:{cls:'pill-green',txt:'Limpio'} } },
-  'marta': { name: 'Marta', handle: '@martal · Miembro de EL CLUB', initials: 'MT', avatarBg: 'var(--ink)', bio: 'Nueva en el grupo, encantada de conoceros 👋', phone: '+34 688 333 444', pills: [{cls:'pill-outline',txt:'Reciente'}], stats: {attended:'9/23', mvps:0, trds:0, yellows:0, reds:0}, discipline:{ icon:'★', bg:'var(--ink3)', name:'Sin sanciones', reason:'Historial limpio', pill:{cls:'pill-green',txt:'Limpio'} } },
-  'tu': { name: 'Tú', handle: '@tu_usuario · Miembro de EL CLUB', initials: 'TU', avatarBg: 'var(--blue)', bio: 'Tu perfil en el grupo', phone: '+34 600 000 000', pills: [{cls:'pill-dark',txt:'Tu perfil'}], stats: {attended:'18/23', mvps:2, trds:0, yellows:0, reds:0}, discipline:{ icon:'★', bg:'var(--ink3)', name:'Sin sanciones', reason:'Historial limpio', pill:{cls:'pill-green',txt:'Limpio'} } },
-};
-
-// Datos de gastos para detalle
-const expenseData = {
-  'lucas-carlos': { title:'Lucas debe a Carlos', icon:'🍽️', amount:'6€', plan:'Quedada en el piso', date:'Hoy', payer:'Carlos', who:'Lucas', validated:true, parts:5 },
-  'mario-carlos': { title:'Mario debe a Carlos', icon:'🍽️', amount:'4€', plan:'Quedada en el piso', date:'Hoy', payer:'Carlos', who:'Mario', validated:true, parts:5 },
-  'javi-tu': { title:'Javi te debe a ti', icon:'🎂', amount:'14€', plan:'Cumpleaños de Carlos', date:'10 May', payer:'Tú', who:'Javi', validated:true, parts:9 },
-  'cena-conjunta': { title:'Cena conjunta', icon:'🍽️', amount:'27€', plan:'Quedada en el piso', date:'Hoy', payer:'Carlos', who:'5 personas', validated:true, parts:5 },
-  'tarta': { title:'Tarta cumpleaños', icon:'🎂', amount:'42€', plan:'Cumpleaños de Carlos', date:'10 May', payer:'Tú', who:'9 personas', validated:true, parts:9 },
-  'pizzas': { title:'Pizzas cena italiana', icon:'🍕', amount:'67€', plan:'Cena italiana', date:'2 May', payer:'Ana', who:'6 personas', validated:false, parts:6 },
-};
+// (Mock data eliminado — datos reales desde Supabase)
 
 // ── NAVEGACIÓN ──
 // ── NAVEGACIÓN (con pila de historial) ──
@@ -357,38 +291,46 @@ window.submitExpense = async function submitExpense() {
 }
 
 window.openExpenseDetail = function openExpenseDetail(id) {
-  const d = expenseData[id];
-  if (!d) return;
+  // Buscar en state.expenses (datos reales de Supabase)
+  const d = (state.expenses || []).find(e => e.id === id);
+  if (!d) { showToast('Gasto no encontrado'); return; }
+  
+  const getProfile = (uid) => {
+    const mem = state.members.find(m => m.profiles && m.profiles.id === uid);
+    return mem ? mem.profiles : { full_name: 'Usuario', username: '' };
+  };
+  const payer = getProfile(d.payer_id);
+  const payerName = payer.full_name || payer.username || 'Usuario';
+  const dateStr = new Date(d.created_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+  const splitsCount = d.expense_splits ? d.expense_splits.length : 0;
+  const isValidated = d.status === 'validated';
+
   const body = document.getElementById('exd-body');
   body.innerHTML = `
     <div style="text-align:center;margin-bottom:14px;">
-      <div style="font-size:46px;margin-bottom:6px;">${d.icon}</div>
-      <div style="font-size:24px;font-weight:900;letter-spacing:-.04em;font-family:'DM Mono',monospace;">${d.amount}</div>
+      <div style="font-size:46px;margin-bottom:6px;">💰</div>
+      <div style="font-size:24px;font-weight:900;letter-spacing:-.04em;font-family:'DM Mono',monospace;">${Number(d.amount).toFixed(2)}€</div>
       <div style="font-size:13px;color:var(--ink3);">${d.title}</div>
     </div>
     <div class="card" style="padding:0 14px;margin-bottom:14px;">
       <div class="card-row" style="cursor:default;">
-        <div class="card-content"><div class="card-name" style="font-size:12px;">Plan asociado</div></div>
-        <div style="font-size:13px;font-weight:700;">${d.plan}</div>
-      </div>
-      <div class="card-row" style="cursor:default;">
         <div class="card-content"><div class="card-name" style="font-size:12px;">Fecha</div></div>
-        <div style="font-size:13px;font-weight:700;">${d.date}</div>
+        <div style="font-size:13px;font-weight:700;">${dateStr}</div>
       </div>
       <div class="card-row" style="cursor:default;">
         <div class="card-content"><div class="card-name" style="font-size:12px;">Pagado por</div></div>
-        <div style="font-size:13px;font-weight:700;">${d.payer}</div>
+        <div style="font-size:13px;font-weight:700;">${payerName}</div>
       </div>
       <div class="card-row" style="cursor:default;">
         <div class="card-content"><div class="card-name" style="font-size:12px;">Participantes</div></div>
-        <div style="font-size:13px;font-weight:700;">${d.parts} personas</div>
+        <div style="font-size:13px;font-weight:700;">${splitsCount} personas</div>
       </div>
       <div class="card-row" style="cursor:default;border-bottom:0;">
         <div class="card-content"><div class="card-name" style="font-size:12px;">Estado</div></div>
-        ${d.validated ? '<span class="pill pill-green">Validado</span>' : '<span class="pill pill-amber">Pendiente</span>'}
+        ${isValidated ? '<span class="pill pill-green">Validado</span>' : '<span class="pill pill-amber">Pendiente</span>'}
       </div>
     </div>
-    <button class="btn btn-secondary btn-full" onclick="showToast('Comprobante mostrado')" style="margin-bottom:8px;">📎 Ver comprobante</button>
+    ${d.proof_url ? '<button class="btn btn-secondary btn-full" onclick="showToast(\'Comprobante mostrado\')" style="margin-bottom:8px;">📎 Ver comprobante</button>' : ''}
     <button class="btn btn-primary btn-full" onclick="reviewExpense('${id}')" style="margin-bottom:8px;">Revisar gasto</button>
     <button class="btn btn-secondary btn-full" onclick="closeModal('modal-expense-detail')">Cerrar</button>
   `;
@@ -711,8 +653,15 @@ window.switchGroup = function switchGroup(id) {
   closeModal('modal-group');
   showToast(`Cambiado a "${g.name}" ✓`);
   
-  // Refrescar planes del nuevo grupo
+  // Refrescar TODOS los módulos del nuevo grupo
+  if (window.loadMembers) window.loadMembers();
   if (window.loadPlans) window.loadPlans();
+  if (window.loadExpenses) window.loadExpenses();
+  if (window.loadFeed) window.loadFeed();
+  if (window.loadRankings) window.loadRankings();
+  if (window.loadGroupSettings) window.loadGroupSettings();
+  // Reiniciar WebSocket para el nuevo grupo
+  if (window.initRealtime) window.initRealtime();
 }
 
 window.openSearchGroups = function openSearchGroups() {
@@ -1023,12 +972,58 @@ window.submitCreatePlan = async function submitCreatePlan() {
    ════════════════════════════════════════════════════════════════ */
 
 window.openEditRules = function openEditRules() {
+  // Pre-fill con los datos cargados
+  if (state.groupSettings) {
+    const yEl = document.getElementById('rules-yellow-amount');
+    const rEl = document.getElementById('rules-red-amount');
+    if (yEl) yEl.value = state.groupSettings.yellow_card_amount || 2;
+    if (rEl) rEl.value = state.groupSettings.red_card_amount || 10;
+  }
   document.getElementById('modal-rules').classList.add('open');
 }
 
-window.submitRules = function submitRules() {
-  closeModal('modal-rules');
-  showToast('Cambios enviados a votación del grupo ✓');
+window.submitRules = async function submitRules() {
+  if (!state.currentGroupId) return;
+  const yellowAmount = parseFloat(document.getElementById('rules-yellow-amount').value) || 2;
+  const redAmount = parseFloat(document.getElementById('rules-red-amount').value) || 10;
+
+  try {
+    const { error } = await supabase
+      .from('group_settings')
+      .update({
+        yellow_card_amount: yellowAmount,
+        red_card_amount: redAmount
+      })
+      .eq('group_id', state.currentGroupId);
+
+    if (error) throw error;
+
+    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount };
+    closeModal('modal-rules');
+    showToast('Reglas guardadas ✓');
+  } catch (err) {
+    console.error(err);
+    showToast('Error al guardar las reglas');
+  }
+}
+
+window.loadGroupSettings = async function loadGroupSettings() {
+  if (!state.currentGroupId) return;
+  const { data, error } = await supabase
+    .from('group_settings')
+    .select('*')
+    .eq('group_id', state.currentGroupId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error loading settings:', error);
+    return;
+  }
+  state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10 };
+}
+
+window.showStandingsLegend = function showStandingsLegend() {
+  document.getElementById('modal-standings-legend').classList.add('open');
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1072,7 +1067,11 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
   let realtimeChannel = null;
   window.initRealtime = function initRealtime() {
     if (!state.currentGroupId) return;
-    if (realtimeChannel) return; // Ya está suscrito
+    // Desuscribirse del canal anterior si existe
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
 
     realtimeChannel = supabase.channel(`group_${state.currentGroupId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `group_id=eq.${state.currentGroupId}` }, payload => {
@@ -1771,14 +1770,54 @@ window.showAddExpense = function showAddExpense(fromPlan = false) {
 /* ════════════════════════════════════════════════════════════════
    V5: CHATS
    ════════════════════════════════════════════════════════════════ */
-window.openChat = function openChat(chatId, name, initials, color, kind) {
+window.openChat = async function openChat(chatId, name, initials, color, kind) {
   state.currentChat = chatId;
+  state.currentChatKind = kind;
   document.getElementById('conv-avatar').textContent = initials;
   document.getElementById('conv-avatar').style.background = color;
   document.getElementById('conv-name').textContent = name;
-  document.getElementById('conv-sub').textContent = kind === 'group' ? `${state.myGroups.find(g=>g.id===state.currentGroupId)?.members || 9} miembros` : 'Activo ahora';
+  document.getElementById('conv-sub').textContent = kind === 'group' ? `${state.myGroups.find(g=>g.id===state.currentGroupId)?.members || 0} miembros` : 'Activo ahora';
+  
+  // Cargar mensajes reales de Supabase
+  await loadChatMessages(chatId, kind);
   renderConversation();
   showScreen('conversation');
+}
+
+async function loadChatMessages(chatId, kind) {
+  let query;
+  if (kind === 'group') {
+    // Chat grupal: mensajes con group_id y sin recipient_id
+    query = supabase
+      .from('messages')
+      .select('*, profiles:sender_id(full_name, username)')
+      .eq('group_id', state.currentGroupId)
+      .is('recipient_id', null)
+      .order('created_at', { ascending: true })
+      .limit(100);
+  } else {
+    // Chat privado: mensajes entre yo y el otro usuario
+    query = supabase
+      .from('messages')
+      .select('*, profiles:sender_id(full_name, username)')
+      .or(`and(sender_id.eq.${state.currentUserId},recipient_id.eq.${chatId}),and(sender_id.eq.${chatId},recipient_id.eq.${state.currentUserId})`)
+      .order('created_at', { ascending: true })
+      .limit(100);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('Error loading chat:', error);
+    state.chatMessages[chatId] = [];
+    return;
+  }
+
+  state.chatMessages[chatId] = (data || []).map(m => ({
+    from: m.sender_id === state.currentUserId ? 'me' : m.sender_id,
+    fromName: m.profiles ? (m.profiles.full_name || m.profiles.username || 'Usuario') : 'Usuario',
+    text: m.text,
+    time: new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+  }));
 }
 
 window.backFromChat = function backFromChat() {
@@ -1788,13 +1827,18 @@ window.backFromChat = function backFromChat() {
 window.renderConversation = function renderConversation() {
   const body = document.getElementById('conv-body');
   const msgs = state.chatMessages[state.currentChat] || [];
-  const isGroup = state.currentChat === 'group';
+  const isGroup = state.currentChatKind === 'group';
+
+  if (msgs.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:40px 20px;font-size:12px;color:var(--ink3);">No hay mensajes. ¡Sé el primero en escribir!</div>';
+    return;
+  }
+
   body.innerHTML = msgs.map(m => {
     const mine = m.from === 'me';
     let authorName = '';
     if (isGroup && !mine) {
-      const memberMap = { 'carlos': 'Carlos', 'mario': 'Mario', 'pablo': 'Pablo', 'lucas': 'Lucas', 'ana': 'Ana', 'javi': 'Javi' };
-      authorName = `<div class="msg-author">${memberMap[m.from] || m.from}</div>`;
+      authorName = `<div class="msg-author">${m.fromName}</div>`;
     }
     return `
       <div class="msg-group ${mine ? 'me' : 'them'}">
@@ -1807,96 +1851,56 @@ window.renderConversation = function renderConversation() {
   setTimeout(() => body.scrollIntoView({ block: 'end' }), 50);
 }
 
-window.sendChatMessage = function sendChatMessage() {
+window.sendChatMessage = async function sendChatMessage() {
   const input = document.getElementById('conv-input');
   const val = input.value.trim();
   if (!val) return;
-  if (!state.chatMessages[state.currentChat]) state.chatMessages[state.currentChat] = [];
-  const time = `${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}`;
-  state.chatMessages[state.currentChat].push({ from: 'me', text: val, time });
   input.value = '';
+
+  const isGroup = state.currentChatKind === 'group';
+  const msgData = {
+    sender_id: state.currentUserId,
+    text: val,
+  };
+
+  if (isGroup) {
+    msgData.group_id = state.currentGroupId;
+  } else {
+    msgData.recipient_id = state.currentChat;
+  }
+
+  // Insertar optimistamente en la UI
+  if (!state.chatMessages[state.currentChat]) state.chatMessages[state.currentChat] = [];
+  const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  state.chatMessages[state.currentChat].push({ from: 'me', fromName: 'Tú', text: val, time });
   renderConversation();
+
+  // Guardar en Supabase
+  const { error } = await supabase.from('messages').insert([msgData]);
+  if (error) {
+    console.error('Error sending message:', error);
+    showToast('Error al enviar mensaje');
+  }
 }
 
 window.openChatWith = function openChatWith(memberId) {
-  // Mapeo de avatar
-  const m = memberData[memberId];
-  if (!m) return;
-  openChat(memberId, m.name, m.initials, m.avatarBg, 'private');
+  // Buscar en state.members (datos reales de Supabase)
+  const memberRecord = state.members.find(m => m.profiles && m.profiles.id === memberId);
+  if (!memberRecord || !memberRecord.profiles) {
+    showToast('Miembro no encontrado');
+    return;
+  }
+  const p = memberRecord.profiles;
+  const name = p.full_name || p.username || 'Usuario';
+  const initials = name.substring(0, 2).toUpperCase();
+  const color = p.avatar_url || '#0A0A0A';
+  openChat(memberId, name, initials, color, 'private');
 }
 
 /* ════════════════════════════════════════════════════════════════
    V5: STANDINGS (CLASIFICACIÓN tipo Liga)
    ════════════════════════════════════════════════════════════════ */
-window.renderStandings = function renderStandings() {
-  const offset = state.standingsMonthOffset;
-  const today = new Date();
-  const targetDate = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-  const monthName = meses[targetDate.getMonth()];
-  const year = targetDate.getFullYear();
-  const label = `${monthName} ${year}${offset === 0 ? ' · Mes actual' : ''}`;
-  document.getElementById('stand-month-label').textContent = label;
-
-  document.getElementById('stand-next').classList.toggle('disabled', offset >= 0);
-  const hasOlder = state.standingsHistory[offset - 1] !== undefined;
-  document.getElementById('stand-prev').classList.toggle('disabled', !hasOlder);
-
-  // PTS = pj + mvp + trd - 2*am - 5*rj - nc
-  const raw = state.standingsHistory[offset] || [];
-  const data = raw.map(p => ({
-    ...p,
-    pts: p.pj + p.mvp + p.trd - 2 * (p.am || 0) - 5 * (p.rj || 0) - (p.nc || 0),
-  })).sort((a, b) => b.pts - a.pts || b.mvp - a.mvp || b.pj - a.pj);
-
-  const rows = document.getElementById('standings-rows');
-  rows.innerHTML = data.map((p, idx) => {
-    const pos = idx + 1;
-    const posCls = pos === 1 ? 'gold' : (pos === 2 ? 'silver' : (pos === 3 ? 'bronze' : ''));
-    const isYou = p.id === 'tu';
-    const md = memberData[p.id];
-    let handle = '';
-    if (md && md.handle) handle = md.handle.split(' ')[0];
-    // Indicador de cambio de posición desde el último plan (campo prevPos en los datos)
-    let moveTag = '';
-    if (typeof p.prevPos === 'number') {
-      const diff = p.prevPos - pos;
-      if (diff > 0) moveTag = `<span class="pos-move up" title="Sube ${diff}">▲${diff}</span>`;
-      else if (diff < 0) moveTag = `<span class="pos-move down" title="Baja ${-diff}">▼${-diff}</span>`;
-      else moveTag = `<span class="pos-move same">–</span>`;
-    }
-    return `
-      <div class="standings-row" onclick="openMemberProfile('${p.id}')" style="${isYou ? 'background:var(--surface2);' : ''}">
-        <div class="standings-pos ${posCls}">${pos}</div>
-        <div class="standings-name">
-          <div class="standings-avatar" style="background:${p.color};">${p.initials}</div>
-          <div class="standings-namelabel">${p.name} <span style="color:var(--ink3);font-weight:500;font-size:9px;">(${handle})</span></div>
-          ${moveTag}
-        </div>
-        <div class="standings-stat">${p.pj}</div>
-        <div class="standings-stat" style="color:${(p.nc||0) > 0 ? 'var(--red)' : 'var(--ink3)'};">${(p.nc||0) > 0 ? '-'+(p.nc) : '0'}</div>
-        <div class="standings-stat" style="color:${p.mvp > 0 ? 'var(--green)' : 'var(--ink3)'};">${p.mvp > 0 ? '+'+p.mvp : p.mvp}</div>
-        <div class="standings-stat" style="color:${p.trd < 0 ? 'var(--red)' : 'var(--ink3)'};">${p.trd === 0 ? '0' : p.trd}</div>
-        <div class="standings-stat" style="color:${(p.am||0) > 0 ? 'var(--amber)' : 'var(--ink3)'};">${p.am||0}</div>
-        <div class="standings-stat" style="color:${(p.rj||0) > 0 ? 'var(--red)' : 'var(--ink3)'};">${p.rj||0}</div>
-        <div class="standings-pts" style="color:${p.pts < 0 ? 'var(--red)' : 'var(--ink)'};">${p.pts}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-window.standingsNav = function standingsNav(delta) {
-  const newOffset = state.standingsMonthOffset + delta;
-  // No permitir ir al futuro
-  if (newOffset > 0) return;
-  // No permitir más allá de los datos disponibles
-  if (state.standingsHistory[newOffset] === undefined) return;
-  state.standingsMonthOffset = newOffset;
-  renderStandings();
-}
-
-window.showStandingsLegend = function showStandingsLegend() {
-  document.getElementById('modal-standings-legend').classList.add('open');
-}
+// (Old renderStandings with mock standingsHistory removed — using Supabase-connected version below)
 
 /* ════════════════════════════════════════════════════════════════
    V6: ESTADISTICAS Y RANKINGS
@@ -1904,25 +1908,25 @@ window.showStandingsLegend = function showStandingsLegend() {
 window.loadRankings = async function loadRankings() {
     if (!state.currentGroupId) return;
 
-    // Fetch plan attendance
+    // Fetch plan attendance (status = 'voy' en el schema)
     const { data: attendance, error: e1 } = await supabase
       .from('plan_attendance')
       .select('*, plans!inner(*)')
       .eq('plans.group_id', state.currentGroupId)
-      .eq('status', 'going');
+      .eq('status', 'voy');
       
-    // Fetch plan rankings
+    // Fetch plan rankings (category y target_user_id en el schema)
     const { data: rankings, error: e2 } = await supabase
       .from('plan_rankings')
       .select('*, plans!inner(*)')
       .eq('plans.group_id', state.currentGroupId);
 
-    // Fetch sanctions
+    // Fetch sanctions (tiene group_id directo)
     const { data: sanctions, error: e3 } = await supabase
       .from('sanctions')
-      .select('*, plans!inner(*)')
-      .eq('plans.group_id', state.currentGroupId)
-      .eq('status', 'validated');
+      .select('*')
+      .eq('group_id', state.currentGroupId)
+      .in('status', ['active', 'validated']);
 
     const stats = {};
     state.members.forEach(m => {
@@ -1939,15 +1943,15 @@ window.loadRankings = async function loadRankings() {
 
     if (rankings) {
       rankings.forEach(r => {
-        if (r.ranking_type === 'mvp' && stats[r.voted_user_id]) stats[r.voted_user_id].mvp++;
-        if (r.ranking_type === 'tardon' && stats[r.voted_user_id]) stats[r.voted_user_id].trd++;
+        if (r.category === 'mvp' && stats[r.target_user_id]) stats[r.target_user_id].mvp++;
+        if (r.category === 'tardon' && stats[r.target_user_id]) stats[r.target_user_id].trd++;
       });
     }
 
     if (sanctions) {
       sanctions.forEach(s => {
-        if (s.type === 'yellow' && stats[s.user_id]) stats[s.user_id].am++;
-        if (s.type === 'red' && stats[s.user_id]) stats[s.user_id].rj++;
+        if (s.type === 'amarilla' && stats[s.target_user_id]) stats[s.target_user_id].am++;
+        if (s.type === 'roja' && stats[s.target_user_id]) stats[s.target_user_id].rj++;
       });
     }
 
@@ -2970,6 +2974,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (window.loadRankings) window.loadRankings();
     if (window.loadFeed) window.loadFeed();
     if (window.loadExpenses) window.loadExpenses();
+    if (window.loadGroupSettings) window.loadGroupSettings();
     if (window.initRealtime) window.initRealtime();
     safeInit('renderCalendar', () => renderCalendar());
     safeInit('renderBote', () => renderBote());
