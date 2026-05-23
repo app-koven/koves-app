@@ -122,6 +122,11 @@ window.openPlan = function openPlan(id) {
   // TODO: Check if user attendance is pending by fetching plan_attendance
   updateAttendanceBlink(true);
   renderTardonList();
+  
+  // Guardar el ID del plan activo globalmente
+  state.currentPlanId = id;
+  // Cargar las fotos reales
+  loadPlanPhotos(id);
 }
 
 window.openHistorial = function openHistorial() {
@@ -2266,17 +2271,90 @@ window.memberPlansNav = function memberPlansNav(delta) {
   }
 }
 
-// Subir foto a mejores momentos
-window.uploadPlanPhoto = function uploadPlanPhoto() {
+// Cargar fotos reales del plan
+window.loadPlanPhotos = async function loadPlanPhotos(planId) {
   const grid = document.getElementById('plan-photos-grid');
   if (!grid) return;
-  const emojis = ['📸','🎊','🍾','🎶','🌟','💃','🕺','🎉'];
-  const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-  const div = document.createElement('div');
-  div.style.cssText = 'aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;';
-  div.innerHTML = `<span style="font-size:24px;">${emoji}</span>`;
-  grid.appendChild(div);
-  showToast('Foto añadida a los mejores momentos ✓');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:12px;color:var(--ink3);">Cargando fotos...</div>';
+
+  const { data: photos, error } = await supabase
+    .from('plan_photos')
+    .select('*')
+    .eq('plan_id', planId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading photos:', error);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:12px;color:var(--ink3);">Error al cargar fotos</div>';
+    return;
+  }
+
+  if (!photos || photos.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:12px;color:var(--ink3);">No hay fotos todavía.</div>';
+    return;
+  }
+
+  grid.innerHTML = photos.map(p => `
+    <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);background-image:url('${p.photo_url}');background-size:cover;background-position:center;"></div>
+  `).join('');
+}
+
+// Subir foto real a Supabase Storage
+window.handleRealPhotoUpload = async function handleRealPhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!state.currentPlanId) {
+    showToast('Abre un plan primero');
+    return;
+  }
+
+  const grid = document.getElementById('plan-photos-grid');
+  const tempDiv = document.createElement('div');
+  tempDiv.style.cssText = 'aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink3);';
+  tempDiv.innerHTML = 'Subiendo...';
+  if (grid.innerHTML.includes('No hay fotos todavía')) grid.innerHTML = '';
+  grid.prepend(tempDiv);
+
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${state.currentPlanId}_${Date.now()}.${fileExt}`;
+    const filePath = `${state.currentUserId}/${fileName}`;
+
+    // Subir a Storage (bucket 'plan_photos')
+    const { error: uploadError } = await supabase.storage
+      .from('plan_photos')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // Obtener la URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from('plan_photos')
+      .getPublicUrl(filePath);
+
+    const publicUrl = publicUrlData.publicUrl;
+
+    // Insertar en la tabla plan_photos
+    const { error: dbError } = await supabase
+      .from('plan_photos')
+      .insert([{
+        plan_id: state.currentPlanId,
+        user_id: state.currentUserId,
+        photo_url: publicUrl
+      }]);
+
+    if (dbError) throw dbError;
+
+    showToast('Foto subida correctamente ✓');
+    loadPlanPhotos(state.currentPlanId);
+  } catch (error) {
+    console.error('Upload error:', error);
+    tempDiv.remove();
+    showToast('Error al subir la foto');
+  } finally {
+    event.target.value = ''; // reset input
+  }
 }
 
 // Confirmar pago en bote (deudor)
@@ -2366,14 +2444,15 @@ window.openPhotoMenu = function openPhotoMenu() {
 }
 window.pickPhotoSource = function pickPhotoSource(source) {
   closeModal('modal-photo-menu');
-  const labels = {
-    biblioteca: 'biblioteca',
-    camara: 'la cámara',
-    recientes: 'fotos recientes',
-    archivos: 'archivos',
-  };
-  // Simular selección y añadir la foto
-  uploadPlanPhoto();
+  const fileInput = document.getElementById('real-photo-input');
+  
+  if (source === 'camara') {
+    fileInput.setAttribute('capture', 'environment');
+  } else {
+    fileInput.removeAttribute('capture');
+  }
+  
+  fileInput.click();
 }
 
 // Parpadeo del título "Tu asistencia" si el plan está pendiente
