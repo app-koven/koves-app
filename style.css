@@ -359,7 +359,7 @@ textarea.form-input { resize: vertical; min-height: 72px; font-family: 'DM Sans'
 .vote-count { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--ink3); margin-left: auto; }
 
 /* ── MODAL OVERLAY ── */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-overlay { display: none; position: fixed; inset: 0; margin: 0 auto; width: 100%; max-width: 430px; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-end; justify-content: center; }
 .modal-overlay.open { display: flex; animation: fadeIn .15s ease; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 .modal-sheet { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 430px; padding: 0 0 env(safe-area-inset-bottom, 16px); max-height: 90vh; overflow-y: auto; animation: slideUp .25s ease; }
