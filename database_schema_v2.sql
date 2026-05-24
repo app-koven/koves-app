@@ -41,8 +41,6 @@ CREATE TABLE IF NOT EXISTS public.group_members (
 CREATE TABLE IF NOT EXISTS public.group_settings (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL UNIQUE,
-  yellow_card_amount numeric(10,2) DEFAULT 2.00,
-  red_card_amount numeric(10,2) DEFAULT 10.00,
   invite_visibility text DEFAULT 'all' CHECK (invite_visibility IN ('all', 'admins')),
   member_limit integer DEFAULT 20,
   code_expiry text DEFAULT 'never' CHECK (code_expiry IN ('never', '24h', '7d', '30d'))
@@ -129,38 +127,7 @@ CREATE TABLE IF NOT EXISTS public.expense_splits (
   created_at timestamptz DEFAULT now() NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS public.sanctions (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-  plan_id uuid REFERENCES public.plans(id) ON DELETE SET NULL,
-  target_user_id uuid REFERENCES public.profiles(id) NOT NULL,
-  proposed_by uuid REFERENCES public.profiles(id) NOT NULL,
-  type text NOT NULL CHECK (type IN ('amarilla', 'roja')),
-  reason text NOT NULL,
-  status text DEFAULT 'voting' CHECK (status IN ('voting', 'active', 'history', 'rejected')),
-  amount numeric(10,2) NOT NULL DEFAULT 0,
-  expires_at timestamptz,
-  created_at timestamptz DEFAULT now() NOT NULL
-);
 
-CREATE TABLE IF NOT EXISTS public.sanction_votes (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  sanction_id uuid REFERENCES public.sanctions(id) ON DELETE CASCADE NOT NULL,
-  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  vote text NOT NULL CHECK (vote IN ('favor', 'contra')),
-  created_at timestamptz DEFAULT now() NOT NULL,
-  UNIQUE(sanction_id, user_id)
-);
-
-CREATE TABLE IF NOT EXISTS public.plan_rankings (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  plan_id uuid REFERENCES public.plans(id) ON DELETE CASCADE NOT NULL,
-  voter_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  category text NOT NULL CHECK (category IN ('mvp', 'tardon')),
-  target_user_id uuid REFERENCES public.profiles(id) NOT NULL,
-  position integer CHECK (position IN (1, 2, 3)),
-  created_at timestamptz DEFAULT now() NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS public.messages (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -184,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.roulette_sessions (
 CREATE TABLE IF NOT EXISTS public.claims (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-  type text NOT NULL CHECK (type IN ('gasto', 'tarjeta')),
+  type text NOT NULL CHECK (type IN ('gasto')),
   reference_id uuid NOT NULL,
   claimant_id uuid REFERENCES public.profiles(id) NOT NULL,
   reason text NOT NULL,
@@ -313,18 +280,7 @@ CREATE POLICY "Debtor or payer can update" ON public.expense_splits FOR UPDATE U
   )
 );
 
-ALTER TABLE public.sanctions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Sanctions viewable" ON public.sanctions FOR SELECT USING (true);
-CREATE POLICY "Members can propose sanctions" ON public.sanctions FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "System can update sanctions" ON public.sanctions FOR UPDATE USING (auth.uid() IS NOT NULL);
 
-ALTER TABLE public.sanction_votes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Votes viewable" ON public.sanction_votes FOR SELECT USING (true);
-CREATE POLICY "Users can vote" ON public.sanction_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-ALTER TABLE public.plan_rankings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Rankings viewable" ON public.plan_rankings FOR SELECT USING (true);
-CREATE POLICY "Users can vote rankings" ON public.plan_rankings FOR INSERT WITH CHECK (auth.uid() = voter_id);
 
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Messages viewable by participants" ON public.messages FOR SELECT USING (

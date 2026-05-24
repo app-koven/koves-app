@@ -16,25 +16,16 @@ const state = {
   // Cuentas guardadas (como Instagram: varias cuentas en el mismo dispositivo)
   accounts: [],
   // Grupos del usuario actual
-  myGroups: [],
-  // V5: Votación de ranking del plan actual
-  ranking: { mvp: [null, null, null], tardon: [] },
-  // V5: Cuál es el miembro actualmente en perfil (para chat)
+  myGroups: [],  // V5: Cuál es el miembro actualmente en perfil (para chat)
   currentMemberId: 'carlos',
   // V5: Chat actual abierto
-  currentChat: null,
-  // V5: Selector de mes en standings (0 = actual, -1 = mes anterior, etc)
-  standingsMonthOffset: 0,
-  // V5: Mensajes simulados por chat
+  currentChat: null,  // V5: Mensajes simulados por chat
   chatMessages: {},
   // V5: Members para podium picker (asistentes al plan actual)
   planAttendees: [],
   // V6: Historial de standings por mes (offset → array de jugadores)
   // pts = pj + mvp + trd - 2*am - 5*rj
-  // (Mock data de standingsHistory y boteHistory eliminados)
-  // V6: Offset del mes mostrado en el bote
-  boteMonthOffset: 0,
-  // V6: ¿Eres admin del grupo actual? (controla la edición de reglas)
+  // (Mock data de standingsHistory y boteHistory eliminados)  // V6: ¿Eres admin del grupo actual? (controla la edición de reglas)
   isAdmin: true,
   // V6: Offset del mes mostrado en el calendario de planes
   calendarMonthOffset: 0,
@@ -198,25 +189,11 @@ window.castVote = function castVote(type, btn) {
 }
 
 // ── DISCIPLINE ──
-window.showDisciplineModal = function showDisciplineModal(type) {
-  const titles = { amarilla: '🟡 Sacar amarilla', roja: '🔴 Sacar tarjeta roja', motivo: '📝 Añadir motivo', votar: '🗳️ Votar sanción' };
-  document.getElementById('disc-modal-title').firstChild.textContent = titles[type] || 'Sanción';
-  document.getElementById('modal-discipline').classList.add('open');
-}
 
-window.selectDiscMember = function selectDiscMember(row, name) {
-  document.querySelectorAll('#disc-member-list .card-row').forEach(r => {
-    r.style.borderColor = 'var(--line)';
-    r.style.background = '';
-  });
-  row.style.borderColor = 'var(--ink)';
-  row.style.background = 'var(--surface2)';
-}
 
-window.submitSanction = function submitSanction() {
-  closeModal('modal-discipline');
-  showToast('Sanción enviada a votación grupal ✓');
-}
+
+
+
 
 // ── EXPENSE ──
 window.showAddExpenseLegacy = function showAddExpenseLegacy() { document.getElementById('modal-expense').classList.add('open'); }
@@ -1027,9 +1004,7 @@ window.loadGroupSettings = async function loadGroupSettings() {
   state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10 };
 }
 
-window.showStandingsLegend = function showStandingsLegend() {
-  document.getElementById('modal-standings-legend').classList.add('open');
-}
+
 
 /* ════════════════════════════════════════════════════════════════
    INIT
@@ -1098,204 +1073,9 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
   }
 
   // Carga paralela de componentes al cambiar de contexto o iniciar
-  window.renderBote = function renderBote() {
-  const deudores = document.getElementById('bote-deudores');
-  const reparto = document.getElementById('bote-reparto');
   
-  const formatCur = (num) => (num > 0 ? '+' : '') + num.toFixed(2).replace('.00','') + '€';
-  const el = (id) => document.getElementById(id);
 
-  if (!state.expenses || state.expenses.length === 0) {
-    if (deudores) deudores.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay gastos registrados.</div>';
-    if (reparto) reparto.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Nadie debe nada.</div>';
-    const totalEl = document.getElementById('bote-total');
-    if (totalEl) totalEl.textContent = '0€';
-    const repWrap = document.getElementById('bote-reparto-wrap');
-    if (repWrap) repWrap.style.display = 'none';
-    
-    // Limpiar KPIs superiores
-    if (el('kpi-exp-total')) el('kpi-exp-total').textContent = '0€';
-    if (el('kpi-exp-paid')) el('kpi-exp-paid').textContent = '0€';
-    if (el('kpi-exp-owed')) el('kpi-exp-owed').textContent = '0€';
-    if (el('kpi-exp-owe')) el('kpi-exp-owe').textContent = '0€';
-    if (el('kpi-exp-balance')) {
-      el('kpi-exp-balance').textContent = '0€';
-      el('kpi-exp-balance').style.color = 'var(--ink)';
-    }
-    return;
-  }
 
-  // 1. Calcular balances netos
-  const balances = {};
-  state.members.forEach(m => {
-    if (m.profiles) balances[m.profiles.id] = 0;
-  });
-
-  let totalExpenses = 0;
-
-  state.expenses.forEach(ex => {
-    if (ex.status !== 'validated') return;
-    totalExpenses += Number(ex.amount);
-    if (balances[ex.payer_id] !== undefined) {
-      balances[ex.payer_id] += Number(ex.amount);
-    }
-    if (ex.expense_splits) {
-      ex.expense_splits.forEach(sp => {
-        if (balances[sp.debtor_id] !== undefined) {
-          balances[sp.debtor_id] -= Number(sp.amount);
-        }
-      });
-    }
-  });
-
-  const totalEl = document.getElementById('bote-total');
-  if (totalEl) totalEl.textContent = totalExpenses.toFixed(2).replace('.00','') + '€';
-
-  // 1.5. Actualizar KPIs superiores de Gastos
-  let userPaid = 0;
-  state.expenses.forEach(ex => {
-    if (ex.status !== 'validated') return;
-    if (ex.payer_id === state.currentUserId) userPaid += Number(ex.amount);
-  });
-  
-  const userBalance = balances[state.currentUserId] || 0;
-  let userOwed = userBalance > 0.01 ? userBalance : 0;
-  let userOwes = userBalance < -0.01 ? Math.abs(userBalance) : 0;
-
-  if (el('kpi-exp-total')) el('kpi-exp-total').textContent = totalExpenses.toFixed(2).replace('.00','') + '€';
-  if (el('kpi-exp-paid')) el('kpi-exp-paid').textContent = userPaid.toFixed(2).replace('.00','') + '€';
-  if (el('kpi-exp-owed')) el('kpi-exp-owed').textContent = '+' + userOwed.toFixed(2).replace('.00','') + '€';
-  if (el('kpi-exp-owe')) el('kpi-exp-owe').textContent = '-' + userOwes.toFixed(2).replace('.00','') + '€';
-  if (el('kpi-exp-balance')) {
-    el('kpi-exp-balance').textContent = formatCur(userBalance);
-    el('kpi-exp-balance').style.color = userBalance >= 0 ? 'var(--green)' : 'var(--red)';
-    if (Math.abs(userBalance) < 0.01) {
-      el('kpi-exp-balance').textContent = '0€';
-      el('kpi-exp-balance').style.color = 'var(--ink)';
-    }
-  }
-
-  // 2. Separar acreedores y deudores
-  const creditors = [];
-  const debtors = [];
-  
-  for (const [id, bal] of Object.entries(balances)) {
-    if (bal > 0.01) creditors.push({ id, bal });
-    else if (bal < -0.01) debtors.push({ id, bal: -bal });
-  }
-
-  // Ordenar de mayor a menor
-  creditors.sort((a,b) => b.bal - a.bal);
-  debtors.sort((a,b) => b.bal - a.bal);
-
-  // 3. Emparejar deudas
-  const transfers = [];
-  let i = 0, j = 0;
-  while (i < debtors.length && j < creditors.length) {
-    const d = debtors[i];
-    const c = creditors[j];
-    const amount = Math.min(d.bal, c.bal);
-    
-    transfers.push({
-      from: d.id,
-      to: c.id,
-      amount: amount
-    });
-    
-    d.bal -= amount;
-    c.bal -= amount;
-    
-    if (d.bal < 0.01) i++;
-    if (c.bal < 0.01) j++;
-  }
-
-  // 4. Renderizar UI
-  const getProfile = (id) => {
-    const mem = state.members.find(m => m.profiles && m.profiles.id === id);
-    if (mem && mem.profiles) return mem.profiles;
-    return { id, full_name: 'Usuario', avatar_url: '#0A0A0A', username: '' };
-  };
-
-  if (transfers.length === 0) {
-    if (deudores) deudores.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Las cuentas están saldadas.</div>';
-    if (reparto) reparto.innerHTML = '';
-    const repWrap = document.getElementById('bote-reparto-wrap');
-    if (repWrap) repWrap.style.display = 'none';
-    return;
-  }
-
-  // Agrupar cuánto debe cada uno en total
-  const whoOwesWhat = {};
-  transfers.forEach(t => {
-    whoOwesWhat[t.from] = (whoOwesWhat[t.from] || 0) + t.amount;
-  });
-
-  if (deudores) {
-    const arr = Object.keys(whoOwesWhat).map(id => ({ id, amount: whoOwesWhat[id] }));
-    deudores.innerHTML = arr.map((d, idx) => {
-      const p = getProfile(d.id);
-      const name = p.full_name || p.username || 'Usuario';
-      const init = name.substring(0,2).toUpperCase();
-      const col = p.avatar_url || '#0A0A0A';
-      return `
-        <div class="expense-item" ${idx === arr.length - 1 ? 'style="border-bottom:0;"' : ''}>
-          <div class="exp-left">
-            <div class="exp-icon" style="background:${col};color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${init}</div>
-            <div class="exp-info">
-              <div class="exp-name">${name}</div>
-              <div class="exp-sub">Debe al bote</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="exp-amount negative">-${d.amount.toFixed(2).replace('.00','')}€</div>
-            <!-- Botón pagar TODO: falta implementación de pago real -->
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  const repWrap = document.getElementById('bote-reparto-wrap');
-  if (repWrap) repWrap.style.display = 'block';
-  
-  if (reparto) {
-    // Agrupar cuánto recibe cada uno
-    const whoReceivesWhat = {};
-    transfers.forEach(t => {
-      whoReceivesWhat[t.to] = (whoReceivesWhat[t.to] || 0) + t.amount;
-    });
-    
-    const arr2 = Object.keys(whoReceivesWhat).map(id => ({ id, amount: whoReceivesWhat[id] }));
-    reparto.innerHTML = arr2.map((r, idx) => {
-      const p = getProfile(r.id);
-      const name = p.full_name || p.username || 'Usuario';
-      const init = name.substring(0,2).toUpperCase();
-      const col = p.avatar_url || '#0A0A0A';
-      return `
-        <div class="expense-item" ${idx === arr2.length - 1 ? 'style="border-bottom:0;"' : ''}>
-          <div class="exp-left">
-            <div class="exp-icon" style="background:${col};color:#fff;font-size:10px;font-weight:800;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${init}</div>
-            <div class="exp-info">
-              <div class="exp-name">${name}</div>
-              <div class="exp-sub">A cobrar</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="exp-amount positive">+${r.amount.toFixed(2).replace('.00','')}€</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-}
-
-window.boteNav = function boteNav(delta) {
-  const newOffset = state.boteMonthOffset + delta;
-  if (newOffset > 0) return;
-  if (state.boteHistory[newOffset] === undefined) return;
-  state.boteMonthOffset = newOffset;
-  renderBote();
-}
 
 /* ════════════════════════════════════════════════════════════════
    V5/V6: AGENDA TAB SWITCH (compatibilidad — pantalla agenda eliminada)
@@ -1671,26 +1451,7 @@ window.addComment = function addComment() {
    ════════════════════════════════════════════════════════════════ */
 let currentPodium = { type: 'mvp', position: 1 };
 
-window.openPodiumPicker = function openPodiumPicker(type, pos) {
-  currentPodium = { type, position: pos };
-  const title = type === 'mvp' ? `MVP · Elegir ${pos}º` : `Tardón · Elegir ${pos}º`;
-  document.querySelector('#modal-podium-picker .modal-title').firstChild.textContent = title;
-  const body = document.getElementById('podium-picker-body');
-  const ya = state.ranking[type];
-  body.innerHTML = state.planAttendees.map(person => {
-    const yaUsado = ya.includes(person);
-    return `
-      <div class="account-item" style="${yaUsado ? 'opacity:.4;pointer-events:none;' : ''}" onclick="pickPodium('${person}')">
-        <div class="account-avatar" style="background:${type === 'tardon' ? 'var(--red)' : 'var(--ink)'};">${person.substring(0,2).toUpperCase()}</div>
-        <div class="account-info">
-          <div class="account-name">${person}</div>
-          <div class="account-handle">${yaUsado ? 'Ya votado' : (type === 'mvp' ? 'Como MVP' : 'Como tardón')}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  document.getElementById('modal-podium-picker').classList.add('open');
-}
+
 
 window.pickPodium = function pickPodium(name) {
   const { type, position } = currentPodium;
@@ -1705,11 +1466,7 @@ window.pickPodium = function pickPodium(name) {
   closeModal('modal-podium-picker');
 }
 
-window.resetTardon = function resetTardon() {
-  state.ranking.tardon = [];
-  renderTardonList();
-  showToast('Lista de tardones vaciada');
-}
+
 
 // Lista dinámica de tardones (N personas, -2 pts cada una)
 window.renderTardonList = function renderTardonList() {
@@ -1730,25 +1487,7 @@ window.renderTardonList = function renderTardonList() {
   `).join('');
 }
 
-window.openTardonPicker = function openTardonPicker() {
-  currentPodium = { type: 'tardon', position: 0 };
-  document.querySelector('#modal-podium-picker .modal-title').firstChild.textContent = 'Añadir persona tardona ';
-  const body = document.getElementById('podium-picker-body');
-  const ya = state.ranking.tardon || [];
-  body.innerHTML = state.planAttendees.map(person => {
-    const yaUsado = ya.includes(person);
-    return `
-      <div class="account-item" style="${yaUsado ? 'opacity:.4;pointer-events:none;' : ''}" onclick="addTardonPerson('${person}')">
-        <div class="account-avatar" style="background:var(--red);">${person.substring(0,2).toUpperCase()}</div>
-        <div class="account-info">
-          <div class="account-name">${person}</div>
-          <div class="account-handle">${yaUsado ? 'Ya en la lista' : 'Marcar como tardón · −2 pts'}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  document.getElementById('modal-podium-picker').classList.add('open');
-}
+
 
 window.addTardonPerson = function addTardonPerson(name) {
   if (!state.ranking.tardon) state.ranking.tardon = [];
@@ -1762,14 +1501,7 @@ window.removeTardonPerson = function removeTardonPerson(idx) {
   renderTardonList();
 }
 
-window.submitRanking = function submitRanking() {
-  const mvpComplete = state.ranking.mvp.every(x => x !== null);
-  if (!mvpComplete) {
-    showToast('Debes elegir los 3 MVPs');
-    return;
-  }
-  showToast('Votación enviada ✓');
-}
+
 
 /* ════════════════════════════════════════════════════════════════
    V5: showAddExpense con flag para ocultar selector "Asociado al plan"
@@ -1947,198 +1679,7 @@ window.openChatWith = function openChatWith(memberId) {
 /* ════════════════════════════════════════════════════════════════
    V6: ESTADISTICAS Y RANKINGS
    ════════════════════════════════════════════════════════════════ */
-window.loadRankings = async function loadRankings() {
-    if (!state.currentGroupId) return;
 
-    // Fetch plan attendance (status = 'voy' en el schema)
-    const { data: attendance, error: e1 } = await supabase
-      .from('plan_attendance')
-      .select('*, plans!inner(*)')
-      .eq('plans.group_id', state.currentGroupId)
-      .eq('status', 'voy');
-      
-    // Fetch plan rankings (category y target_user_id en el schema)
-    const { data: rankings, error: e2 } = await supabase
-      .from('plan_rankings')
-      .select('*, plans!inner(*)')
-      .eq('plans.group_id', state.currentGroupId);
-
-    // Fetch sanctions (tiene group_id directo)
-    const { data: sanctions, error: e3 } = await supabase
-      .from('sanctions')
-      .select('*')
-      .eq('group_id', state.currentGroupId)
-      .in('status', ['active', 'validated']);
-
-    const stats = {};
-    state.members.forEach(m => {
-      if (m.profiles) {
-        stats[m.profiles.id] = { pj: 0, mvp: 0, trd: 0, am: 0, rj: 0, nc: 0 };
-      }
-    });
-
-    if (attendance) {
-      attendance.forEach(a => {
-        if (stats[a.user_id]) stats[a.user_id].pj++;
-      });
-    }
-
-    if (rankings) {
-      rankings.forEach(r => {
-        if (r.category === 'mvp' && stats[r.target_user_id]) stats[r.target_user_id].mvp++;
-        if (r.category === 'tardon' && stats[r.target_user_id]) stats[r.target_user_id].trd++;
-      });
-    }
-
-    if (sanctions) {
-      sanctions.forEach(s => {
-        if (s.type === 'amarilla' && stats[s.target_user_id]) stats[s.target_user_id].am++;
-        if (s.type === 'roja' && stats[s.target_user_id]) stats[s.target_user_id].rj++;
-      });
-    }
-
-    state.rankings = stats;
-    renderStandings();
-
-    // 4. Render Disciplina Activas (last 7 days)
-    const discList = document.getElementById('disciplina-activas-list');
-    if (discList) {
-      if (!sanctions || sanctions.length === 0) {
-        discList.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay sanciones recientes.</div>';
-      } else {
-        const now = new Date();
-        const activeSanctions = sanctions.filter(s => {
-          const d = new Date(s.created_at || Date.now());
-          const diffDays = (now - d) / (1000 * 60 * 60 * 24);
-          return diffDays <= 7;
-        });
-
-        if (activeSanctions.length === 0) {
-          discList.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay sanciones recientes.</div>';
-        } else {
-          discList.innerHTML = activeSanctions.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map((s, idx) => {
-            const m = state.members.find(x => x.profiles && x.profiles.id === s.target_user_id);
-            const name = m && m.profiles ? (m.profiles.full_name || m.profiles.username) : 'Usuario';
-            const init = name.substring(0,2).toUpperCase();
-            const col = m && m.profiles && m.profiles.avatar_url ? m.profiles.avatar_url : (s.type === 'roja' ? 'var(--red)' : '#C07000');
-            const d = new Date(s.created_at || Date.now());
-            const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
-            const timeStr = diffDays === 0 ? 'hoy' : `hace ${diffDays} días`;
-            const pillClass = s.type === 'roja' ? 'pill-red' : 'pill-amber';
-            const pillText = s.type === 'roja' ? 'Roja' : 'Amarilla';
-            const reasonText = s.reason || 'Falta disciplinaria';
-            
-            return `
-              <div class="discipline-item" ${idx === activeSanctions.length - 1 ? 'style="border-bottom:0;"' : ''}>
-                <div class="disc-avatar" style="background:${col};color:#fff;">${init}</div>
-                <div class="disc-body"><div class="disc-name">${name} <span style="color:var(--ink3);font-weight:500;font-size:10px;">· ${timeStr}</span></div><div class="disc-reason">${reasonText}</div></div>
-                <span class="pill ${pillClass}">${pillText}</span>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-    }
-  }
-
-  window.loadFeed = async function loadFeed() {
-    if (!state.currentGroupId) return;
-
-    // Fetch messages (simplest feed implementation)
-    const { data: messages, error } = await supabase
-      .from('messages')
-      .select('*, profiles(full_name, username, avatar_url)')
-      .eq('group_id', state.currentGroupId)
-      .order('created_at', { ascending: false })
-      .limit(50);
-      
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    const feedList = document.getElementById('feed-list');
-    if (!feedList) return;
-
-    if (!messages || messages.length === 0) {
-      feedList.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay actividad reciente.</div>';
-      return;
-    }
-
-    feedList.innerHTML = messages.map((m, idx) => {
-      const p = m.profiles || {};
-      const name = p.full_name || p.username || 'Usuario';
-      
-      const d = new Date(m.created_at);
-      const diffMs = Date.now() - d.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-      
-      let timeStr = '';
-      if (diffMins < 60) timeStr = `Hace ${diffMins}m`;
-      else if (diffHours < 24) timeStr = `Hace ${diffHours}h`;
-      else timeStr = `Hace ${diffDays}d`;
-
-      return `
-        <div class="feed-item" ${idx === messages.length - 1 ? 'style="border-bottom:0;"' : ''}>
-          <div class="feed-num" style="color:var(--ink3);font-weight:600;width:46px;font-size:10px;">${timeStr}</div>
-          <div class="feed-body">
-            <strong>${name} comentó</strong>
-            <p>"${m.text}"</p>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-window.renderStandings = function renderStandings() {
-  const rows = document.getElementById('standings-rows');
-  if (!state.rankings) {
-    if (rows) rows.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Cargando estadísticas...</div>';
-    return;
-  }
-
-  const data = [];
-  for (const [id, st] of Object.entries(state.rankings)) {
-    const p = state.members.find(m => m.profiles && m.profiles.id === id);
-    if (!p) continue;
-    const prof = p.profiles;
-    data.push({
-      id: id,
-      name: prof.full_name || prof.username || 'Usuario',
-      initials: (prof.full_name || prof.username || 'U').substring(0,2).toUpperCase(),
-      color: prof.avatar_url || '#0A0A0A',
-      handle: prof.username ? `@${prof.username}` : '',
-      pj: st.pj, mvp: st.mvp, trd: st.trd, am: st.am, rj: st.rj,
-      pts: st.pj + st.mvp + st.trd - 2 * st.am - 5 * st.rj
-    });
-  }
-
-  data.sort((a,b) => b.pts - a.pts || b.mvp - a.mvp || b.pj - a.pj);
-
-  if (rows) {
-    if (data.length === 0) {
-      rows.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay estadísticas.</div>';
-    } else {
-      rows.innerHTML = data.map((p, idx) => {
-        const pos = idx + 1;
-        const posCls = pos === 1 ? 'gold' : (pos === 2 ? 'silver' : (pos === 3 ? 'bronze' : ''));
-        const isYou = p.id === state.currentUserId;
-        return `
-          <div class="standings-row" onclick="openMemberProfile('${p.id}')" style="${isYou ? 'background:var(--surface2);' : ''}">
-            <div class="standings-pos ${posCls}">${pos}</div>
-            <div class="standings-name">
-              <div class="standings-avatar" style="background:${p.color};">${p.initials}</div>
-              <div class="standings-namelabel">${p.name} <span style="color:var(--ink3);font-weight:500;font-size:9px;">(${p.handle})</span></div>
-            </div>
-            <div class="standings-pts">${p.pts} <span style="font-size:9px;color:var(--ink3);font-weight:500;">pts</span></div>
-          </div>
-        `;
-      }).join('');
-    }
-  }
-}
 
 /* ════════════════════════════════════════════════════════════════
    V6: SWITCHES DE PESTAÑAS NUEVAS
@@ -2159,13 +1700,7 @@ window.switchHistorialTab = function switchHistorialTab(el, name) {
   document.getElementById('historial-transferencias').style.display = name === 'transferencias' ? 'block' : 'none';
 }
 
-window.switchDisciplinaTab = function switchDisciplinaTab(el, name) {
-  const wrap = el.closest('.section');
-  wrap.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('disciplina-activas').style.display = name === 'activas' ? 'block' : 'none';
-  document.getElementById('disciplina-historial').style.display = name === 'historial' ? 'block' : 'none';
-}
+
 
 window.switchActivityTab = function switchActivityTab(el, name) {
   el.parentElement.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
@@ -2559,37 +2094,14 @@ window.histExpNav = function histExpNav(delta) {
 
 // Navegador de meses del historial de disciplina del grupo
 let discHistOffset = -1;
-window.discHistNav = function discHistNav(delta) {
-  const n = discHistOffset + delta;
-  if (n >= 0) return;
-  discHistOffset = n;
-  const next = document.getElementById('disc-hist-next');
-  if (next) next.classList.toggle('disabled', discHistOffset >= -1 ? false : false);
-  const d = new Date(2026, 4 + discHistOffset, 1);
-  const lbl = document.getElementById('disc-hist-month');
-  if (lbl) lbl.textContent = `${meses[d.getMonth()]} ${d.getFullYear()}`;
-}
+
 
 // Navegador de meses de disciplina del perfil de miembro
 let memberDiscOffset = -1;
-window.memberDiscNav = function memberDiscNav(delta) {
-  const n = memberDiscOffset + delta;
-  if (n >= 0) return;
-  memberDiscOffset = n;
-  const next = document.getElementById('mp-disc-next');
-  if (next) next.classList.toggle('disabled', false);
-  const d = new Date(2026, 4 + memberDiscOffset, 1);
-  const lbl = document.getElementById('mp-disc-month');
-  if (lbl) lbl.textContent = `${meses[d.getMonth()]} ${d.getFullYear()}`;
-}
+
 
 // Selector Actual/Historial de disciplina en el perfil de miembro
-window.switchMemberDiscTab = function switchMemberDiscTab(el, name) {
-  el.parentElement.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('mp-disc-actual').style.display = name === 'actual' ? 'block' : 'none';
-  document.getElementById('mp-disc-historial').style.display = name === 'historial' ? 'block' : 'none';
-}
+
 
 // Ajustes de invitaciones del grupo
 // Visibilidad del grupo (público/privado)

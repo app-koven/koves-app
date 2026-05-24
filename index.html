@@ -274,145 +274,7 @@
       </button>
     </div>
 
-    <!-- Clasificación tipo Liga: con AM y RJ. Al tocar una fila se abre el perfil -->
-    <div class="section">
-      <div class="section-head"><span class="section-title">Clasificación</span><span class="section-action" onclick="showStandingsLegend()">Cómo se calcula</span></div>
-      <div class="month-nav">
-        <button class="month-nav-btn" id="stand-prev" onclick="standingsNav(-1)">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="month-nav-label" id="stand-month-label">Mayo 2026 · Mes actual</div>
-        <button class="month-nav-btn disabled" id="stand-next" onclick="standingsNav(1)">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <div class="card" style="padding:0;">
-        <div class="standings-header">
-          <div>#</div>
-          <div>Jugador</div>
-          <div>PJ</div>
-          <div>NC</div>
-          <div>MVP</div>
-          <div>TRD</div>
-          <div>AM</div>
-          <div>RJ</div>
-          <div>PTS</div>
-        </div>
-        <div id="standings-rows">
-          <!-- Generado dinámicamente -->
-        </div>
-      </div>
-      <div style="font-size:10px;color:var(--ink3);margin-top:8px;line-height:1.5;">
-        PJ: planes jugados · NC: no confirmados (−1) · MVP: podio MVP · TRD: tardón · AM: amarillas (−2) · RJ: rojas (−5) · PTS: total.
-      </div>
-    </div>
 
-    <!-- Disciplina con selector Activas/Historial -->
-    <div class="section">
-      <div class="section-head"><span class="section-title">Disciplina</span></div>
-      <div class="split-toggle">
-        <div class="split-toggle-item active" onclick="switchDisciplinaTab(this,'activas')">Activas</div>
-        <div class="split-toggle-item" onclick="switchDisciplinaTab(this,'historial')">Historial</div>
-      </div>
-      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;">
-        Las tarjetas pasan al historial automáticamente a los 7 días.
-      </div>
-
-      <!-- Activas (≤7 días) -->
-      <div id="disciplina-activas">
-        <div class="card" style="padding:0 14px;" id="disciplina-activas-list">
-          <!-- Generado dinámicamente -->
-        </div>
-      </div>
-
-      <!-- Historial (>7 días) -->
-      <div id="disciplina-historial" style="display:none;">
-        <div class="month-nav" style="margin-bottom:10px;">
-          <button class="month-nav-btn" onclick="discHistNav(-1)">
-            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div class="month-nav-label" id="disc-hist-month">Abril 2026</div>
-          <button class="month-nav-btn disabled" id="disc-hist-next" onclick="discHistNav(1)">
-            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-        <div class="card" style="padding:0 14px;">
-          <div class="scroll-y">
-            <div class="discipline-item">
-              <div class="disc-avatar" style="background:#C07000;">MR</div>
-              <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 10 May</span></div><div class="disc-reason">Concierto · Faltó sin avisar</div></div>
-              <span class="pill pill-amber">Amarilla</span>
-            </div>
-            <div class="discipline-item">
-              <div class="disc-avatar" style="background:var(--red);">JV</div>
-              <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 28 Abr</span></div><div class="disc-reason">Cumpleaños Carlos · Ofensa al grupo</div></div>
-              <span class="pill pill-red">Roja</span>
-            </div>
-            <div class="discipline-item">
-              <div class="disc-avatar" style="background:#C07000;">LC</div>
-              <div class="disc-body"><div class="disc-name">Lucas <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 15 Abr</span></div><div class="disc-reason">Cena italiana · Llegó tarde</div></div>
-              <span class="pill pill-amber">Amarilla</span>
-            </div>
-            <div class="discipline-item">
-              <div class="disc-avatar" style="background:#C07000;">MR</div>
-              <div class="disc-body"><div class="disc-name">Mario <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 5 Abr</span></div><div class="disc-reason">Viaje Alicante · Olvidó la mochila</div></div>
-              <span class="pill pill-amber">Amarilla</span>
-            </div>
-            <div class="discipline-item" style="border-bottom:0;">
-              <div class="disc-avatar" style="background:var(--red);">JV</div>
-              <div class="disc-body"><div class="disc-name">Javi <span style="color:var(--ink3);font-weight:500;font-size:10px;">· 22 Mar</span></div><div class="disc-reason">Karaoke · Borracho ofensivo</div></div>
-              <span class="pill pill-red">Roja</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- BOTE DE SANCIONES (sección propia con navegación lateral por meses) -->
-    <div class="section">
-      <div class="section-head"><span class="section-title">Bote de sanciones</span></div>
-      <div class="month-nav">
-        <button class="month-nav-btn" id="bote-prev" onclick="boteNav(-1)">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="month-nav-label" id="bote-month-label">Mayo 2026 · Mes actual</div>
-        <button class="month-nav-btn disabled" id="bote-next" onclick="boteNav(1)">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-
-      <!-- Resumen del bote del mes -->
-      <div class="spend-summary light" style="margin-bottom:12px;">
-        <div class="spend-row"><span class="spend-label">Total recaudado</span><span class="spend-value" id="bote-total">14€</span></div>
-        <div class="spend-row"><span class="spend-label" id="bote-status-label">Estado del mes</span><span class="spend-value" id="bote-status">En curso</span></div>
-        <div class="spend-row" id="bote-reparto-status-row" style="display:none;flex-direction:column;align-items:stretch;gap:6px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="spend-label">Estado del reparto</span>
-            <span class="spend-value" id="bote-reparto-status-count" style="font-size:12px;">0/0</span>
-          </div>
-          <div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;">
-            <div id="bote-reparto-status-bar" style="width:0%;height:100%;background:var(--green);border-radius:3px;transition:width .3s;"></div>
-          </div>
-          <div id="bote-reparto-status-pending" style="font-size:10px;color:var(--ink3);"></div>
-        </div>
-      </div>
-
-      <!-- Deuda al bote por usuario -->
-      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 8px;">Quién debe al bote</div>
-      <div class="card" style="padding:0 14px;margin-bottom:12px;">
-        <div id="bote-deudores">
-          <!-- Generado dinámicamente -->
-        </div>
-      </div>
-
-      <!-- Reparto al top 3 -->
-      <div id="bote-reparto-wrap" style="display:none;">
-        <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 8px;">Reparto al top 3</div>
-        <div class="card" style="padding:0 14px;">
-          <div id="bote-reparto"></div>
-        </div>
-      </div>
-    </div>
 
     <!-- Reglas del grupo (justo debajo del bote) -->
     <div class="section">
@@ -658,55 +520,6 @@
       </div>
     </div>
 
-    <!-- Ranking del plan: MVP (3 votos obligatorios) y Tardón (0 o 3) -->
-    <div class="section" style="padding-bottom:20px;" id="ranking-section">
-      <div class="section-head"><span class="section-title">Ranking del plan</span></div>
-
-      <!-- Aviso si tienes tarjeta en este plan -->
-      <div id="ranking-card-warning" style="display:none;" class="notice" style="margin-bottom:14px;border-left:3px solid var(--red);">
-        <strong>Tienes una tarjeta en este plan.</strong> No puedes participar en el ranking de este plan.
-      </div>
-
-      <!-- Aviso de cierre a 24h -->
-      <div class="notice" style="margin-bottom:14px;" id="ranking-time-notice">
-        Cierra a las 24h de que el plan empezó. Solo votan asistentes. Voto anónimo. No puedes votarte.
-      </div>
-
-      <div id="ranking-vote-wrap">
-        <!-- MVP -->
-        <div style="margin-bottom:18px;">
-          <div style="font-size:12px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;">MVP del plan</div>
-          <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Vota a 3 personas. 1º = 3 pts · 2º = 2 pts · 3º = 1 pt.</div>
-          <div class="podium-slot" onclick="openPodiumPicker('mvp', 1)">
-            <div class="podium-pos p1">1</div>
-            <div style="flex:1;"><div class="podium-name podium-empty" id="mvp-slot-1">Toca para elegir 1º</div></div>
-            <div class="podium-pts">+3 PTS</div>
-          </div>
-          <div class="podium-slot" onclick="openPodiumPicker('mvp', 2)">
-            <div class="podium-pos p2">2</div>
-            <div style="flex:1;"><div class="podium-name podium-empty" id="mvp-slot-2">Toca para elegir 2º</div></div>
-            <div class="podium-pts">+2 PTS</div>
-          </div>
-          <div class="podium-slot" onclick="openPodiumPicker('mvp', 3)">
-            <div class="podium-pos p3">3</div>
-            <div style="flex:1;"><div class="podium-name podium-empty" id="mvp-slot-3">Toca para elegir 3º</div></div>
-            <div class="podium-pts">+1 PTS</div>
-          </div>
-        </div>
-
-        <!-- TARDÓN -->
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-            <div style="font-size:12px;font-weight:800;letter-spacing:-.01em;">Más tardón</div>
-            <span class="comment-action" onclick="resetTardon()">Vaciar</span>
-          </div>
-          <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;">Opcional. Marca a todas las personas que llegaron tarde. Cada una resta −2 puntos.</div>
-          <div id="tardon-list"></div>
-          <button class="btn btn-secondary btn-full" style="margin-top:8px;font-size:12px;" onclick="openTardonPicker()">Añadir persona tardona</button>
-        </div>
-        <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="submitRanking()">Enviar votación</button>
-      </div>
-    </div>
 
     <!-- ═══ MEJORES MOMENTOS ═══ -->
     <div class="section" style="padding-bottom:28px;">
@@ -751,75 +564,10 @@
     <!-- KPI ampliado TOTALES (toda la antigüedad, todos los grupos) -->
     <div class="section" style="padding-top:16px;">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-align:center;">Métricas totales · todos los grupos · desde el registro · toca para ver detalle</div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;">
+      <div style="display:grid;grid-template-columns:repeat(1,1fr);gap:6px;text-align:center;">
         <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('asistidos')">
           <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;" id="mp-attended">58/64</div>
           <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Asistidos</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('mvps')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--green);" id="mp-mvps">12</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">MVPs</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('trds')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);" id="mp-trds">3</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">TRDs</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('amarillas')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:#C07000;" id="mp-yellows">4</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Amarillas</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('rojas')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);" id="mp-reds">1</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Rojas</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Disciplina personal: selector Actual / Historial -->
-    <div class="section">
-      <div class="section-head"><span class="section-title">Disciplina personal</span></div>
-      <div class="split-toggle">
-        <div class="split-toggle-item active" onclick="switchMemberDiscTab(this,'actual')">Actual</div>
-        <div class="split-toggle-item" onclick="switchMemberDiscTab(this,'historial')">Historial</div>
-      </div>
-      <!-- Actual: tarjetas activas, indicando el grupo -->
-      <div id="mp-disc-actual">
-        <div class="card" style="padding:0 14px;">
-          <div class="discipline-item">
-            <div class="disc-avatar" style="background:#C07000;">⚠</div>
-            <div class="disc-body"><div class="disc-name">Amarilla · EL CLUB</div><div class="disc-reason">Llegó 2h tarde · activa 5 días más</div></div>
-            <span class="pill pill-amber">Amarilla</span>
-          </div>
-          <div class="discipline-item" style="border-bottom:0;">
-            <div class="disc-avatar" style="background:#C07000;">⚠</div>
-            <div class="disc-body"><div class="disc-name">Amarilla · La Cuadrilla</div><div class="disc-reason">No pagó su parte · activa 2 días más</div></div>
-            <span class="pill pill-amber">Amarilla</span>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Las tarjetas de cada grupo son independientes y solo cuentan en ese grupo.</div>
-      </div>
-      <!-- Historial: con scroll de meses -->
-      <div id="mp-disc-historial" style="display:none;">
-        <div class="month-nav" style="margin-bottom:10px;">
-          <button class="month-nav-btn" onclick="memberDiscNav(-1)">
-            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div class="month-nav-label" id="mp-disc-month">Abril 2026</div>
-          <button class="month-nav-btn disabled" id="mp-disc-next" onclick="memberDiscNav(1)">
-            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-        <div class="card" style="padding:0 14px;">
-          <div class="discipline-item">
-            <div class="disc-avatar" style="background:var(--red);">⚠</div>
-            <div class="disc-body"><div class="disc-name">Roja · EL CLUB</div><div class="disc-reason">28 Abr · Ofensa al grupo</div></div>
-            <span class="pill pill-red">Roja</span>
-          </div>
-          <div class="discipline-item" style="border-bottom:0;">
-            <div class="disc-avatar" style="background:#C07000;">⚠</div>
-            <div class="disc-body"><div class="disc-name">Amarilla · Equipo BBVA</div><div class="disc-reason">15 Abr · Llegó tarde a la comida</div></div>
-            <span class="pill pill-amber">Amarilla</span>
-          </div>
         </div>
       </div>
     </div>
@@ -1097,15 +845,7 @@
   </section>
 </div> <!-- Fin de #app -->
 
-  <div class="modal-overlay" id="modal-podium-picker">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-title" id="podium-picker-title">Elegir 1º <span class="modal-close" onclick="closeModal('modal-podium-picker')">Cancelar</span></div>
-      <div class="modal-body" id="podium-picker-body">
-        <!-- generado dinámicamente -->
-      </div>
-    </div>
-  </div>
+
 
   <!-- NUEVA RECLAMACIÓN -->
   <div class="modal-overlay" id="modal-new-reclam">
@@ -1653,26 +1393,10 @@
     <div class="modal-title">Mis estadísticas <span class="modal-close" onclick="closeModal('modal-stats')">Cerrar</span></div>
     <div class="modal-body">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-align:center;">Métricas totales · todos los grupos en los que has estado · toca para ver detalle</div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:repeat(1,1fr);gap:6px;text-align:center;margin-bottom:14px;">
         <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('asistidos')">
           <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;">52/57</div>
           <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Asistidos</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('mvps')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--green);">9</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">MVPs</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('trds')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);">2</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">TRDs</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('amarillas')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:#C07000;">1</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Amarillas</div>
-        </div>
-        <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="closeModal('modal-stats');openStatSheet('rojas')">
-          <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;color:var(--red);">0</div>
-          <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Rojas</div>
         </div>
       </div>
       <div class="card" style="padding:0 14px;">
@@ -2004,34 +1728,6 @@
   </div>
 </div>
 
-<!-- Discipline Modal -->
-<div class="modal-overlay" id="modal-discipline">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="disc-modal-title">Sacar tarjeta <span class="modal-close" onclick="closeModal('modal-discipline')">Cancelar</span></div>
-    <div class="modal-body">
-      <div style="margin-bottom:12px;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px;">Seleccionar miembro</div>
-        <div style="display:flex;flex-direction:column;gap:6px;" id="disc-member-list">
-          <div class="card-row" style="border-radius:var(--r);border:1px solid var(--line);padding:10px 12px;" onclick="selectDiscMember(this,'Mario')">
-            <div class="card-content"><div class="card-name" style="font-size:13px;">Mario</div><div class="card-sub">Asistente confirmado · 1 amarilla previa</div></div>
-            <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);"></div>
-          </div>
-          <div class="card-row" style="border-radius:var(--r);border:1px solid var(--line);padding:10px 12px;" onclick="selectDiscMember(this,'Lucas')">
-            <div class="card-content"><div class="card-name" style="font-size:13px;">Lucas</div><div class="card-sub">Asistente confirmado</div></div>
-            <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);"></div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px;">Motivo (obligatorio)</div>
-        <textarea class="text-input" style="border-radius:var(--r);width:100%;height:72px;resize:none;padding:10px 12px;" placeholder="Describe el motivo de la sanción…"></textarea>
-      </div>
-      <button class="btn btn-primary btn-full" onclick="submitSanction()" style="margin-bottom:8px;">Enviar para votación grupal</button>
-      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-discipline')">Cancelar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Add Expense Modal -->
 <div class="modal-overlay" id="modal-expense">
