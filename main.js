@@ -112,12 +112,13 @@ window.openPlan = function openPlan(id) {
   
   // TODO: Check if user attendance is pending by fetching plan_attendance
   updateAttendanceBlink(true);
-  renderTardonList();
   
   // Guardar el ID del plan activo globalmente
   state.currentPlanId = id;
   // Cargar las fotos reales
   loadPlanPhotos(id);
+  // Cargar tarjetas propuestas
+  if (window.loadPlanCards) window.loadPlanCards();
 }
 
 window.openHistorial = function openHistorial() {
@@ -2639,13 +2640,12 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     safeInit('renderGroupList', () => renderGroupList());
     if (window.loadMembers) window.loadMembers();
     if (window.loadPlans) window.loadPlans();
-    if (window.loadRankings) window.loadRankings();
     if (window.loadFeed) window.loadFeed();
     if (window.loadExpenses) window.loadExpenses();
     if (window.loadGroupSettings) window.loadGroupSettings();
+    if (window.loadGroupCards) window.loadGroupCards();
     if (window.initRealtime) window.initRealtime();
     safeInit('renderCalendar', () => renderCalendar());
-    safeInit('renderBote', () => renderBote());
     safeInit('applyAdminVisibility', () => applyAdminVisibility());
     safeInit('initPendingBlink', () => initPendingBlink());
     safeInit('renderRouletteOptions', () => renderRouletteOptions());
@@ -2959,3 +2959,290 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 window.safeInit = function safeInit(label, fn) {
   try { fn(); } catch (e) { console.error('Init error en ' + label + ':', e); }
 }
+
+// ── TARJETAS DEL GRUPO (FASE 2) ──
+
+window.loadGroupCards = async function loadGroupCards() {
+  if (!state.currentGroupId) return;
+  const list = document.getElementById('group-cards-list');
+  if (!list) return;
+
+  const { data, error } = await supabase
+    .from('group_cards')
+    .select('*')
+    .eq('group_id', state.currentGroupId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading group cards:', error);
+    return;
+  }
+
+  state.groupCards = data || []; // Guardamos en state para usar al proponer
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `
+      <div class="card-row" style="cursor:default;">
+        <div class="card-content"><div class="card-name" style="font-size:13px;color:var(--ink3);">No hay tarjetas definidas</div></div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  data.forEach(card => {
+    html += `
+      <div class="card-row" style="cursor:pointer;" onclick="openEditGroupCard('${card.id}')">
+        <div class="card-content">
+          <div class="card-name" style="font-size:13px;font-weight:700;">${card.name}</div>
+          ${card.description ? `<div class="card-sub" style="font-size:11px;color:var(--ink3);">${card.description}</div>` : ''}
+        </div>
+        <div style="width:20px;height:28px;border-radius:4px;background:${card.color};"></div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+};
+
+window.openCreateGroupCard = function openCreateGroupCard() {
+  state.editingCardId = null;
+  document.getElementById('create-card-title').innerHTML = 'Nueva Tarjeta <span class="modal-close" onclick="closeModal(\'modal-create-card\')">Cancelar</span>';
+  document.getElementById('card-name-input').value = '';
+  document.getElementById('card-desc-input').value = '';
+  selectCardColor(document.querySelector('.color-picker-opt'), '#C07000'); // default
+  document.getElementById('modal-create-card').classList.add('open');
+};
+
+window.openEditGroupCard = function openEditGroupCard(cardId) {
+  const card = state.groupCards.find(c => c.id === cardId);
+  if (!card) return;
+  state.editingCardId = cardId;
+  document.getElementById('create-card-title').innerHTML = 'Editar Tarjeta <span class="modal-close" onclick="closeModal(\'modal-create-card\')">Cancelar</span>';
+  document.getElementById('card-name-input').value = card.name;
+  document.getElementById('card-desc-input').value = card.description || '';
+  
+  // Encontrar el color y seleccionarlo
+  const opts = document.querySelectorAll('.color-picker-opt');
+  let selected = false;
+  opts.forEach(opt => {
+    if (opt.getAttribute('onclick').includes(card.color)) {
+      selectCardColor(opt, card.color);
+      selected = true;
+    }
+  });
+  if (!selected) selectCardColor(opts[0], '#C07000');
+
+  document.getElementById('modal-create-card').classList.add('open');
+};
+
+window.selectCardColor = function selectCardColor(el, color) {
+  document.querySelectorAll('.color-picker-opt').forEach(opt => {
+    opt.style.borderColor = 'transparent';
+  });
+  el.style.borderColor = 'var(--ink)';
+  state.selectedCardColor = color;
+};
+
+window.saveGroupCard = async function saveGroupCard() {
+  const name = document.getElementById('card-name-input').value.trim();
+  const desc = document.getElementById('card-desc-input').value.trim();
+  const color = state.selectedCardColor || '#C07000';
+
+  if (!name) {
+    showToast('El nombre de la tarjeta es obligatorio');
+    return;
+  }
+
+  const payload = {
+    group_id: state.currentGroupId,
+    name: name,
+    description: desc,
+    color: color,
+    created_by: state.currentUserId
+  };
+
+  let error;
+  if (state.editingCardId) {
+    const res = await supabase.from('group_cards').update(payload).eq('id', state.editingCardId);
+    error = res.error;
+  } else {
+    const res = await supabase.from('group_cards').insert([payload]);
+    error = res.error;
+  }
+
+  if (error) {
+    console.error('Error saving group card:', error);
+    showToast('Error al guardar la tarjeta');
+    return;
+  }
+
+  closeModal('modal-create-card');
+  showToast('Tarjeta guardada ✓');
+  loadGroupCards();
+};
+
+// ── PROPONER Y VOTAR TARJETAS EN PLANES (FASE 2) ──
+
+window.loadPlanCards = async function loadPlanCards() {
+  if (!state.currentPlanId) return;
+  const list = document.getElementById('plan-cards-list');
+  if (!list) return;
+
+  // Cargar tarjetas asignadas a este plan
+  const { data: cards, error } = await supabase
+    .from('assigned_cards')
+    .select('*, group_cards(*), profiles!assigned_cards_target_user_id_fkey(name), proposer:profiles!assigned_cards_proposed_by_fkey(name)')
+    .eq('plan_id', state.currentPlanId);
+
+  if (error) {
+    console.error('Error loading plan cards:', error);
+    return;
+  }
+
+  // Cargar votos
+  const cardIds = cards.map(c => c.id);
+  const { data: votes } = await supabase
+    .from('assigned_card_votes')
+    .select('*')
+    .in('assigned_card_id', cardIds);
+
+  if (cards.length === 0) {
+    list.innerHTML = `<div style="font-size:11px;color:var(--ink3);text-align:center;">No hay tarjetas propuestas en este plan.</div>`;
+    return;
+  }
+
+  let html = '';
+  cards.forEach(ac => {
+    const cardVotes = (votes || []).filter(v => v.assigned_card_id === ac.id);
+    const favor = cardVotes.filter(v => v.vote === 'favor').length;
+    const contra = cardVotes.filter(v => v.vote === 'contra').length;
+    const totalVotes = favor + contra;
+    const favorPct = totalVotes > 0 ? (favor / totalVotes) * 100 : 0;
+    const contraPct = totalVotes > 0 ? (contra / totalVotes) * 100 : 0;
+    const hasVoted = cardVotes.some(v => v.user_id === state.currentUserId);
+    
+    // Si la tarjeta ya está activa, history o rejected, mostramos estado en vez de botones
+    let voteUI = '';
+    if (ac.status === 'voting') {
+       voteUI = `
+         <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
+           <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','favor')" ${hasVoted ? 'disabled' : ''}>A favor (${favor})</button>
+           <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','contra')" ${hasVoted ? 'disabled' : ''}>En contra (${contra})</button>
+         </div>
+         <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Tu voto es público. Cierra a las 24h.</div>
+       `;
+    } else {
+       const statusText = {
+         'active': 'Aprobada y Activa',
+         'history': 'Historial',
+         'rejected': 'Rechazada'
+       };
+       voteUI = `<div style="font-size:11px;font-weight:700;color:var(--ink2);text-align:center;margin-top:8px;">${statusText[ac.status]}</div>`;
+    }
+
+    html += `
+      <div class="card" style="padding:14px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:24px;height:34px;border-radius:4px;background:${ac.group_cards.color};"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;">${ac.profiles.name} · ${ac.group_cards.name}</div>
+            <div style="font-size:11px;color:var(--ink3);">Propuesto por ${ac.proposer.name}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+          <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
+            <div style="width:${favorPct}%;background:var(--green);"></div>
+            <div style="width:${contraPct}%;background:var(--red);"></div>
+          </div>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">${favor}/${totalVotes}</span>
+        </div>
+        ${voteUI}
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+};
+
+window.openProposeCard = async function openProposeCard() {
+  const selectTarget = document.getElementById('propose-target-input');
+  const selectCard = document.getElementById('propose-card-input');
+  
+  // Llenar asistentes (fallback a state.members si no hay attendees reales aún)
+  let attendees = state.currentPlanAttendees || [];
+  if (attendees.length === 0 && state.members) {
+    attendees = state.members.map(m => ({ user_id: m.id, profiles: { name: m.name } }));
+  }
+  let tHtml = '<option value="">Selecciona un asistente</option>';
+  attendees.forEach(a => {
+    tHtml += `<option value="${a.user_id}">${a.profiles.name}</option>`;
+  });
+  selectTarget.innerHTML = tHtml;
+
+  // Llenar tarjetas del grupo
+  const cards = state.groupCards || [];
+  let cHtml = '<option value="">Selecciona una tarjeta del grupo</option>';
+  cards.forEach(c => {
+    cHtml += `<option value="${c.id}">${c.name}</option>`;
+  });
+  selectCard.innerHTML = cHtml;
+
+  document.getElementById('modal-propose-card').classList.add('open');
+};
+
+window.submitProposeCard = async function submitProposeCard() {
+  const targetId = document.getElementById('propose-target-input').value;
+  const cardId = document.getElementById('propose-card-input').value;
+
+  if (!targetId || !cardId) {
+    showToast('Selecciona a quién y qué tarjeta proponer');
+    return;
+  }
+
+  const { error } = await supabase.from('assigned_cards').insert([{
+    group_id: state.currentGroupId,
+    plan_id: state.currentPlanId,
+    card_id: cardId,
+    target_user_id: targetId,
+    proposed_by: state.currentUserId,
+    status: 'voting'
+  }]);
+
+  if (error) {
+    console.error('Error proposing card:', error);
+    showToast('Error al proponer la tarjeta');
+    return;
+  }
+
+  closeModal('modal-propose-card');
+  showToast('Tarjeta propuesta ✓');
+  loadPlanCards();
+};
+
+window.votePlanCard = async function votePlanCard(assignedCardId, voteType) {
+  const { error } = await supabase.from('assigned_card_votes').insert([{
+    assigned_card_id: assignedCardId,
+    user_id: state.currentUserId,
+    vote: voteType
+  }]);
+
+  if (error) {
+    if (error.code === '23505') showToast('Ya has votado');
+    else showToast('Error al votar');
+    return;
+  }
+
+  showToast('Voto registrado ✓');
+  loadPlanCards();
+};
+
+// ── TARJETAS RECIBIDAS (MEMBER PROFILE) ──
+window.switchMemberCardsTab = function switchMemberCardsTab(el, type) {
+  document.querySelectorAll('#s-member .split-toggle-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mp-cards-actual').style.display = type === 'actual' ? 'block' : 'none';
+  document.getElementById('mp-cards-historial').style.display = type === 'historial' ? 'block' : 'none';
+};
+
+window.memberCardsNav = function memberCardsNav(delta) {
+  showToast('Navegación de historial mockeada');
+};

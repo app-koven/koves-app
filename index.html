@@ -274,8 +274,22 @@
       </button>
     </div>
 
-
-
+    <!-- Tarjetas del Grupo -->
+    <div class="section" id="group-cards-section">
+      <div class="section-head">
+        <span class="section-title">Tarjetas del grupo</span>
+        <span class="section-action" onclick="openCreateGroupCard()">Crear nueva</span>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;">
+        Plantillas de tarjetas que los miembros pueden usar para sancionar comportamientos en los planes.
+      </div>
+      <div class="card" style="padding:0 14px;" id="group-cards-list">
+        <!-- Generado dinámicamente -->
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;color:var(--ink3);">Cargando tarjetas...</div></div>
+        </div>
+      </div>
+    </div>
     <!-- Reglas del grupo (justo debajo del bote) -->
     <div class="section">
       <div class="section-head">
@@ -471,25 +485,20 @@
       </div>
     </div>
 
-    <!-- Disciplina del plan: solo 2 botones árbitro -->
+    <!-- Tarjetas propuestas en este plan -->
     <div class="section">
-      <div class="section-head"><span class="section-title">Disciplina</span><span style="font-size:10px;color:var(--ink3);">Proponer tarjeta a un asistente</span></div>
-      <div class="referee-row" style="margin-bottom:14px;">
-        <div class="referee-btn amber-frame" onclick="showDisciplineModal('amarilla')">
-          <div class="referee-card referee-yellow"></div>
-        </div>
-        <div class="referee-btn red-frame" onclick="showDisciplineModal('roja')">
-          <div class="referee-card referee-red"></div>
-        </div>
-      </div>
-      <!-- Tarjeta activa en este plan, votable porque asististe -->
-      <div id="plan-discipline-list">
+      <div class="section-head"><span class="section-title">Tarjetas del plan</span></div>
+      <button class="btn btn-secondary btn-full" style="margin-bottom:14px;" onclick="openProposeCard()">Proponer tarjeta a un asistente</button>
+      
+      <!-- Lista de tarjetas propuestas -->
+      <div id="plan-cards-list">
+        <!-- Mock de tarjeta propuesta en votación -->
         <div class="card" style="padding:14px;margin-bottom:10px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
+            <div style="width:24px;height:34px;border-radius:4px;background:#C07000;"></div>
             <div style="flex:1;">
-              <div style="font-size:13px;font-weight:700;">Mario · Amarilla</div>
-              <div style="font-size:11px;color:var(--ink3);">Llegó 2 horas tarde · Propuesto por Carlos</div>
+              <div style="font-size:13px;font-weight:700;">Mario · No pagó a tiempo</div>
+              <div style="font-size:11px;color:var(--ink3);">Propuesto por Carlos</div>
             </div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
@@ -499,23 +508,11 @@
             </div>
             <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">5/7</span>
           </div>
-          <div style="display:flex;gap:6px;" id="plan-disc-vote-btns">
-            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanDiscipline(this,'favor')">A favor (5)</button>
-            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanDiscipline(this,'contra')">En contra (2)</button>
+          <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
+            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard(this,'favor')">A favor (5)</button>
+            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard(this,'contra')">En contra (2)</button>
           </div>
           <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Asististe a este plan · Tu voto cuenta para validar la tarjeta</div>
-        </div>
-        <!-- Tarjeta tuya: puedes reclamarla -->
-        <div class="card" style="padding:14px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div class="referee-card referee-yellow" style="width:24px;height:34px;"></div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:700;">Tú · Amarilla</div>
-              <div style="font-size:11px;color:var(--ink3);">No trajiste lo acordado · Propuesto por Ana</div>
-            </div>
-          </div>
-          <button class="btn btn-secondary btn-full" style="font-size:11px;padding:8px;" onclick="openReclamFor('tarjeta','Tu amarilla en este plan')">Reclamar esta tarjeta</button>
-          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Es tu tarjeta · puedes reclamarla explicando el motivo</div>
         </div>
       </div>
     </div>
@@ -568,6 +565,45 @@
         <div class="card" style="padding:10px 6px;cursor:pointer;" onclick="openStatSheet('asistidos')">
           <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;" id="mp-attended">58/64</div>
           <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Asistidos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjetas recibidas: selector Activas / Historial -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Tarjetas recibidas</span></div>
+      <div class="split-toggle">
+        <div class="split-toggle-item active" onclick="switchMemberCardsTab(this,'actual')">Activas</div>
+        <div class="split-toggle-item" onclick="switchMemberCardsTab(this,'historial')">Historial</div>
+      </div>
+      <!-- Activas (≤7 días) -->
+      <div id="mp-cards-actual">
+        <div class="card" style="padding:0 14px;">
+          <div class="discipline-item" style="border-bottom:0;">
+            <div class="disc-avatar" style="background:#C07000;"></div>
+            <div class="disc-body"><div class="disc-name">Llegó 2 horas tarde · EL CLUB</div><div class="disc-reason">Activa 5 días más</div></div>
+            <span class="pill pill-outline">12 May</span>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;">Las tarjetas activas pasan al historial automáticamente a los 7 días de ser aprobadas.</div>
+      </div>
+      <!-- Historial: con scroll de meses -->
+      <div id="mp-cards-historial" style="display:none;">
+        <div class="month-nav" style="margin-bottom:10px;">
+          <button class="month-nav-btn" onclick="memberCardsNav(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="month-nav-label" id="mp-cards-month">Abril 2026</div>
+          <button class="month-nav-btn disabled" id="mp-cards-next" onclick="memberCardsNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="card" style="padding:0 14px;">
+          <div class="discipline-item" style="border-bottom:0;">
+            <div class="disc-avatar" style="background:var(--red);"></div>
+            <div class="disc-body"><div class="disc-name">No pagó a tiempo · EL CLUB</div><div class="disc-reason">Ofensa al grupo</div></div>
+            <span class="pill pill-outline">28 Abr</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1781,6 +1817,58 @@
         Crear plan en este día
       </button>
       <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modal-cal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Group Card Modal -->
+<div class="modal-overlay" id="modal-create-card">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="create-card-title">Nueva Tarjeta <span class="modal-close" onclick="closeModal('modal-create-card')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nombre de la tarjeta</label>
+        <input type="text" class="form-input" id="card-name-input" placeholder="Ej: No pagó a tiempo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color de la tarjeta</label>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <div class="color-picker-opt" style="width:32px;height:32px;border-radius:50%;background:#C07000;cursor:pointer;border:2px solid var(--ink);" onclick="selectCardColor(this, '#C07000')"></div>
+          <div class="color-picker-opt" style="width:32px;height:32px;border-radius:50%;background:var(--red);cursor:pointer;border:2px solid transparent;" onclick="selectCardColor(this, 'var(--red)')"></div>
+          <div class="color-picker-opt" style="width:32px;height:32px;border-radius:50%;background:#007AFF;cursor:pointer;border:2px solid transparent;" onclick="selectCardColor(this, '#007AFF')"></div>
+          <div class="color-picker-opt" style="width:32px;height:32px;border-radius:50%;background:#34C759;cursor:pointer;border:2px solid transparent;" onclick="selectCardColor(this, '#34C759')"></div>
+          <div class="color-picker-opt" style="width:32px;height:32px;border-radius:50%;background:#AF52DE;cursor:pointer;border:2px solid transparent;" onclick="selectCardColor(this, '#AF52DE')"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción (opcional)</label>
+        <textarea class="text-input" id="card-desc-input" style="height:60px;" placeholder="¿Qué significa esta tarjeta?"></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="saveGroupCard()">Guardar tarjeta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Propose Card Modal -->
+<div class="modal-overlay" id="modal-propose-card">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Proponer tarjeta <span class="modal-close" onclick="closeModal('modal-propose-card')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">¿A quién?</label>
+        <select class="form-input" id="propose-target-input">
+          <option value="">Selecciona un asistente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">¿Qué tarjeta?</label>
+        <select class="form-input" id="propose-card-input">
+          <option value="">Selecciona una tarjeta del grupo</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="submitProposeCard()">Enviar propuesta</button>
     </div>
   </div>
 </div>

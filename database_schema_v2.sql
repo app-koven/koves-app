@@ -128,6 +128,36 @@ CREATE TABLE IF NOT EXISTS public.expense_splits (
 );
 
 
+CREATE TABLE IF NOT EXISTS public.group_cards (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
+  description text,
+  color text DEFAULT '#C07000',
+  created_by uuid REFERENCES public.profiles(id),
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.assigned_cards (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  plan_id uuid REFERENCES public.plans(id) ON DELETE SET NULL,
+  card_id uuid REFERENCES public.group_cards(id) ON DELETE CASCADE NOT NULL,
+  target_user_id uuid REFERENCES public.profiles(id) NOT NULL,
+  proposed_by uuid REFERENCES public.profiles(id) NOT NULL,
+  status text DEFAULT 'voting' CHECK (status IN ('voting', 'active', 'history', 'rejected')),
+  expires_at timestamptz,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.assigned_card_votes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  assigned_card_id uuid REFERENCES public.assigned_cards(id) ON DELETE CASCADE NOT NULL,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  vote text NOT NULL CHECK (vote IN ('favor', 'contra')),
+  created_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(assigned_card_id, user_id)
+);
 
 CREATE TABLE IF NOT EXISTS public.messages (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -280,7 +310,20 @@ CREATE POLICY "Debtor or payer can update" ON public.expense_splits FOR UPDATE U
   )
 );
 
+ALTER TABLE public.group_cards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Group cards viewable by members" ON public.group_cards FOR SELECT USING (true);
+CREATE POLICY "Members can create group cards" ON public.group_cards FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Members can update group cards" ON public.group_cards FOR UPDATE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Members can delete group cards" ON public.group_cards FOR DELETE USING (auth.uid() IS NOT NULL);
 
+ALTER TABLE public.assigned_cards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Assigned cards viewable" ON public.assigned_cards FOR SELECT USING (true);
+CREATE POLICY "Members can propose cards" ON public.assigned_cards FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "System can update assigned cards" ON public.assigned_cards FOR UPDATE USING (auth.uid() IS NOT NULL);
+
+ALTER TABLE public.assigned_card_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Card votes viewable" ON public.assigned_card_votes FOR SELECT USING (true);
+CREATE POLICY "Users can vote on cards" ON public.assigned_card_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Messages viewable by participants" ON public.messages FOR SELECT USING (
