@@ -1042,7 +1042,99 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
     }
     
     state.expenses = expenses || [];
-    renderBote();
+    renderExpenses();
+  }
+
+  window.renderExpenses = function renderExpenses() {
+    let totalGroup = 0;
+    let paidByMe = 0;
+    let owedToMe = 0;
+    let oweToOthers = 0;
+
+    const me = state.currentUserId;
+
+    state.expenses.forEach(exp => {
+      totalGroup += exp.amount;
+      if (exp.paid_by === me) {
+        paidByMe += exp.amount;
+      }
+      
+      const splits = exp.expense_splits || [];
+      splits.forEach(split => {
+        if (split.user_id === me && exp.paid_by !== me && split.status !== 'paid') {
+          oweToOthers += split.amount;
+        }
+        if (exp.paid_by === me && split.user_id !== me && split.status !== 'paid') {
+          owedToMe += split.amount;
+        }
+      });
+    });
+
+    const balance = paidByMe - oweToOthers;
+
+    document.getElementById('kpi-exp-total').textContent = totalGroup.toFixed(2) + '€';
+    document.getElementById('kpi-exp-paid').textContent = paidByMe.toFixed(2) + '€';
+    document.getElementById('kpi-exp-owed').textContent = owedToMe.toFixed(2) + '€';
+    document.getElementById('kpi-exp-owe').textContent = oweToOthers.toFixed(2) + '€';
+    
+    const balEl = document.getElementById('kpi-exp-balance');
+    balEl.textContent = (balance > 0 ? '+' : '') + balance.toFixed(2) + '€';
+    if (balance > 0) balEl.style.color = 'var(--green)';
+    else if (balance < 0) balEl.style.color = 'var(--red)';
+    else balEl.style.color = 'var(--ink)';
+
+    // Popular listas de deudas individuales
+    // 1. Te deben
+    const owedByMap = {};
+    // 2. Tú debes
+    const oweToMap = {};
+
+    state.expenses.forEach(exp => {
+      const splits = exp.expense_splits || [];
+      splits.forEach(split => {
+        if (split.status !== 'paid') {
+          if (exp.paid_by === me && split.user_id !== me) {
+            owedByMap[split.user_id] = (owedByMap[split.user_id] || 0) + split.amount;
+          }
+          if (split.user_id === me && exp.paid_by !== me) {
+            oweToMap[exp.paid_by] = (oweToMap[exp.paid_by] || 0) + split.amount;
+          }
+        }
+      });
+    });
+
+    const getProfileName = (id) => {
+      const m = state.members.find(x => x.id === id);
+      return m ? m.name : 'Usuario';
+    };
+
+    const cTeDeben = document.getElementById('pendientes-te-deben');
+    if (Object.keys(owedByMap).length === 0) {
+      cTeDeben.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay pagos pendientes a tu favor.</div>';
+    } else {
+      let html = '';
+      for (const [uid, amount] of Object.entries(owedByMap)) {
+        html += `<div class="card" style="padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:600;">${getProfileName(uid)} te debe</div>
+          <div style="font-size:15px;font-weight:900;color:var(--green);">+${amount.toFixed(2)}€</div>
+        </div>`;
+      }
+      cTeDeben.innerHTML = html;
+    }
+
+    const cTuDebes = document.getElementById('pendientes-tu-debes');
+    if (Object.keys(oweToMap).length === 0) {
+      cTuDebes.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No tienes deudas pendientes.</div>';
+    } else {
+      let html = '';
+      for (const [uid, amount] of Object.entries(oweToMap)) {
+        html += `<div class="card" style="padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;font-weight:600;">Debes a ${getProfileName(uid)}</div>
+          <div style="font-size:15px;font-weight:900;color:var(--red);">${amount.toFixed(2)}€</div>
+        </div>`;
+      }
+      cTuDebes.innerHTML = html;
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -2832,7 +2924,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     
     const { data: plans, error } = await supabase
       .from('plans')
-      .select('*')
+      .select('*, plan_attendance(*)')
       .eq('group_id', state.currentGroupId)
       .order('event_date', { ascending: true });
       
@@ -2843,28 +2935,38 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     
     state.plans = plans || [];
     
-    // Calcular KPIs
+    // Calcular KPIs reales de MI cuenta
     const now = new Date();
     let pendingCount = 0;
     let activeCount = 0;
     let historicCount = 0;
     let totalFuture = 0;
     let totalAll = state.plans.length;
+    let totalPast = 0;
 
     state.plans.forEach(p => {
       const isPast = new Date(p.event_date) < now;
+      const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
+      const myStatus = att ? att.status : null; // 'voy', 'novoy', 'quizas', 'tarde'
+
       if (isPast) {
-        historicCount++;
+        totalPast++;
+        if (myStatus === 'voy' || myStatus === 'tarde') {
+          historicCount++;
+        }
       } else {
         totalFuture++;
-        if (p.status === 'active') activeCount++;
-        else pendingCount++;
+        if (myStatus === 'voy' || myStatus === 'tarde') {
+          activeCount++;
+        } else if (!myStatus || myStatus === 'quizas') {
+          pendingCount++;
+        }
       }
     });
 
     const pendingPct = totalFuture ? Math.round((pendingCount / totalFuture) * 100) : 0;
     const activePct = totalFuture ? Math.round((activeCount / totalFuture) * 100) : 0;
-    const histPct = totalAll ? Math.round((historicCount / totalAll) * 100) : 0;
+    const histPct = totalPast ? Math.round((historicCount / totalPast) * 100) : 0;
 
     const el = (id) => document.getElementById(id);
     if (el('kpi-pending-num')) el('kpi-pending-num').textContent = pendingCount;
@@ -2875,32 +2977,53 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (el('kpi-active-pct')) el('kpi-active-pct').textContent = activePct + '%';
     if (el('kpi-active-fill')) el('kpi-active-fill').style.width = activePct + '%';
 
-    if (el('kpi-hist-num')) el('kpi-hist-num').textContent = `${historicCount}/${totalAll}`;
+    if (el('kpi-hist-num')) el('kpi-hist-num').textContent = `${historicCount}/${totalPast}`;
     if (el('kpi-hist-pct')) el('kpi-hist-pct').textContent = histPct + '%';
     if (el('kpi-hist-fill')) el('kpi-hist-fill').style.width = histPct + '%';
     
-    const activosHTML = state.plans.map(p => {
+    let activosHTML = '';
+    let historialHTML = '';
+    
+    state.plans.forEach(p => {
       const d = new Date(p.event_date);
+      const isPast = d < now;
       const dateStr = d.toLocaleString('es-ES', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-      return `
-        <div class="card pending-border">
-          <div class="card-row" onclick="openPlan('${p.id}')">
+      
+      const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
+      const myStatus = att ? att.status : null;
+      let attBadge = `<span class="attendance-tag pendiente">${p.status === 'active' ? 'Confirmado' : 'Propuesto'}</span>`;
+      if (myStatus === 'voy' || myStatus === 'tarde') attBadge = `<span class="attendance-tag voy">✓ Voy</span>`;
+      else if (myStatus === 'novoy') attBadge = `<span class="attendance-tag novoy">✗ No voy</span>`;
+
+      const html = `
+        <div class="card pending-border" style="margin-bottom:8px;">
+          <div class="card-row" onclick="openPlan('${p.id}')" style="cursor:pointer;">
             <div class="card-content">
               <div class="card-label">${dateStr}</div>
               <div class="card-name">${p.title}</div>
               <div class="card-sub card-sub-1line">${p.description || 'Sin descripción'}</div>
             </div>
             <div class="card-right">
-              <span class="attendance-tag pendiente">${p.status === 'active' ? 'Confirmado' : 'Propuesto'}</span>
+              ${attBadge}
             </div>
           </div>
         </div>
       `;
-    }).join('');
+      if (isPast) {
+        historialHTML += html;
+      } else {
+        activosHTML += html;
+      }
+    });
+
+    const listActivos = document.getElementById('plans-activos-list');
+    if (listActivos) {
+      listActivos.innerHTML = activosHTML || '<div class="notice" style="margin-bottom:16px;">No hay planes activos. ¡Crea el primero!</div>';
+    }
     
-    const list = document.getElementById('plans-activos-list');
-    if (list) {
-      list.innerHTML = activosHTML || '<div class="notice" style="margin-bottom:16px;">No hay planes en este grupo. ¡Crea el primero!</div>';
+    const listHistorial = document.getElementById('plans-historial-list');
+    if (listHistorial) {
+      listHistorial.innerHTML = historialHTML || '<div style="text-align:center;font-size:12px;color:var(--ink3);margin-top:16px;">No hay historial de planes.</div>';
     }
   }
 
