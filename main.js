@@ -861,6 +861,9 @@ window.openMemberProfile = function openMemberProfile(id) {
     const today = new Date();
     mpMonth.textContent = `${meses[today.getMonth()]} ${today.getFullYear()} · Mes actual · Todos los grupos`;
   }
+  
+  if (window.loadMemberLabels) window.loadMemberLabels(id);
+  
   showScreen('member');
 }
 
@@ -2644,6 +2647,8 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (window.loadExpenses) window.loadExpenses();
     if (window.loadGroupSettings) window.loadGroupSettings();
     if (window.loadGroupCards) window.loadGroupCards();
+    if (window.loadGroupLabels) window.loadGroupLabels();
+    if (window.loadWeeklyVotingStatus) window.loadWeeklyVotingStatus();
     if (window.initRealtime) window.initRealtime();
     safeInit('renderCalendar', () => renderCalendar());
     safeInit('applyAdminVisibility', () => applyAdminVisibility());
@@ -3246,3 +3251,352 @@ window.switchMemberCardsTab = function switchMemberCardsTab(el, type) {
 window.memberCardsNav = function memberCardsNav(delta) {
   showToast('Navegación de historial mockeada');
 };
+
+
+// ── ETIQUETAS SEMANALES (FASE 3) ──
+
+window.loadGroupLabels = async function loadGroupLabels() {
+  if (!state.currentGroupId) return;
+  const list = document.getElementById('group-labels-list');
+  if (!list) return;
+
+  const { data, error } = await supabase
+    .from('group_labels')
+    .select('*')
+    .eq('group_id', state.currentGroupId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error loading group labels:', error);
+    return;
+  }
+
+  state.groupLabels = data || [];
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `<span style="font-size:13px;color:var(--ink3);">No hay etiquetas definidas</span>`;
+    return;
+  }
+
+  let html = '';
+  data.forEach(label => {
+    html += `
+      <div style="background:var(--surface2);border:1px solid var(--line);border-radius:16px;padding:6px 12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;" onclick="openEditGroupLabel('${label.id}')">
+        <span style="font-size:16px;">${label.emoji}</span>
+        <span>${label.name}</span>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+};
+
+window.openCreateGroupLabel = function openCreateGroupLabel() {
+  state.editingLabelId = null;
+  document.getElementById('create-label-title').innerHTML = 'Nueva Etiqueta <span class="modal-close" onclick="closeModal(\'modal-create-label\')">Cancelar</span>';
+  document.getElementById('label-emoji-input').value = '';
+  document.getElementById('label-name-input').value = '';
+  document.getElementById('modal-create-label').classList.add('open');
+};
+
+window.openEditGroupLabel = function openEditGroupLabel(labelId) {
+  const label = state.groupLabels.find(l => l.id === labelId);
+  if (!label) return;
+  state.editingLabelId = labelId;
+  document.getElementById('create-label-title').innerHTML = 'Editar Etiqueta <span class="modal-close" onclick="closeModal(\'modal-create-label\')">Cancelar</span>';
+  document.getElementById('label-emoji-input').value = label.emoji;
+  document.getElementById('label-name-input').value = label.name;
+  document.getElementById('modal-create-label').classList.add('open');
+};
+
+window.saveGroupLabel = async function saveGroupLabel() {
+  const emoji = document.getElementById('label-emoji-input').value.trim();
+  const name = document.getElementById('label-name-input').value.trim();
+
+  if (!emoji || !name) {
+    showToast('El emoji y el nombre son obligatorios');
+    return;
+  }
+
+  const payload = {
+    group_id: state.currentGroupId,
+    name: name,
+    emoji: emoji,
+    created_by: state.currentUserId
+  };
+
+  let error;
+  if (state.editingLabelId) {
+    const res = await supabase.from('group_labels').update(payload).eq('id', state.editingLabelId);
+    error = res.error;
+  } else {
+    const res = await supabase.from('group_labels').insert([payload]);
+    error = res.error;
+  }
+
+  if (error) {
+    console.error('Error saving group label:', error);
+    showToast('Error al guardar la etiqueta');
+    return;
+  }
+
+  closeModal('modal-create-label');
+  showToast('Etiqueta guardada ✓');
+  loadGroupLabels();
+};
+
+window.loadWeeklyVotingStatus = async function loadWeeklyVotingStatus() {
+  if (!state.currentGroupId) return;
+  const statusText = document.getElementById('voting-status-text');
+  const actionBtn = document.getElementById('voting-action-btn');
+  if (!statusText || !actionBtn) return;
+
+  const { data, error } = await supabase
+    .from('weekly_votings')
+    .select('*')
+    .eq('group_id', state.currentGroupId)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error('Error loading voting status:', error);
+    return;
+  }
+
+  const currentVoting = data && data.length > 0 ? data[0] : null;
+  state.currentVoting = currentVoting;
+
+  if (currentVoting) {
+    statusText.textContent = 'La votación semanal está abierta. ¡Vota ahora!';
+    statusText.style.color = 'var(--green)';
+    statusText.style.opacity = '1';
+    actionBtn.textContent = 'Ir a Votar';
+    actionBtn.onclick = openWeeklyVoting;
+  } else {
+    statusText.textContent = 'La votación está cerrada.';
+    statusText.style.color = 'var(--bg)';
+    statusText.style.opacity = '0.8';
+    actionBtn.textContent = 'Abrir votación (Admin)';
+    actionBtn.onclick = openAdminVoting;
+  }
+};
+
+window.openAdminVoting = async function openAdminVoting() {
+  // Solo admins pueden abrir votaciones. Por ahora lo abrimos directamente.
+  const { data, error } = await supabase
+    .from('weekly_votings')
+    .insert([{ group_id: state.currentGroupId, status: 'open' }])
+    .select();
+
+  if (error) {
+    showToast('Error al abrir votación');
+    return;
+  }
+  
+  showToast('Votación abierta ✓');
+  loadWeeklyVotingStatus();
+};
+
+window.openWeeklyVoting = async function openWeeklyVoting() {
+  if (!state.currentVoting) return;
+
+  const container = document.getElementById('voting-labels-container');
+  const labels = state.groupLabels || [];
+  const members = state.members || [];
+
+  if (labels.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:20px;">El grupo no tiene etiquetas creadas.</div>';
+    document.getElementById('voting-submit-container').style.display = 'none';
+    showScreen('voting');
+    return;
+  }
+
+  // Cargar mis votos anteriores si los hay
+  const { data: myVotes } = await supabase
+    .from('weekly_votes')
+    .select('*')
+    .eq('voting_id', state.currentVoting.id)
+    .eq('voter_id', state.currentUserId);
+
+  let html = '';
+  labels.forEach(label => {
+    const existingVote = (myVotes || []).find(v => v.label_id === label.id);
+    let optionsHtml = '<option value="">Ninguno</option>';
+    members.forEach(m => {
+      const selected = (existingVote && existingVote.target_user_id === m.id) ? 'selected' : '';
+      optionsHtml += `<option value="${m.id}" ${selected}>${m.name}</option>`;
+    });
+
+    html += `
+      <div class="card" style="padding:14px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="font-size:28px;">${label.emoji}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:800;">${label.name}</div>
+          </div>
+        </div>
+        <select class="form-input voting-select" data-label-id="${label.id}">
+          ${optionsHtml}
+        </select>
+      </div>
+    `;
+  });
+
+  html += `
+    <button class="btn btn-secondary btn-full" style="margin-top:20px;" onclick="closeWeeklyVotingAdmin()">Cerrar Votación (Admin)</button>
+  `;
+
+  container.innerHTML = html;
+  document.getElementById('voting-submit-container').style.display = 'block';
+  showScreen('voting');
+};
+
+window.submitWeeklyVotes = async function submitWeeklyVotes() {
+  if (!state.currentVoting) return;
+
+  const selects = document.querySelectorAll('.voting-select');
+  const votesToInsert = [];
+
+  selects.forEach(select => {
+    const targetUserId = select.value;
+    const labelId = select.getAttribute('data-label-id');
+    if (targetUserId) {
+      votesToInsert.push({
+        voting_id: state.currentVoting.id,
+        label_id: labelId,
+        voter_id: state.currentUserId,
+        target_user_id: targetUserId
+      });
+    }
+  });
+
+  if (votesToInsert.length === 0) {
+    showToast('No has votado a nadie');
+    return;
+  }
+
+  // Primero borrar mis votos anteriores en esta votación
+  await supabase
+    .from('weekly_votes')
+    .delete()
+    .eq('voting_id', state.currentVoting.id)
+    .eq('voter_id', state.currentUserId);
+
+  // Insertar nuevos votos
+  const { error } = await supabase.from('weekly_votes').insert(votesToInsert);
+
+  if (error) {
+    console.error('Error saving votes:', error);
+    showToast('Error al guardar votos');
+  } else {
+    showToast('Votos enviados ✓');
+    goBack();
+  }
+};
+
+window.closeWeeklyVotingAdmin = async function closeWeeklyVotingAdmin() {
+  if (!state.currentVoting) return;
+
+  // 1. Marcar como cerrada
+  const { error: updateErr } = await supabase
+    .from('weekly_votings')
+    .update({ status: 'closed', closed_at: new Date().toISOString() })
+    .eq('id', state.currentVoting.id);
+
+  if (updateErr) {
+    showToast('Error al cerrar la votación');
+    return;
+  }
+
+  // 2. Calcular ganadores
+  const { data: allVotes } = await supabase
+    .from('weekly_votes')
+    .select('*')
+    .eq('voting_id', state.currentVoting.id);
+
+  if (allVotes && allVotes.length > 0) {
+    const labels = state.groupLabels || [];
+    const awarded = [];
+
+    labels.forEach(label => {
+      const votesForLabel = allVotes.filter(v => v.label_id === label.id);
+      if (votesForLabel.length > 0) {
+        // Contar votos por usuario
+        const voteCounts = {};
+        votesForLabel.forEach(v => {
+          voteCounts[v.target_user_id] = (voteCounts[v.target_user_id] || 0) + 1;
+        });
+
+        // Encontrar el ganador (o ganadores en caso de empate, para simplificar cogemos el primero)
+        let winnerId = null;
+        let maxVotes = 0;
+        for (const [uid, count] of Object.entries(voteCounts)) {
+          if (count > maxVotes) {
+            maxVotes = count;
+            winnerId = uid;
+          }
+        }
+
+        if (winnerId) {
+          awarded.push({
+            user_id: winnerId,
+            group_id: state.currentGroupId,
+            label_id: label.id,
+            voting_id: state.currentVoting.id
+          });
+        }
+      }
+    });
+
+    if (awarded.length > 0) {
+      await supabase.from('awarded_labels').insert(awarded);
+    }
+  }
+
+  showToast('Votación cerrada ✓ Resultados publicados');
+  goBack();
+  loadWeeklyVotingStatus();
+};
+
+window.loadMemberLabels = async function loadMemberLabels(memberId) {
+  const list = document.getElementById('mp-labels-list');
+  if (!list) return;
+
+  const { data, error } = await supabase
+    .from('awarded_labels')
+    .select('*, group_labels(emoji, name)')
+    .eq('user_id', memberId)
+    .eq('group_id', state.currentGroupId);
+
+  if (error) {
+    console.error('Error loading member labels:', error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `<span style="font-size:11px;color:var(--ink3);">No ha ganado ninguna etiqueta en este grupo aún.</span>`;
+    return;
+  }
+
+  // Agrupar por etiqueta
+  const counts = {};
+  data.forEach(row => {
+    const lbl = row.group_labels;
+    if (!lbl) return;
+    const key = lbl.name;
+    if (!counts[key]) counts[key] = { emoji: lbl.emoji, name: lbl.name, count: 0 };
+    counts[key].count++;
+  });
+
+  let html = '';
+  Object.values(counts).forEach(c => {
+    html += `
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 10px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:18px;">${c.emoji}</span>
+        <span style="font-size:12px;font-weight:700;">x${c.count}</span>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+};
+

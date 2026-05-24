@@ -159,6 +159,42 @@ CREATE TABLE IF NOT EXISTS public.assigned_card_votes (
   UNIQUE(assigned_card_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.group_labels (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
+  emoji text NOT NULL,
+  created_by uuid REFERENCES public.profiles(id),
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.weekly_votings (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  status text DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+  created_at timestamptz DEFAULT now() NOT NULL,
+  closed_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS public.weekly_votes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  voting_id uuid REFERENCES public.weekly_votings(id) ON DELETE CASCADE NOT NULL,
+  label_id uuid REFERENCES public.group_labels(id) ON DELETE CASCADE NOT NULL,
+  voter_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  target_user_id uuid REFERENCES public.profiles(id) NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(voting_id, label_id, voter_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.awarded_labels (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  label_id uuid REFERENCES public.group_labels(id) ON DELETE CASCADE NOT NULL,
+  voting_id uuid REFERENCES public.weekly_votings(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS public.messages (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE,
@@ -324,6 +360,25 @@ CREATE POLICY "System can update assigned cards" ON public.assigned_cards FOR UP
 ALTER TABLE public.assigned_card_votes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Card votes viewable" ON public.assigned_card_votes FOR SELECT USING (true);
 CREATE POLICY "Users can vote on cards" ON public.assigned_card_votes FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE public.group_labels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Group labels viewable by members" ON public.group_labels FOR SELECT USING (true);
+CREATE POLICY "Members can create group labels" ON public.group_labels FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Members can update group labels" ON public.group_labels FOR UPDATE USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Members can delete group labels" ON public.group_labels FOR DELETE USING (auth.uid() IS NOT NULL);
+
+ALTER TABLE public.weekly_votings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Votings viewable by members" ON public.weekly_votings FOR SELECT USING (true);
+CREATE POLICY "Admins can create votings" ON public.weekly_votings FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins can update votings" ON public.weekly_votings FOR UPDATE USING (auth.uid() IS NOT NULL);
+
+ALTER TABLE public.weekly_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Votes viewable by members" ON public.weekly_votes FOR SELECT USING (true);
+CREATE POLICY "Users can vote" ON public.weekly_votes FOR INSERT WITH CHECK (auth.uid() = voter_id);
+
+ALTER TABLE public.awarded_labels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Awarded labels viewable" ON public.awarded_labels FOR SELECT USING (true);
+CREATE POLICY "System can award labels" ON public.awarded_labels FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Messages viewable by participants" ON public.messages FOR SELECT USING (

@@ -274,6 +274,30 @@
       </button>
     </div>
 
+    <!-- Votación Semanal -->
+    <div class="section" id="weekly-voting-section">
+      <div class="card" style="padding:14px;background:var(--ink);color:var(--bg);text-align:center;">
+        <div style="font-size:16px;font-weight:900;margin-bottom:4px;">Votación Semanal</div>
+        <div style="font-size:11px;color:var(--bg);opacity:0.8;margin-bottom:12px;" id="voting-status-text">La votación está cerrada.</div>
+        <button class="btn" style="background:var(--bg);color:var(--ink);width:100%;" id="voting-action-btn" onclick="openWeeklyVoting()">Abrir votación (Admin)</button>
+      </div>
+    </div>
+
+    <!-- Etiquetas del Grupo -->
+    <div class="section" id="group-labels-section">
+      <div class="section-head">
+        <span class="section-title">Etiquetas Semanales</span>
+        <span class="section-action" onclick="openCreateGroupLabel()">Crear nueva</span>
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;">
+        Categorías que se votan cada semana (ej: "Más borracho", "Mejor outfit").
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;" id="group-labels-list">
+        <!-- Generado dinámicamente -->
+        <span style="font-size:13px;color:var(--ink3);">Cargando etiquetas...</span>
+      </div>
+    </div>
+
     <!-- Tarjetas del Grupo -->
     <div class="section" id="group-cards-section">
       <div class="section-head">
@@ -546,6 +570,29 @@
 
   </section>
 
+  <!-- ═══════ SCREEN: WEEKLY VOTING ═══════ -->
+  <section class="screen" id="s-voting">
+    <div class="header">
+      <div class="back-btn" onclick="goBack()"><span class="back-arrow">←</span> Grupo</div>
+      <div class="header-title">Votación Semanal</div>
+      <div style="width:50px;"></div>
+    </div>
+    <div class="page-hero" style="padding-top:10px;">
+      <div class="hero-label">Semana actual</div>
+      <div class="hero-sub" style="margin-top:4px;">Asigna estas etiquetas a los miembros del grupo según lo ocurrido en los planes de esta semana.</div>
+    </div>
+    
+    <div class="section" id="voting-labels-container" style="padding-bottom:100px;">
+      <!-- Generado dinámicamente -->
+      <div style="font-size:13px;color:var(--ink3);text-align:center;">Cargando...</div>
+    </div>
+
+    <!-- Botón flotante para guardar votos -->
+    <div style="position:fixed;bottom:20px;left:0;right:0;max-width:430px;margin:0 auto;padding:0 18px;z-index:100;" id="voting-submit-container">
+      <button class="btn btn-primary btn-full" onclick="submitWeeklyVotes()">Enviar mis votos</button>
+    </div>
+  </section>
+
   <!-- ═══════ SCREEN: MEMBER PROFILE ═══════ -->
   <section class="screen" id="s-member">
     <div class="member-profile-header" style="position:relative;">
@@ -568,7 +615,18 @@
         </div>
       </div>
     </div>
-
+    <!-- Vitrina de Etiquetas Semanales -->
+    <div class="section">
+      <div class="section-head"><span class="section-title">Vitrina de Etiquetas</span></div>
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.4;">
+        Etiquetas semanales ganadas en votaciones del grupo.
+      </div>
+      <div class="card" style="padding:14px;">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;" id="mp-labels-list">
+          <span style="font-size:11px;color:var(--ink3);">Cargando etiquetas...</span>
+        </div>
+      </div>
+    </div>
     <!-- Tarjetas recibidas: selector Activas / Historial -->
     <div class="section">
       <div class="section-head"><span class="section-title">Tarjetas recibidas</span></div>
@@ -1848,6 +1906,25 @@
       <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="saveGroupCard()">Guardar tarjeta</button>
     </div>
   </div>
+
+<!-- Create/Edit Group Label Modal -->
+<div class="modal-overlay" id="modal-create-label">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="create-label-title">Nueva Etiqueta <span class="modal-close" onclick="closeModal('modal-create-label')">Cancelar</span></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Emoji representativo</label>
+        <input type="text" class="form-input" id="label-emoji-input" placeholder="Ej: 🍻" maxlength="2" style="font-size:24px;text-align:center;width:60px;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre de la etiqueta</label>
+        <input type="text" class="form-input" id="label-name-input" placeholder="Ej: Más borracho">
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="saveGroupLabel()">Guardar etiqueta</button>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- Propose Card Modal -->
