@@ -402,28 +402,21 @@ window.showToast = function showToast(msg) {
    USUARIO Y CUENTAS (estilo Instagram)
    ════════════════════════════════════════════════════════════════ */
 
-window.openUserSheet = function openUserSheet() {
+window.openUserSheet = async function openUserSheet() {
   if (!state.isLoggedIn) {
     document.getElementById('modal-auth').classList.add('open');
     return;
   }
-  // Actualizar header del sheet con el usuario actual
-  const acc = state.accounts.find(a => a.id === state.currentUserId);
-  if (acc) {
-    document.getElementById('us-avatar').textContent = acc.initials;
-    document.getElementById('us-avatar').style.background = acc.avatarColor;
-    document.getElementById('us-name').textContent = acc.name;
-    document.getElementById('us-handle').textContent = acc.handle;
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', state.currentUserId).single();
+  if (profile) {
+    const fullName = profile.full_name || profile.username || 'Usuario';
+    const initials = (fullName.substring(0, 2)).toUpperCase();
+    document.getElementById('us-avatar').textContent = initials;
+    document.getElementById('us-avatar').style.background = profile.avatar_url || '#0A0A0A';
+    document.getElementById('us-name').textContent = fullName;
+    document.getElementById('us-handle').textContent = profile.username ? '@' + profile.username : '';
   }
   document.getElementById('modal-user').classList.add('open');
-}
-
-window.openSwitchAccount = function openSwitchAccount() {
-  closeModal('modal-user');
-  setTimeout(() => {
-    renderAccountList();
-    document.getElementById('modal-switch').classList.add('open');
-  }, 200);
 }
 
 window.renderAccountList = function renderAccountList() {
@@ -497,34 +490,28 @@ window.confirmLogout = function confirmLogout() {
   }, 200);
 }
 
-window.doLogout = function doLogout() {
-  // Quitar la cuenta actual
-  state.accounts = state.accounts.filter(a => a.id !== state.currentUserId);
-  if (state.accounts.length === 0) {
-    // Re-añadir la cuenta por defecto para que no se quede vacío en demo
-    state.accounts = [{ id: 'tu', name: 'Tu cuenta', handle: '@tu_usuario', initials: 'TU', avatarColor: '#0A0A0A' }];
-  }
-  state.currentUserId = state.accounts[0].id;
-  const acc = state.accounts[0];
-  document.getElementById('hdr-user-avatar').textContent = acc.initials;
-  document.getElementById('hdr-user-avatar').style.background = acc.avatarColor;
+window.doLogout = async function doLogout() {
+  await supabase.auth.signOut();
   closeModal('modal-logout');
   showToast('Sesión cerrada ✓');
+  window.location.reload();
 }
 
 /* ════════════════════════════════════════════════════════════════
    PERFIL DE USUARIO
    ════════════════════════════════════════════════════════════════ */
 
-window.openEditProfile = function openEditProfile() {
+window.openEditProfile = async function openEditProfile() {
   closeModal('modal-user');
+  const { data: acc } = await supabase.from('profiles').select('*').eq('id', state.currentUserId).single();
   setTimeout(() => {
-    const acc = state.accounts.find(a => a.id === state.currentUserId);
     if (acc) {
-      document.getElementById('ep-avatar').textContent = acc.initials;
-      document.getElementById('ep-avatar').style.background = acc.avatarColor;
-      document.getElementById('ep-name').value = acc.name === 'Tu cuenta' ? '' : acc.name;
-      document.getElementById('ep-handle').value = acc.handle.replace('@', '');
+      const fullName = acc.full_name || acc.username || 'Usuario';
+      const initials = (fullName.substring(0, 2)).toUpperCase();
+      document.getElementById('ep-avatar').textContent = initials;
+      document.getElementById('ep-avatar').style.background = acc.avatar_url || '#0A0A0A';
+      document.getElementById('ep-name').value = acc.full_name || '';
+      document.getElementById('ep-handle').value = acc.username || '';
       document.getElementById('ep-phone').value = acc.phone || '';
       document.getElementById('ep-bio').value = acc.bio || '';
     }
@@ -533,7 +520,6 @@ window.openEditProfile = function openEditProfile() {
 }
 
 window.submitEditProfile = async function submitEditProfile() {
-  const acc = state.accounts.find(a => a.id === state.currentUserId);
   const newName = document.getElementById('ep-name').value.trim();
   const newHandle = document.getElementById('ep-handle').value.trim().replace('@', '');
   const newPhone = document.getElementById('ep-phone').value.trim();
@@ -1046,19 +1032,24 @@ window.submitRules = async function submitRules() {
   if (!state.currentGroupId) return;
   const yellowAmount = parseFloat(document.getElementById('rules-yellow-amount').value) || 2;
   const redAmount = parseFloat(document.getElementById('rules-red-amount').value) || 10;
+  const privacy = document.getElementById('rules-privacy') ? document.getElementById('rules-privacy').value : 'private';
+  const allowInvites = document.getElementById('rules-allow-invites') ? document.getElementById('rules-allow-invites').value : 'all';
 
   try {
     const { error } = await supabase
       .from('group_settings')
       .update({
         yellow_card_amount: yellowAmount,
-        red_card_amount: redAmount
+        red_card_amount: redAmount,
+        privacy: privacy,
+        allow_invites: allowInvites
       })
       .eq('group_id', state.currentGroupId);
 
     if (error) throw error;
 
-    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount };
+    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount, privacy: privacy, allow_invites: allowInvites };
+    loadGroupSettings();
     closeModal('modal-rules');
     showToast('Reglas guardadas ✓');
   } catch (err) {
@@ -1079,8 +1070,14 @@ window.loadGroupSettings = async function loadGroupSettings() {
     console.error('Error loading settings:', error);
     return;
   }
-  state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10 };
+  state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10, privacy: 'private', allow_invites: 'all' };
   
+  // Set values in modal
+  if (document.getElementById('rules-yellow-amount')) document.getElementById('rules-yellow-amount').value = state.groupSettings.yellow_card_amount;
+  if (document.getElementById('rules-red-amount')) document.getElementById('rules-red-amount').value = state.groupSettings.red_card_amount;
+  if (document.getElementById('rules-privacy')) document.getElementById('rules-privacy').value = state.groupSettings.privacy || 'private';
+  if (document.getElementById('rules-allow-invites')) document.getElementById('rules-allow-invites').value = state.groupSettings.allow_invites || 'all';
+
   // Render rules
   const list = document.getElementById('rules-list');
   if (list) {
@@ -1089,6 +1086,18 @@ window.loadGroupSettings = async function loadGroupSettings() {
         <div class="card-content">
           <div class="card-name" style="font-size:13px;">Bote mensual</div>
           <div class="card-sub">Amarilla: ${state.groupSettings.yellow_card_amount}€ · Roja: ${state.groupSettings.red_card_amount}€</div>
+        </div>
+      </div>
+      <div class="card-row" style="cursor:default;">
+        <div class="card-content">
+          <div class="card-name" style="font-size:13px;">Privacidad</div>
+          <div class="card-sub">${state.groupSettings.privacy === 'public' ? 'Público (cualquiera puede ver el grupo)' : 'Privado (solo miembros invitados)'}</div>
+        </div>
+      </div>
+      <div class="card-row" style="cursor:default;border-bottom:0;">
+        <div class="card-content">
+          <div class="card-name" style="font-size:13px;">Invitaciones</div>
+          <div class="card-sub">${state.groupSettings.allow_invites === 'admins' ? 'Solo administradores pueden invitar' : 'Cualquier miembro puede invitar'}</div>
         </div>
       </div>
     `;
@@ -3635,34 +3644,27 @@ window.loadWeeklyVotingStatus = async function loadWeeklyVotingStatus() {
   const actionBtn = document.getElementById('voting-action-btn');
   if (!statusText || !actionBtn) return;
 
-  const { data, error } = await supabase
-    .from('weekly_votings')
-    .select('*')
-    .eq('group_id', state.currentGroupId)
-    .eq('status', 'open')
-    .order('created_at', { ascending: false })
-    .limit(1);
+  const now = new Date();
+  const isSunday = now.getDay() === 0;
+  const hours = now.getHours();
+  const isVotingWindow = isSunday && hours >= 12 && hours < 18;
 
-  if (error) {
-    console.error('Error loading voting status:', error);
-    return;
-  }
-
-  const currentVoting = data && data.length > 0 ? data[0] : null;
-  state.currentVoting = currentVoting;
-
-  if (currentVoting) {
+  if (isVotingWindow) {
     statusText.textContent = 'La votación semanal está abierta. ¡Vota ahora!';
     statusText.style.color = 'var(--green)';
     statusText.style.opacity = '1';
     actionBtn.textContent = 'Ir a Votar';
     actionBtn.onclick = openWeeklyVoting;
+    actionBtn.classList.remove('disabled');
+    actionBtn.disabled = false;
   } else {
-    statusText.textContent = 'La votación está cerrada.';
-    statusText.style.color = 'var(--bg)';
-    statusText.style.opacity = '0.8';
-    actionBtn.textContent = 'Abrir votación (Admin)';
-    actionBtn.onclick = openAdminVoting;
+    statusText.textContent = 'La votación está cerrada. Abre el domingo de 12:00 a 18:00.';
+    statusText.style.color = 'var(--ink3)';
+    statusText.style.opacity = '.7';
+    actionBtn.textContent = 'Votación cerrada';
+    actionBtn.onclick = null;
+    actionBtn.classList.add('disabled');
+    actionBtn.disabled = true;
   }
 };
 
