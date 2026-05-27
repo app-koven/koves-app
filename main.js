@@ -820,7 +820,7 @@ window.shareInviteLink = function shareInviteLink() {
    MEMBER PROFILE
    ════════════════════════════════════════════════════════════════ */
 
-window.openMemberProfile = function openMemberProfile(id) {
+window.openMemberProfile = async function openMemberProfile(id) {
   const memberRecord = state.members.find(m => m.profiles && m.profiles.id === id);
   if (!memberRecord) return;
   const m = memberRecord.profiles;
@@ -846,8 +846,82 @@ window.openMemberProfile = function openMemberProfile(id) {
   if (isAdmin) pillsHtml += `<span class="pill pill-outline">Admin</span>`;
   setHtml('mp-pills', pillsHtml);
   
-  // KPI ampliado (Por ahora simulado a 0 hasta implementar las consultas de stats)
-  setText('mp-attended', '0');
+  // Load real stats
+  setText('mp-attended', 'Cargando...');
+  setText('mp-groups', 'Cargando...');
+  
+  // Plans attended by member
+  const { count: attended } = await supabase.from('plan_participants').select('*', { count: 'exact', head: true }).eq('user_id', id);
+  // Total plans of this group
+  const { count: groupPlans } = await supabase.from('plans').select('*', { count: 'exact', head: true }).eq('group_id', state.currentGroupId);
+  setText('mp-attended', `${attended || 0}/${groupPlans || 0}`);
+  
+  // Total groups of member
+  const { count: groupsCount } = await supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('user_id', id);
+  setText('mp-groups', `${groupsCount || 0}`);
+
+  // Labels won (Vitrina)
+  const { data: labelsData } = await supabase
+    .from('label_winners')
+    .select('*, group_labels(name, emoji)')
+    .eq('winner_user_id', id);
+    
+  const labelsList = document.getElementById('mp-labels-list');
+  if (labelsList) {
+    if (!labelsData || labelsData.length === 0) {
+      labelsList.innerHTML = `<span style="font-size:11px;color:var(--ink3);">No ha ganado etiquetas semanales aún.</span>`;
+    } else {
+      labelsList.innerHTML = labelsData.map(l => {
+        const gl = l.group_labels || {};
+        return `<span class="pill" style="font-size:12px;padding:6px 10px;background:var(--surface2);border-color:var(--line2);">${gl.emoji || '🏆'} ${gl.name || 'Premio'}</span>`;
+      }).join('');
+    }
+  }
+
+  // Cards received (Activas & Historial)
+  // Activas: received in last 7 days. Historial: older than 7 days.
+  const { data: cardsData } = await supabase
+    .from('assigned_cards')
+    .select('*, group_cards(name, color)')
+    .eq('target_user_id', id)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+    
+  const actualList = document.getElementById('mp-cards-actual-list');
+  const historialList = document.getElementById('mp-cards-historial-list');
+  
+  let actualHtml = '';
+  let historialHtml = '';
+  
+  if (cardsData && cardsData.length > 0) {
+    const now = new Date();
+    cardsData.forEach(c => {
+      const cDate = new Date(c.created_at);
+      const diffDays = (now - cDate) / (1000 * 60 * 60 * 24);
+      const isActual = diffDays <= 7;
+      const gc = c.group_cards || {};
+      
+      const htmlItem = `
+        <div class="discipline-item" style="border-bottom:1px solid var(--line2);">
+          <div class="disc-avatar" style="background:${gc.color || '#C07000'};"></div>
+          <div class="disc-body"><div class="disc-name">${gc.name || 'Tarjeta'}</div></div>
+          <span class="pill pill-outline" style="font-size:10px;">${cDate.toLocaleDateString()}</span>
+        </div>
+      `;
+      if (isActual) {
+        actualHtml += htmlItem;
+      } else {
+        historialHtml += htmlItem;
+      }
+    });
+  }
+  
+  if (actualList) {
+    actualList.innerHTML = actualHtml || `<div class="discipline-item" style="border-bottom:0; justify-content:center;"><span style="font-size:11px;color:var(--ink3);">Sin tarjetas activas.</span></div>`;
+  }
+  if (historialList) {
+    historialList.innerHTML = historialHtml || `<div class="discipline-item" style="border-bottom:0; justify-content:center;"><span style="font-size:11px;color:var(--ink3);">Sin historial de tarjetas.</span></div>`;
+  }
   setText('mp-mvps', '0');
   setText('mp-trds', '0');
   setText('mp-yellows', '0');
@@ -1006,6 +1080,43 @@ window.loadGroupSettings = async function loadGroupSettings() {
     return;
   }
   state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10 };
+  
+  // Render rules
+  const list = document.getElementById('rules-list');
+  if (list) {
+    list.innerHTML = `
+      <div class="card-row" style="cursor:default;">
+        <div class="card-content">
+          <div class="card-name" style="font-size:13px;">Bote mensual</div>
+          <div class="card-sub">Amarilla: ${state.groupSettings.yellow_card_amount}€ · Roja: ${state.groupSettings.red_card_amount}€</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Render KPIs as well here since we are loading group data
+  if (window.renderGroupKPIs) window.renderGroupKPIs();
+}
+
+window.renderGroupKPIs = async function renderGroupKPIs() {
+  if (!state.currentGroupId) return;
+  
+  // 1. Members
+  const numMembers = state.members ? state.members.length : 0;
+  document.getElementById('kpi-members').textContent = numMembers;
+  
+  // 2. Plans
+  const { count: plansCount } = await supabase.from('plans').select('*', { count: 'exact', head: true }).eq('group_id', state.currentGroupId);
+  document.getElementById('kpi-plans').textContent = plansCount || 0;
+  
+  // 3. Attendance
+  const { count: myAttended } = await supabase.from('plan_participants').select('*', { count: 'exact', head: true }).eq('user_id', state.currentUserId);
+  let attendancePct = 0;
+  if (plansCount > 0) {
+    attendancePct = Math.round((myAttended / plansCount) * 100);
+  }
+  document.getElementById('kpi-attendance').textContent = attendancePct + '%';
+  document.getElementById('kpi-attendance-bar').style.width = attendancePct + '%';
 }
 
 
@@ -2456,34 +2567,69 @@ window.spinRoulette = function spinRoulette() {
   svg.style.transform = `rotate(${rouletteAngle}deg)`;
   document.getElementById('roulette-result').textContent = '';
   document.getElementById('roulette-spin-btn').disabled = true;
-  setTimeout(() => {
+  setTimeout(async () => {
     rouletteSpinning = false;
     document.getElementById('roulette-spin-btn').disabled = false;
     const res = document.getElementById('roulette-result');
     res.textContent = `🎉 ${rouletteOptions[winner]}`;
-    // Guardar la decisión (para su subpágina) e insertarla en el historial
-    const decisionId = 'rd-' + Date.now();
-    rouletteDecisions[decisionId] = {
-      title: 'Decisión del grupo',
-      meta: `Hoy · ${n} opciones`,
-      winner: rouletteOptions[winner],
-      options: rouletteOptions.slice(),
-      by: 'Lanzada por ti. El resultado lo eligió el azar.',
-    };
-    const hist = document.getElementById('roulette-history');
-    if (hist) {
-      const row = document.createElement('div');
-      row.className = 'expense-item';
-      row.style.cursor = 'pointer';
-      row.setAttribute('onclick', `openRouletteDetail('${decisionId}')`);
-      row.innerHTML = `
-        <div class="exp-left"><div class="exp-icon">🎲</div><div class="exp-info"><div class="exp-name">Decisión del grupo</div><div class="exp-sub">Ahora · ${n} opciones</div></div></div>
-        <span class="pill pill-dark">${rouletteOptions[winner]}</span>
-      `;
-      hist.insertBefore(row, hist.firstChild);
+    
+    // Guardar en DB
+    if (state.currentGroupId) {
+      const payload = {
+        group_id: state.currentGroupId,
+        title: 'Decisión del grupo',
+        winner: rouletteOptions[winner],
+        options: rouletteOptions,
+        spun_by: state.currentUserId
+      };
+      const { error } = await supabase.from('roulette_spins').insert([payload]);
+      if (!error) {
+        if (window.loadRouletteHistory) window.loadRouletteHistory();
+      }
     }
   }, 4100);
 }
+
+window.loadRouletteHistory = async function loadRouletteHistory() {
+  if (!state.currentGroupId) return;
+  const hist = document.getElementById('roulette-history');
+  if (!hist) return;
+  
+  const { data, error } = await supabase
+    .from('roulette_spins')
+    .select('*, profiles(name)')
+    .eq('group_id', state.currentGroupId)
+    .order('created_at', { ascending: false });
+    
+  if (error || !data || data.length === 0) {
+    hist.innerHTML = `<div class="expense-item" style="border-bottom:0; justify-content:center;"><span style="font-size:11px;color:var(--ink3);">Sin historial de tiradas.</span></div>`;
+    return;
+  }
+  
+  hist.innerHTML = data.map(spin => {
+    const d = new Date(spin.created_at);
+    const dateStr = d.toLocaleDateString();
+    const optsCount = spin.options ? spin.options.length : 0;
+    
+    // Simulate caching decision for detail page
+    const decisionId = spin.id;
+    rouletteDecisions[decisionId] = {
+      title: spin.title,
+      meta: `${dateStr} · ${optsCount} opciones`,
+      winner: spin.winner,
+      options: spin.options,
+      by: spin.profiles ? `Lanzada por ${spin.profiles.name}` : 'Lanzada por un miembro',
+    };
+    
+    return `
+      <div class="expense-item" style="cursor:pointer;border-bottom:1px solid var(--line2);" onclick="openRouletteDetail('${decisionId}')">
+        <div class="exp-left"><div class="exp-icon">🎲</div><div class="exp-info"><div class="exp-name">${spin.title}</div><div class="exp-sub">${dateStr} · ${optsCount} opciones</div></div></div>
+        <span class="pill pill-dark">${spin.winner}</span>
+      </div>
+    `;
+  }).join('');
+}
+
 
 // Navegador de meses del historial de la ruleta
 let rouletteHistOffset = 0;
@@ -2756,6 +2902,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (window.loadGroupCards) window.loadGroupCards();
     if (window.loadGroupLabels) window.loadGroupLabels();
     if (window.loadWeeklyVotingStatus) window.loadWeeklyVotingStatus();
+    if (window.loadRouletteHistory) window.loadRouletteHistory();
     if (window.initRealtime) window.initRealtime();
     safeInit('renderCalendar', () => renderCalendar());
     safeInit('applyAdminVisibility', () => applyAdminVisibility());
