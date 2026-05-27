@@ -753,12 +753,12 @@ textarea.form-input { resize: vertical; min-height: 72px; font-family: 'DM Sans'
 .conv-name strong { display: block; font-size: 14px; font-weight: 700; }
 .conv-name span { font-size: 11px; color: var(--ink3); }
 .conv-body { padding: 14px 14px calc(var(--nav-h) + 16px); min-height: 50vh; display: flex; flex-direction: column; gap: 8px; }
-.msg-bubble { max-width: 90%; width: fit-content; padding: 10px 16px; border-radius: 20px; font-size: 14px; line-height: 1.4; white-space: normal; overflow-wrap: break-word; word-break: break-word; hyphens: none; }
+.msg-bubble { max-width: 100%; width: fit-content; padding: 10px 16px; border-radius: 20px; font-size: 14px; line-height: 1.4; white-space: normal; overflow-wrap: break-word; word-break: break-word; hyphens: none; }
 .msg-bubble.them { background: var(--surface); border: 1px solid var(--line); color: var(--ink); align-self: flex-start; border-bottom-left-radius: 6px; }
 .msg-bubble.me { background: var(--ink); color: #fff; align-self: flex-end; border-bottom-right-radius: 6px; }
 .msg-author { font-size: 10px; font-weight: 700; color: var(--ink3); padding: 4px 12px 0; align-self: flex-start; }
 .msg-time { font-size: 9px; color: var(--ink3); padding: 2px 4px 0; }
-.msg-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; max-width: 78%; }
+.msg-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; max-width: 85%; }
 .msg-group.me { align-self: flex-end; }
 .msg-group.them { align-self: flex-start; }
 .conv-input-row { position: fixed; bottom: 0; left: 0; background: var(--bg); padding: 10px 14px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; box-sizing: border-box; width: 100%; z-index: 50; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }

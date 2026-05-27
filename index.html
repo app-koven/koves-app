@@ -269,10 +269,10 @@
 
     <!-- Votación Semanal -->
     <div class="section" id="weekly-voting-section">
-      <div class="card" style="padding:14px;background:var(--ink);color:var(--bg);text-align:center;">
+      <div class="card" style="margin-bottom:24px;background:var(--ink);color:var(--bg);padding:18px;">
         <div style="font-size:16px;font-weight:900;margin-bottom:4px;">Votación Semanal</div>
-        <div style="font-size:11px;color:var(--bg);opacity:0.8;margin-bottom:12px;" id="voting-status-text">La votación está cerrada.</div>
-        <button class="btn" style="background:var(--bg);color:var(--ink);width:100%;" id="voting-action-btn" onclick="openWeeklyVoting()">Abrir votación (Admin)</button>
+        <div style="font-size:11px;color:var(--bg);opacity:0.8;margin-bottom:12px;" id="voting-status-text">Automática: Domingos de 12:00 a 18:00</div>
+        <button class="btn" style="background:var(--bg);color:var(--ink);width:100%;" id="voting-action-btn" onclick="openWeeklyVoting()">Votar</button>
       </div>
     </div>
 
@@ -1619,18 +1619,29 @@
         </div>
       </div>
 
-      <div style="font-size:10px;color:var(--ink3);margin-bottom:14px;line-height:1.5;">
-        El resto de reglas son fijas: rankings anónimos, comprobante obligatorio, 2 amarillas activas = roja, tarjetas activas 7 días, amarilla −2 pts, roja −5 pts, bote repartido 50/30/20.
-      </div>
-
       <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Ajustes del grupo</div>
       <div class="card" style="padding:0 14px;margin-bottom:18px;">
         <div class="card-row" style="cursor:default;">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Privacidad</div><div class="card-sub">Quién puede ver la existencia del grupo</div></div>
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Destino del Bote</div><div class="card-sub">Para qué es la recaudación de tarjetas</div></div>
           <div>
-            <select id="rules-privacy" style="padding:6px;border-radius:4px;border:1px solid var(--line);font-size:13px;">
-              <option value="private">Privado</option>
-              <option value="public">Público</option>
+            <input type="text" id="rules-pot-goal" placeholder="Ej: Cena de Navidad" style="width:130px;padding:6px;border-radius:4px;border:1px solid var(--line);font-size:13px;">
+          </div>
+        </div>
+        <div class="card-row" style="cursor:default;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Privacidad</div><div class="card-sub">Se puede entrar sin invitación</div></div>
+          <div>
+            <select id="rules-privacy" onchange="togglePrivacySettings()" style="padding:6px;border-radius:4px;border:1px solid var(--line);font-size:13px;">
+              <option value="private">Privado (Solo inv)</option>
+              <option value="public">Público (Código)</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-row" id="row-show-info" style="cursor:default; display:flex;">
+          <div class="card-content"><div class="card-name" style="font-size:13px;">Info. Pública</div><div class="card-sub">Mostrar datos del grupo a externos</div></div>
+          <div>
+            <select id="rules-show-info" style="padding:6px;border-radius:4px;border:1px solid var(--line);font-size:13px;">
+              <option value="true">Sí</option>
+              <option value="false">No</option>
             </select>
           </div>
         </div>

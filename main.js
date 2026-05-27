@@ -46,6 +46,12 @@ window.showScreen = function showScreen(name, opts) {
   opts = opts || {};
   const sEl = document.getElementById('s-' + name);
   if (!sEl) return;
+
+  if ((name === 'activity' || name === 'roulette') && !state.currentGroupId) {
+    showToast('Selecciona o únete a un grupo primero.');
+    return;
+  }
+
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     // Limpiar cualquier transform/sombra residual de un gesto a medias
@@ -76,7 +82,21 @@ window.showScreen = function showScreen(name, opts) {
   // FAB solo en la pantalla de planes
   const fab = document.getElementById('fab-create');
   if (fab) fab.style.display = (name === 'plans') ? 'flex' : 'none';
+  
+  // Ocultar barra inferior en pantallas de detalle
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) {
+    bottomNav.style.display = DETAIL_SCREENS.includes(name) ? 'none' : 'grid';
+  }
+  
   window.scrollTo(0, 0);
+
+  if (name === 'activity') {
+    if (window.loadActivityFeed) window.loadActivityFeed();
+  }
+  if (name === 'roulette') {
+    if (window.loadRouletteHistory) window.loadRouletteHistory();
+  }
 }
 
 window.goBack = function goBack() {
@@ -407,14 +427,18 @@ window.openUserSheet = async function openUserSheet() {
     document.getElementById('modal-auth').classList.add('open');
     return;
   }
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', state.currentUserId).single();
-  if (profile) {
-    const fullName = profile.full_name || profile.username || 'Usuario';
-    const initials = (fullName.substring(0, 2)).toUpperCase();
-    document.getElementById('us-avatar').textContent = initials;
-    document.getElementById('us-avatar').style.background = profile.avatar_url || '#0A0A0A';
-    document.getElementById('us-name').textContent = fullName;
-    document.getElementById('us-handle').textContent = profile.username ? '@' + profile.username : '';
+  try {
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', state.currentUserId).single();
+    if (profile) {
+      const fullName = profile.full_name || profile.username || 'Usuario';
+      const initials = (fullName.substring(0, 2)).toUpperCase();
+      document.getElementById('us-avatar').textContent = initials;
+      document.getElementById('us-avatar').style.background = profile.avatar_url || '#0A0A0A';
+      document.getElementById('us-name').textContent = fullName;
+      document.getElementById('us-handle').textContent = profile.username ? '@' + profile.username : '';
+    }
+  } catch (err) {
+    console.error('Error al cargar perfil para el menú:', err);
   }
   document.getElementById('modal-user').classList.add('open');
 }
@@ -560,7 +584,11 @@ window.submitEditProfile = async function submitEditProfile() {
 
 window.openMyStats = function openMyStats() {
   closeModal('modal-user');
-  setTimeout(() => document.getElementById('modal-stats').classList.add('open'), 200);
+  if (state.currentUserId) {
+    openMemberProfile(state.currentUserId);
+  } else {
+    showToast('No has iniciado sesión');
+  }
 }
 
 window.openNotifications = function openNotifications() {
@@ -923,6 +951,7 @@ window.openMemberProfile = async function openMemberProfile(id) {
   }
   
   if (window.loadMemberLabels) window.loadMemberLabels(id);
+  if (window.loadMemberPlans) loadMemberPlans(id);
   
   showScreen('member');
 }
@@ -1032,7 +1061,9 @@ window.submitRules = async function submitRules() {
   if (!state.currentGroupId) return;
   const yellowAmount = parseFloat(document.getElementById('rules-yellow-amount').value) || 2;
   const redAmount = parseFloat(document.getElementById('rules-red-amount').value) || 10;
+  const potGoal = document.getElementById('rules-pot-goal') ? document.getElementById('rules-pot-goal').value : 'Cena de grupo';
   const privacy = document.getElementById('rules-privacy') ? document.getElementById('rules-privacy').value : 'private';
+  const showInfo = document.getElementById('rules-show-info') ? document.getElementById('rules-show-info').value === 'true' : true;
   const allowInvites = document.getElementById('rules-allow-invites') ? document.getElementById('rules-allow-invites').value : 'all';
 
   try {
@@ -1041,14 +1072,16 @@ window.submitRules = async function submitRules() {
       .update({
         yellow_card_amount: yellowAmount,
         red_card_amount: redAmount,
+        pot_goal: potGoal,
         privacy: privacy,
+        show_info_if_private: showInfo,
         allow_invites: allowInvites
       })
       .eq('group_id', state.currentGroupId);
 
     if (error) throw error;
 
-    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount, privacy: privacy, allow_invites: allowInvites };
+    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount, pot_goal: potGoal, privacy: privacy, show_info_if_private: showInfo, allow_invites: allowInvites };
     loadGroupSettings();
     closeModal('modal-rules');
     showToast('Reglas guardadas ✓');
@@ -1070,13 +1103,17 @@ window.loadGroupSettings = async function loadGroupSettings() {
     console.error('Error loading settings:', error);
     return;
   }
-  state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10, privacy: 'private', allow_invites: 'all' };
+  state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10, pot_goal: 'Cena de grupo', privacy: 'private', show_info_if_private: true, allow_invites: 'all' };
   
   // Set values in modal
   if (document.getElementById('rules-yellow-amount')) document.getElementById('rules-yellow-amount').value = state.groupSettings.yellow_card_amount;
   if (document.getElementById('rules-red-amount')) document.getElementById('rules-red-amount').value = state.groupSettings.red_card_amount;
+  if (document.getElementById('rules-pot-goal')) document.getElementById('rules-pot-goal').value = state.groupSettings.pot_goal || '';
   if (document.getElementById('rules-privacy')) document.getElementById('rules-privacy').value = state.groupSettings.privacy || 'private';
+  if (document.getElementById('rules-show-info')) document.getElementById('rules-show-info').value = state.groupSettings.show_info_if_private ? 'true' : 'false';
   if (document.getElementById('rules-allow-invites')) document.getElementById('rules-allow-invites').value = state.groupSettings.allow_invites || 'all';
+
+  window.togglePrivacySettings();
 
   // Render rules
   const list = document.getElementById('rules-list');
@@ -1084,7 +1121,7 @@ window.loadGroupSettings = async function loadGroupSettings() {
     list.innerHTML = `
       <div class="card-row" style="cursor:default;">
         <div class="card-content">
-          <div class="card-name" style="font-size:13px;">Bote mensual</div>
+          <div class="card-name" style="font-size:13px;">Bote mensual: ${state.groupSettings.pot_goal || 'Cena'}</div>
           <div class="card-sub">Amarilla: ${state.groupSettings.yellow_card_amount}€ · Roja: ${state.groupSettings.red_card_amount}€</div>
         </div>
       </div>
@@ -1105,6 +1142,14 @@ window.loadGroupSettings = async function loadGroupSettings() {
   
   // Render KPIs as well here since we are loading group data
   if (window.renderGroupKPIs) window.renderGroupKPIs();
+}
+
+window.togglePrivacySettings = function() {
+  const p = document.getElementById('rules-privacy');
+  const r = document.getElementById('row-show-info');
+  if (p && r) {
+    r.style.display = (p.value === 'private') ? 'flex' : 'none';
+  }
 }
 
 window.renderGroupKPIs = async function renderGroupKPIs() {
@@ -1761,17 +1806,22 @@ window.showAddExpense = function showAddExpense(fromPlan = false) {
    V5: CHATS
    ════════════════════════════════════════════════════════════════ */
 window.openChat = async function openChat(chatId, name, initials, color, kind) {
-  state.currentChat = chatId;
-  state.currentChatKind = kind;
-  document.getElementById('conv-avatar').textContent = initials;
-  document.getElementById('conv-avatar').style.background = color;
-  document.getElementById('conv-name').textContent = name;
-  document.getElementById('conv-sub').textContent = kind === 'group' ? `${state.myGroups.find(g=>g.id===state.currentGroupId)?.members || 0} miembros` : 'Activo ahora';
-  
-  // Cargar mensajes reales de Supabase
-  await loadChatMessages(chatId, kind);
-  renderConversation();
-  showScreen('conversation');
+  try {
+    state.currentChat = chatId;
+    state.currentChatKind = kind;
+    document.getElementById('conv-avatar').textContent = initials;
+    document.getElementById('conv-avatar').style.background = color;
+    document.getElementById('conv-name').textContent = name;
+    document.getElementById('conv-sub').textContent = kind === 'group' ? `${state.myGroups.find(g=>g.id===state.currentGroupId)?.members || 0} miembros` : 'Activo ahora';
+    
+    // Cargar mensajes reales de Supabase
+    await loadChatMessages(chatId, kind);
+    renderConversation();
+    showScreen('conversation');
+  } catch (err) {
+    console.error('Error opening chat:', err);
+    showToast('Error al abrir el chat');
+  }
 }
 
 async function loadChatMessages(chatId, kind) {
@@ -1926,6 +1976,189 @@ window.switchActivityTab = function switchActivityTab(el, name) {
   document.getElementById('activity-reclamaciones').style.display = name === 'reclamaciones' ? 'block' : 'none';
 }
 
+window.loadActivityFeed = async function loadActivityFeed() {
+  if (!state.currentGroupId) return;
+  loadActivityPlans();
+  loadActivityTribunal();
+  loadActivityClaims();
+}
+
+window.loadActivityPlans = async function loadActivityPlans() {
+  const container = document.getElementById('feed-list');
+  if (!container) return;
+  
+  const { data, error } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('group_id', state.currentGroupId)
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('Error loadActivityPlans:', error);
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Error al cargar planes.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Aún no hay planes en este grupo.</div>';
+    return;
+  }
+
+  let html = '';
+  data.forEach(p => {
+    const d = new Date(p.date + 'T' + (p.time || '00:00:00'));
+    const dateStr = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    const isPast = d < new Date();
+    
+    html += `
+      <div class="feed-item card">
+        <div class="feed-icon">\uD83D\uDCC5</div>
+        <div class="feed-content" onclick="openPlan('${p.id}')">
+          <div class="feed-header">
+            <span>${p.title}</span>
+            <span class="feed-time">${dateStr}</span>
+          </div>
+          <div class="feed-body">
+            <p>${p.description || 'Sin descripción'}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+window.loadActivityTribunal = async function loadActivityTribunal() {
+  const container = document.getElementById('activity-disciplina');
+  if (!container) return;
+  
+  const { data, error } = await supabase
+    .from('assigned_cards')
+    .select('*, group_cards(name, color, description), profiles!assigned_cards_target_user_id_fkey(name, username), proposed_by_profile:profiles!assigned_cards_proposed_by_fkey(name)')
+    .eq('group_id', state.currentGroupId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loadActivityTribunal:', error);
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Error al cargar tribunal.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay votaciones activas en este grupo.</div>';
+    return;
+  }
+
+  let html = '';
+  data.forEach(c => {
+    const cardColor = c.group_cards?.color || '#C07000';
+    const cardName = c.group_cards?.name || 'Tarjeta';
+    const targetName = c.profiles?.name || 'Usuario';
+    const proposedByName = c.proposed_by_profile?.name || 'Alguien';
+    
+    html += `
+      <div class="card" style="margin-bottom:12px;padding:14px;border:1px solid ${cardColor};">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:12px;height:16px;border-radius:2px;background:${cardColor};"></div>
+            <div style="font-size:13px;font-weight:800;">${cardName} a ${targetName}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;">Propuesta por ${proposedByName}. ¿Estás de acuerdo?</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;background:var(--ok);color:#fff;" onclick="voteCard('${c.id}', 'favor')">A favor</button>
+          <button class="btn btn-primary" style="flex:1;background:var(--alert);color:#fff;" onclick="voteCard('${c.id}', 'contra')">En contra</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+window.voteCard = async function voteCard(cardId, voteType) {
+  const { error } = await supabase.from('assigned_card_votes').insert({
+    assigned_card_id: cardId,
+    user_id: state.currentUserId,
+    vote: voteType
+  });
+  if (error) {
+    if (error.code === '23505') {
+      showToast('Ya has votado esta tarjeta');
+    } else {
+      showToast('Error al votar');
+      console.error(error);
+    }
+  } else {
+    showToast('Voto registrado ✓');
+  }
+}
+
+window.loadActivityClaims = async function loadActivityClaims() {
+  const container = document.getElementById('reclam-activas');
+  if (!container) return;
+  
+  const { data, error } = await supabase
+    .from('claims')
+    .select('*, profiles(name, username)')
+    .eq('group_id', state.currentGroupId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loadActivityClaims:', error);
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Error al cargar reclamaciones.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">No hay reclamaciones activas.</div>';
+    return;
+  }
+
+  let html = '';
+  data.forEach(c => {
+    const creatorName = c.profiles?.name || 'Usuario';
+    const amount = c.amount || 0;
+    
+    let adminButtons = '';
+    if (state.isAdmin) {
+      adminButtons = `
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn btn-secondary" style="flex:1;font-size:12px;padding:6px;" onclick="resolveClaim('${c.id}', 'approved')">Aprobar</button>
+          <button class="btn btn-secondary" style="flex:1;font-size:12px;padding:6px;" onclick="resolveClaim('${c.id}', 'rejected')">Rechazar</button>
+        </div>
+      `;
+    }
+
+    html += `
+      <div class="card" style="padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:800;">${creatorName}</div>
+          <div style="font-size:13px;font-weight:800;color:var(--brand);">${amount}€</div>
+        </div>
+        <div style="font-size:12px;color:var(--ink2);">Reclama que ha pagado gastos del grupo o similar. Concepto: ${c.description || 'N/A'}</div>
+        ${adminButtons}
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+window.resolveClaim = async function resolveClaim(claimId, newStatus) {
+  const { error } = await supabase.from('claims').update({ status: newStatus }).eq('id', claimId);
+  if (error) {
+    showToast('Error al resolver la reclamación');
+    console.error(error);
+  } else {
+    showToast('Reclamación ' + (newStatus === 'approved' ? 'aprobada ✓' : 'rechazada ✗'));
+    loadActivityClaims();
+  }
+}
+
 // Sub-selector Activas / Historial de reclamaciones
 window.switchReclamTab = function switchReclamTab(el, name) {
   el.parentElement.querySelectorAll('.split-toggle-item').forEach(t => t.classList.remove('active'));
@@ -2017,12 +2250,15 @@ window.applyAdminVisibility = function applyAdminVisibility() {
 
 // Abrir chat grupal directamente desde el header
 window.openGroupChat = function openGroupChat() {
-  if (!state.currentGroupId) return;
+  if (!state.currentGroupId) {
+    showToast('Selecciona o únete a un grupo primero.');
+    return;
+  }
   const g = state.myGroups.find(x => x.id === state.currentGroupId);
   const name = g ? g.name : 'Grupo';
   const initials = g ? g.initials : 'G';
   const color = g ? g.color : '#0A0A0A';
-  openChat('group', name, initials, color, 'group');
+  openChat(state.currentGroupId, name, initials, color, 'group');
 }
 
 // Liquidar deuda individual
@@ -2097,11 +2333,60 @@ window.memberPlansNav = function memberPlansNav(delta) {
   const label = `${meses[d.getMonth()]} ${d.getFullYear()}${memberPlansMonthOffset === 0 ? ' · Mes actual' : ''}`;
   const labelEl = document.getElementById('mp-plans-month');
   if (labelEl) labelEl.textContent = label + ' · Todos los grupos';
-  // En una app real aquí se recargarían los planes; mostramos un placeholder
-  if (memberPlansMonthOffset < 0) {
-    const listEl = document.getElementById('mp-plans-list');
-    if (listEl) listEl.innerHTML = `<div class="card" style="padding:18px 14px;text-align:center;"><div style="font-size:12px;color:var(--ink3);">Cargando planes de ${meses[d.getMonth()]}…</div></div>`;
+  
+  // Cargar planes reales
+  if (window.loadMemberPlans && currentMemberId) {
+    loadMemberPlans(currentMemberId);
   }
+}
+
+window.loadMemberPlans = async function loadMemberPlans(memberId) {
+  const listEl = document.getElementById('mp-plans-list');
+  if (!listEl) return;
+  
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth() + memberPlansMonthOffset, 1);
+  const end = new Date(today.getFullYear(), today.getMonth() + memberPlansMonthOffset + 1, 0);
+  const startStr = start.toISOString().split('T')[0];
+  const endStr = end.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('plan_participants')
+    .select('*, plans(*, groups(name))')
+    .eq('user_id', memberId);
+
+  if (error || !data || data.length === 0) {
+    listEl.innerHTML = `<div class="card" style="padding:18px 14px;text-align:center;"><div style="font-size:12px;color:var(--ink3);">No hay planes en este mes.</div></div>`;
+    return;
+  }
+
+  // Filtrar por fecha en JS para evitar problemas con foreign tables en PostgREST
+  const validPlans = data
+    .filter(d => d.plans && d.plans.date >= startStr && d.plans.date <= endStr)
+    .sort((a,b) => new Date(b.plans.date) - new Date(a.plans.date));
+  
+  if (validPlans.length === 0) {
+    listEl.innerHTML = `<div class="card" style="padding:18px 14px;text-align:center;"><div style="font-size:12px;color:var(--ink3);">No hay planes en este mes.</div></div>`;
+    return;
+  }
+
+  let html = '';
+  validPlans.forEach(row => {
+    const p = row.plans;
+    const gName = p.groups ? p.groups.name : 'Grupo';
+    const d = new Date(p.date + 'T' + (p.time || '00:00:00'));
+    const dateStr = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+    html += \`
+      <div class="card" style="padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:var(--r-sm);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;">📅</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:800;margin-bottom:2px;">\${p.title}</div>
+          <div style="font-size:11px;color:var(--ink3);">\${dateStr} · \${gName}</div>
+        </div>
+      </div>
+    \`;
+  });
+  listEl.innerHTML = html;
 }
 
 // Cargar fotos reales del plan
@@ -2604,10 +2889,17 @@ window.loadRouletteHistory = async function loadRouletteHistory() {
   const hist = document.getElementById('roulette-history');
   if (!hist) return;
   
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth() + rouletteHistOffset, 1);
+  const end = new Date(today.getFullYear(), today.getMonth() + rouletteHistOffset + 1, 0);
+  end.setHours(23, 59, 59, 999);
+
   const { data, error } = await supabase
     .from('roulette_spins')
     .select('*, profiles(name)')
     .eq('group_id', state.currentGroupId)
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
     .order('created_at', { ascending: false });
     
   if (error || !data || data.length === 0) {
@@ -2648,9 +2940,12 @@ window.rouletteHistNav = function rouletteHistNav(delta) {
   rouletteHistOffset = n;
   const next = document.getElementById('roulette-hist-next');
   if (next) next.classList.toggle('disabled', rouletteHistOffset >= 0);
-  const d = new Date(2026, 4 + rouletteHistOffset, 1);
+  const today = new Date();
+  const d = new Date(today.getFullYear(), today.getMonth() + rouletteHistOffset, 1);
   const lbl = document.getElementById('roulette-hist-month');
   if (lbl) lbl.textContent = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+  
+  if (window.loadRouletteHistory) loadRouletteHistory();
 }
 
 // Decisiones guardadas de la ruleta (para sus subpáginas)
@@ -3685,24 +3980,40 @@ window.openAdminVoting = async function openAdminVoting() {
 };
 
 window.openWeeklyVoting = async function openWeeklyVoting() {
-  if (!state.currentVoting) return;
+  const now = new Date();
+  const isSunday = now.getDay() === 0;
+  const isVotingTime = isSunday && now.getHours() >= 12 && now.getHours() < 18;
 
-  const container = document.getElementById('voting-labels-container');
-  const labels = state.groupLabels || [];
+  if (!isVotingTime && localStorage.getItem('force_voting_open') !== 'true') {
+    showToast('La votación solo abre los domingos de 12:00 a 18:00');
+    return;
+  }
+
+  const { data: labels } = await supabase.from('group_labels').select('*').eq('group_id', state.currentGroupId);
   const members = state.members || [];
 
-  if (labels.length === 0) {
+  const container = document.getElementById('voting-labels-container');
+  
+  if (!labels || labels.length === 0) {
     container.innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:20px;">El grupo no tiene etiquetas creadas.</div>';
     document.getElementById('voting-submit-container').style.display = 'none';
     showScreen('voting');
     return;
   }
 
-  // Cargar mis votos anteriores si los hay
+  // Calcular el lunes de esta semana para usarlo como week_start_date
+  const d = new Date();
+  const day = d.getDay() || 7; // 1-7
+  d.setDate(d.getDate() - day + 1);
+  const weekStartStr = d.toISOString().split('T')[0];
+  state.currentVotingWeek = weekStartStr;
+
+  // Cargar mis votos anteriores
   const { data: myVotes } = await supabase
     .from('weekly_votes')
     .select('*')
-    .eq('voting_id', state.currentVoting.id)
+    .eq('group_id', state.currentGroupId)
+    .eq('week_start_date', weekStartStr)
     .eq('voter_id', state.currentUserId);
 
   let html = '';
@@ -3710,14 +4021,14 @@ window.openWeeklyVoting = async function openWeeklyVoting() {
     const existingVote = (myVotes || []).find(v => v.label_id === label.id);
     let optionsHtml = '<option value="">Ninguno</option>';
     members.forEach(m => {
-      const selected = (existingVote && existingVote.target_user_id === m.id) ? 'selected' : '';
+      const selected = (existingVote && existingVote.voted_user_id === m.id) ? 'selected' : '';
       optionsHtml += `<option value="${m.id}" ${selected}>${m.name}</option>`;
     });
 
     html += `
       <div class="card" style="padding:14px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="font-size:28px;">${label.emoji}</div>
+          <div style="font-size:28px;">${label.emoji || '🏆'}</div>
           <div style="flex:1;">
             <div style="font-size:14px;font-weight:800;">${label.name}</div>
           </div>
@@ -3729,17 +4040,13 @@ window.openWeeklyVoting = async function openWeeklyVoting() {
     `;
   });
 
-  html += `
-    <button class="btn btn-secondary btn-full" style="margin-top:20px;" onclick="closeWeeklyVotingAdmin()">Cerrar Votación (Admin)</button>
-  `;
-
   container.innerHTML = html;
   document.getElementById('voting-submit-container').style.display = 'block';
   showScreen('voting');
 };
 
 window.submitWeeklyVotes = async function submitWeeklyVotes() {
-  if (!state.currentVoting) return;
+  if (!state.currentVotingWeek || !state.currentGroupId) return;
 
   const selects = document.querySelectorAll('.voting-select');
   const votesToInsert = [];
@@ -3749,10 +4056,11 @@ window.submitWeeklyVotes = async function submitWeeklyVotes() {
     const labelId = select.getAttribute('data-label-id');
     if (targetUserId) {
       votesToInsert.push({
-        voting_id: state.currentVoting.id,
+        group_id: state.currentGroupId,
+        week_start_date: state.currentVotingWeek,
         label_id: labelId,
         voter_id: state.currentUserId,
-        target_user_id: targetUserId
+        voted_user_id: targetUserId
       });
     }
   });
@@ -3766,7 +4074,8 @@ window.submitWeeklyVotes = async function submitWeeklyVotes() {
   await supabase
     .from('weekly_votes')
     .delete()
-    .eq('voting_id', state.currentVoting.id)
+    .eq('group_id', state.currentGroupId)
+    .eq('week_start_date', state.currentVotingWeek)
     .eq('voter_id', state.currentUserId);
 
   // Insertar nuevos votos
@@ -3779,70 +4088,6 @@ window.submitWeeklyVotes = async function submitWeeklyVotes() {
     showToast('Votos enviados ✓');
     goBack();
   }
-};
-
-window.closeWeeklyVotingAdmin = async function closeWeeklyVotingAdmin() {
-  if (!state.currentVoting) return;
-
-  // 1. Marcar como cerrada
-  const { error: updateErr } = await supabase
-    .from('weekly_votings')
-    .update({ status: 'closed', closed_at: new Date().toISOString() })
-    .eq('id', state.currentVoting.id);
-
-  if (updateErr) {
-    showToast('Error al cerrar la votación');
-    return;
-  }
-
-  // 2. Calcular ganadores
-  const { data: allVotes } = await supabase
-    .from('weekly_votes')
-    .select('*')
-    .eq('voting_id', state.currentVoting.id);
-
-  if (allVotes && allVotes.length > 0) {
-    const labels = state.groupLabels || [];
-    const awarded = [];
-
-    labels.forEach(label => {
-      const votesForLabel = allVotes.filter(v => v.label_id === label.id);
-      if (votesForLabel.length > 0) {
-        // Contar votos por usuario
-        const voteCounts = {};
-        votesForLabel.forEach(v => {
-          voteCounts[v.target_user_id] = (voteCounts[v.target_user_id] || 0) + 1;
-        });
-
-        // Encontrar el ganador (o ganadores en caso de empate, para simplificar cogemos el primero)
-        let winnerId = null;
-        let maxVotes = 0;
-        for (const [uid, count] of Object.entries(voteCounts)) {
-          if (count > maxVotes) {
-            maxVotes = count;
-            winnerId = uid;
-          }
-        }
-
-        if (winnerId) {
-          awarded.push({
-            user_id: winnerId,
-            group_id: state.currentGroupId,
-            label_id: label.id,
-            voting_id: state.currentVoting.id
-          });
-        }
-      }
-    });
-
-    if (awarded.length > 0) {
-      await supabase.from('awarded_labels').insert(awarded);
-    }
-  }
-
-  showToast('Votación cerrada ✓ Resultados publicados');
-  goBack();
-  loadWeeklyVotingStatus();
 };
 
 window.loadMemberLabels = async function loadMemberLabels(memberId) {
