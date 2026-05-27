@@ -1897,7 +1897,12 @@ window.applyAdminVisibility = function applyAdminVisibility() {
 
 // Abrir chat grupal directamente desde el header
 window.openGroupChat = function openGroupChat() {
-  openChat('group', 'EL CLUB', 'EL', '#0A0A0A', 'group');
+  if (!state.currentGroupId) return;
+  const g = state.myGroups.find(x => x.id === state.currentGroupId);
+  const name = g ? g.name : 'Grupo';
+  const initials = g ? g.initials : 'G';
+  const color = g ? g.color : '#0A0A0A';
+  openChat('group', name, initials, color, 'group');
 }
 
 // Liquidar deuda individual
@@ -2699,7 +2704,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   // ── INICIALIZACIÓN ──
   async function initApp() {
     // Configurar listeners de la pantalla de login
-    document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+    // auth-form removed
 
     // Check current session
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -2717,16 +2722,26 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         if (session) {
           state.isLoggedIn = true;
+          document.getElementById('auth-screen').style.display = 'none';
+          document.getElementById('main-app').style.display = 'block';
           await loadUserProfile(session.user);
-          document.getElementById('modal-auth').classList.remove('open');
           window.renderAll();
         }
       } else if (event === 'SIGNED_OUT') {
         state.isLoggedIn = false;
         state.currentUserId = 'tu';
-        window.renderAll();
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('main-app').style.display = 'none';
       }
     });
+    
+    if (!state.isLoggedIn) {
+      document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('main-app').style.display = 'none';
+    } else {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('main-app').style.display = 'block';
+    }
   }
 
   window.renderAll = function() {
@@ -3723,3 +3738,11 @@ window.loadMemberLabels = async function loadMemberLabels(memberId) {
   list.innerHTML = html;
 };
 
+
+window.openCreateGroupModal = function() {
+  document.getElementById('modal-create-group').classList.add('open');
+};
+
+window.openJoinGroupModal = function() {
+  document.getElementById('modal-join-code').classList.add('open');
+};
