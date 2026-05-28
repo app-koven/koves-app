@@ -139,6 +139,7 @@ window.openPlan = function openPlan(id) {
   loadPlanPhotos(id);
   // Cargar tarjetas propuestas
   if (window.loadPlanCards) window.loadPlanCards();
+  if (window.loadPlanComments) loadPlanComments(id);
 }
 
 window.openHistorial = function openHistorial() {
@@ -432,7 +433,7 @@ window.openUserSheet = async function openUserSheet() {
     if (profile) {
       const fullName = profile.full_name || profile.username || 'Usuario';
       const initials = (fullName.substring(0, 2)).toUpperCase();
-      document.getElementById('us-avatar').textContent = initials;
+      document.getElementById('us-avatar').textContent = profile.avatar_url ? '' : initials;
       document.getElementById('us-avatar').style.background = profile.avatar_url || '#0A0A0A';
       document.getElementById('us-name').textContent = fullName;
       document.getElementById('us-handle').textContent = profile.username ? '@' + profile.username : '';
@@ -525,6 +526,52 @@ window.doLogout = async function doLogout() {
    PERFIL DE USUARIO
    ════════════════════════════════════════════════════════════════ */
 
+window.uploadAvatar = async function uploadAvatar(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${state.currentUserId}-${Date.now()}.${fileExt}`;
+  const filePath = `avatars/${fileName}`;
+
+  showToast('Subiendo foto...');
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    
+    // Update profile
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: `url(${data.publicUrl}) center/cover` })
+      .eq('id', state.currentUserId);
+      
+    if (updateError) throw updateError;
+    
+    // Update UI immediately
+    document.getElementById('ep-avatar').style.background = `url(${data.publicUrl}) center/cover`;
+    document.getElementById('ep-avatar').textContent = '';
+    document.getElementById('us-avatar').style.background = `url(${data.publicUrl}) center/cover`;
+    document.getElementById('us-avatar').textContent = '';
+    
+    // If header avatar exists
+    const hdrAvatar = document.getElementById('hdr-user-avatar');
+    if (hdrAvatar) {
+      hdrAvatar.style.background = `url(${data.publicUrl}) center/cover`;
+      hdrAvatar.textContent = '';
+    }
+    
+    showToast('Foto actualizada ✓');
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    showToast('Error al subir la foto');
+  }
+}
+
 window.openEditProfile = async function openEditProfile() {
   closeModal('modal-user');
   const { data: acc } = await supabase.from('profiles').select('*').eq('id', state.currentUserId).single();
@@ -532,7 +579,7 @@ window.openEditProfile = async function openEditProfile() {
     if (acc) {
       const fullName = acc.full_name || acc.username || 'Usuario';
       const initials = (fullName.substring(0, 2)).toUpperCase();
-      document.getElementById('ep-avatar').textContent = initials;
+      document.getElementById('ep-avatar').textContent = acc.avatar_url ? '' : initials;
       document.getElementById('ep-avatar').style.background = acc.avatar_url || '#0A0A0A';
       document.getElementById('ep-name').value = acc.full_name || '';
       document.getElementById('ep-handle').value = acc.username || '';
@@ -564,14 +611,12 @@ window.submitEditProfile = async function submitEditProfile() {
     
     if (error) throw error;
     
-    // Update local state
-    if (acc) {
-      acc.name = newName;
-      acc.handle = '@' + (newHandle || 'user_' + state.currentUserId.substring(0,8));
-      acc.phone = newPhone;
-      acc.bio = newBio;
-      acc.initials = newName.substring(0,2).toUpperCase();
-      document.getElementById('hdr-user-avatar').textContent = acc.initials;
+    // Update local UI
+    const hdrAvatar = document.getElementById('hdr-user-avatar');
+    if (hdrAvatar) {
+      if (!hdrAvatar.style.backgroundImage || hdrAvatar.style.backgroundImage === 'none') {
+        hdrAvatar.textContent = newName.substring(0,2).toUpperCase();
+      }
     }
     
     closeModal('modal-edit-profile');
@@ -593,7 +638,67 @@ window.openMyStats = function openMyStats() {
 
 window.openNotifications = function openNotifications() {
   closeModal('modal-user');
-  setTimeout(() => document.getElementById('modal-notif').classList.add('open'), 200);
+  setTimeout(() => {
+    document.getElementById('modal-notif').classList.add('open');
+    if (window.loadNotifications) window.loadNotifications();
+  }, 200);
+}
+
+window.loadNotifications = async function loadNotifications() {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+
+  const { data: notifs, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', state.currentUserId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error(error);
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--red);font-size:13px;">Error al cargar notificaciones</div>';
+    return;
+  }
+
+  // Actualizar KPI
+  const unreadCount = (notifs || []).filter(n => !n.read).length;
+  // TODO: Si hubiera una campana en la cabecera, actualizaríamos su badge aquí.
+
+  if (!notifs || notifs.length === 0) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--ink3);font-size:13px;">No tienes notificaciones nuevas.</div>';
+    return;
+  }
+
+  let html = '';
+  notifs.forEach(n => {
+    const isUnread = !n.read;
+    const timeStr = new Date(n.created_at).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+    html += `<div class="feed-item" style="opacity: ${isUnread ? '1' : '0.6'};">
+      <div class="feed-num" style="color:${isUnread ? 'var(--blue)' : 'transparent'};">●</div>
+      <div class="feed-body">
+        <strong>${n.title}</strong>
+        <p>${n.body || ''}</p>
+      </div>
+      <div class="feed-time">${timeStr}</div>
+    </div>`;
+  });
+
+  list.innerHTML = html;
+}
+
+window.markAllNotifAsRead = async function markAllNotifAsRead() {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', state.currentUserId)
+    .eq('read', false);
+
+  if (!error) {
+    showToast('Notificaciones marcadas como leídas');
+    if (window.loadNotifications) window.loadNotifications();
+    closeModal('modal-notif');
+  }
 }
 
 window.openSettings = function openSettings() {
@@ -757,17 +862,16 @@ window.submitCreateGroup = async function submitCreateGroup() {
   
   try {
     // 1. Insert Group
-    const groupId = crypto.randomUUID();
-    const { error: gError } = await supabase.from('groups').insert([{
-      id: groupId,
+    const { data: newGroup, error: gError } = await supabase.from('groups').insert([{
       name: name,
       initials: initials,
       color: color,
       created_by: state.currentUserId
-    }]);
+    }]).select().single();
     if (gError) throw gError;
 
     // 2. Insert Admin Member
+    const groupId = newGroup.id;
     const { error: mError } = await supabase.from('group_members').insert([{
       group_id: groupId,
       user_id: state.currentUserId,
@@ -864,8 +968,8 @@ window.openMemberProfile = async function openMemberProfile(id) {
   setText('mp-attended', 'Cargando...');
   setText('mp-groups', 'Cargando...');
   
-  // Plans attended by member
-  const { count: attended } = await supabase.from('plan_participants').select('*', { count: 'exact', head: true }).eq('user_id', id);
+  // Plans attended by member (voy)
+  const { count: attended } = await supabase.from('plan_attendance').select('*', { count: 'exact', head: true }).eq('user_id', id).eq('status', 'voy');
   // Total plans of this group
   const { count: groupPlans } = await supabase.from('plans').select('*', { count: 'exact', head: true }).eq('group_id', state.currentGroupId);
   setText('mp-attended', `${attended || 0}/${groupPlans || 0}`);
@@ -874,31 +978,39 @@ window.openMemberProfile = async function openMemberProfile(id) {
   const { count: groupsCount } = await supabase.from('group_members').select('*', { count: 'exact', head: true }).eq('user_id', id);
   setText('mp-groups', `${groupsCount || 0}`);
 
-  // Labels won (Vitrina)
-  const { data: labelsData } = await supabase
-    .from('label_winners')
-    .select('*, group_labels(name, emoji)')
-    .eq('winner_user_id', id);
+  // Labels won (Vitrina) -> MVP and Tardón from plan_rankings
+  const { data: rankings } = await supabase
+    .from('plan_rankings')
+    .select('category, position')
+    .eq('target_user_id', id);
+    
+  let mvpCount = 0;
+  let tardonCount = 0;
+  if (rankings) {
+    rankings.forEach(r => {
+      if (r.category === 'mvp') mvpCount++;
+      if (r.category === 'tardon') tardonCount++;
+    });
+  }
     
   const labelsList = document.getElementById('mp-labels-list');
   if (labelsList) {
-    if (!labelsData || labelsData.length === 0) {
+    if (mvpCount === 0 && tardonCount === 0) {
       labelsList.innerHTML = `<span style="font-size:11px;color:var(--ink3);">No ha ganado etiquetas semanales aún.</span>`;
     } else {
-      labelsList.innerHTML = labelsData.map(l => {
-        const gl = l.group_labels || {};
-        return `<span class="pill" style="font-size:12px;padding:6px 10px;background:var(--surface2);border-color:var(--line2);">${gl.emoji || '🏆'} ${gl.name || 'Premio'}</span>`;
-      }).join('');
+      let html = '';
+      if (mvpCount > 0) html += `<span class="pill" style="font-size:12px;padding:6px 10px;background:var(--amber-bg, #FFFBEB);color:var(--amber, #D97706);border:1px solid var(--amber, #D97706);">🏆 MVP x${mvpCount}</span>`;
+      if (tardonCount > 0) html += `<span class="pill" style="font-size:12px;padding:6px 10px;background:var(--red-bg, #FEF2F2);color:var(--red, #DC2626);border:1px solid var(--red, #DC2626);">🐌 Tardón x${tardonCount}</span>`;
+      labelsList.innerHTML = html;
     }
   }
 
   // Cards received (Activas & Historial)
-  // Activas: received in last 7 days. Historial: older than 7 days.
-  const { data: cardsData } = await supabase
-    .from('assigned_cards')
-    .select('*, group_cards(name, color)')
+  const { data: sanctionsData } = await supabase
+    .from('sanctions')
+    .select('*')
     .eq('target_user_id', id)
-    .eq('status', 'approved')
+    .in('status', ['active', 'history'])
     .order('created_at', { ascending: false });
     
   const actualList = document.getElementById('mp-cards-actual-list');
@@ -907,18 +1019,17 @@ window.openMemberProfile = async function openMemberProfile(id) {
   let actualHtml = '';
   let historialHtml = '';
   
-  if (cardsData && cardsData.length > 0) {
-    const now = new Date();
-    cardsData.forEach(c => {
+  if (sanctionsData && sanctionsData.length > 0) {
+    sanctionsData.forEach(c => {
       const cDate = new Date(c.created_at);
-      const diffDays = (now - cDate) / (1000 * 60 * 60 * 24);
-      const isActual = diffDays <= 7;
-      const gc = c.group_cards || {};
+      const isActual = c.status === 'active';
+      const color = c.type === 'roja' ? '#991B1B' : '#EAB308';
+      const name = c.type === 'roja' ? 'Tarjeta Roja' : 'Tarjeta Amarilla';
       
       const htmlItem = `
         <div class="discipline-item" style="border-bottom:1px solid var(--line2);">
-          <div class="disc-avatar" style="background:${gc.color || '#C07000'};"></div>
-          <div class="disc-body"><div class="disc-name">${gc.name || 'Tarjeta'}</div></div>
+          <div class="disc-avatar" style="background:${color};"></div>
+          <div class="disc-body"><div class="disc-name">${name}</div><div style="font-size:10px;color:var(--ink3);">${c.reason}</div></div>
           <span class="pill pill-outline" style="font-size:10px;">${cDate.toLocaleDateString()}</span>
         </div>
       `;
@@ -1001,9 +1112,7 @@ window.submitCreatePlan = async function submitCreatePlan() {
   const isoDate = new Date(`${date}T${time}`).toISOString();
 
   try {
-    const planId = crypto.randomUUID();
-    const { error } = await supabase.from('plans').insert([{
-      id: planId,
+    const { data: newPlan, error } = await supabase.from('plans').insert([{
       group_id: state.currentGroupId,
       title: title,
       description: desc,
@@ -1013,13 +1122,13 @@ window.submitCreatePlan = async function submitCreatePlan() {
       status: status,
       mode: modeDb,
       created_by: state.currentUserId
-    }]);
+    }]).select().single();
 
     if (error) throw error;
     
     // Auto-confirm attendance for creator
     await supabase.from('plan_attendance').insert([{
-      plan_id: planId,
+      plan_id: newPlan.id,
       user_id: state.currentUserId,
       status: 'voy'
     }]);
@@ -1121,8 +1230,8 @@ window.loadGroupSettings = async function loadGroupSettings() {
     list.innerHTML = `
       <div class="card-row" style="cursor:default;">
         <div class="card-content">
-          <div class="card-name" style="font-size:13px;">Bote mensual: ${state.groupSettings.pot_goal || 'Cena'}</div>
-          <div class="card-sub">Amarilla: ${state.groupSettings.yellow_card_amount}€ · Roja: ${state.groupSettings.red_card_amount}€</div>
+          <div class="card-name" style="font-size:13px;">Objetivo del Bote: ${state.groupSettings.pot_goal || 'Cena'}</div>
+          <div class="card-sub">Los miembros deciden en qué gastarlo</div>
         </div>
       </div>
       <div class="card-row" style="cursor:default;">
@@ -1220,17 +1329,19 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 
     state.expenses.forEach(exp => {
       totalGroup += exp.amount;
-      if (exp.paid_by === me) {
+      if (exp.payer_id === me) {
         paidByMe += exp.amount;
       }
       
       const splits = exp.expense_splits || [];
       splits.forEach(split => {
-        if (split.user_id === me && exp.paid_by !== me && split.status !== 'paid') {
-          oweToOthers += split.amount;
-        }
-        if (exp.paid_by === me && split.user_id !== me && split.status !== 'paid') {
-          owedToMe += split.amount;
+        if (split.status !== 'paid') {
+          if (split.debtor_id === me && exp.payer_id !== me) {
+            oweToOthers += split.amount;
+          }
+          if (exp.payer_id === me && split.debtor_id !== me) {
+            owedToMe += split.amount;
+          }
         }
       });
     });
@@ -1258,11 +1369,19 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
       const splits = exp.expense_splits || [];
       splits.forEach(split => {
         if (split.status !== 'paid') {
-          if (exp.paid_by === me && split.user_id !== me) {
-            owedByMap[split.user_id] = (owedByMap[split.user_id] || 0) + split.amount;
+          // Te deben: Tú pagaste y el deudor no eres tú
+          if (exp.payer_id === me && split.debtor_id !== me) {
+            if (!owedByMap[split.debtor_id]) owedByMap[split.debtor_id] = { total: 0, pending: [], requested: [] };
+            owedByMap[split.debtor_id].total += split.amount;
+            if (split.status === 'requested') owedByMap[split.debtor_id].requested.push(split);
+            else owedByMap[split.debtor_id].pending.push(split);
           }
-          if (split.user_id === me && exp.paid_by !== me) {
-            oweToMap[exp.paid_by] = (oweToMap[exp.paid_by] || 0) + split.amount;
+          // Tú debes: Tú eres el deudor y el pagador no eres tú
+          if (split.debtor_id === me && exp.payer_id !== me) {
+            if (!oweToMap[exp.payer_id]) oweToMap[exp.payer_id] = { total: 0, pending: [], requested: [] };
+            oweToMap[exp.payer_id].total += split.amount;
+            if (split.status === 'requested') oweToMap[exp.payer_id].requested.push(split);
+            else oweToMap[exp.payer_id].pending.push(split);
           }
         }
       });
@@ -1278,11 +1397,16 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
       cTeDeben.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay pagos pendientes a tu favor.</div>';
     } else {
       let html = '';
-      for (const [uid, amount] of Object.entries(owedByMap)) {
-        html += `<div class="card" style="padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;font-weight:600;">${getProfileName(uid)} te debe</div>
-          <div style="font-size:15px;font-weight:900;color:var(--green);">+${amount.toFixed(2)}€</div>
-        </div>`;
+      for (const [uid, data] of Object.entries(owedByMap)) {
+        html += `<div class="card" style="padding:14px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;font-weight:600;">${getProfileName(uid)} te debe</div>
+            <div style="font-size:15px;font-weight:900;color:var(--green);">+${data.total.toFixed(2)}€</div>
+          </div>`;
+        if (data.requested.length > 0) {
+          html += `<div style="margin-top:12px;"><button class="btn btn-secondary btn-full" style="padding:8px;font-size:12px;" onclick="openRevisarPago('${uid}', ${data.total})">Revisar pago enviado</button></div>`;
+        }
+        html += `</div>`;
       }
       cTeDeben.innerHTML = html;
     }
@@ -1292,13 +1416,83 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
       cTuDebes.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No tienes deudas pendientes.</div>';
     } else {
       let html = '';
-      for (const [uid, amount] of Object.entries(oweToMap)) {
-        html += `<div class="card" style="padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;font-weight:600;">Debes a ${getProfileName(uid)}</div>
-          <div style="font-size:15px;font-weight:900;color:var(--red);">${amount.toFixed(2)}€</div>
-        </div>`;
+      for (const [uid, data] of Object.entries(oweToMap)) {
+        html += `<div class="card" style="padding:14px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;font-weight:600;">Debes a ${getProfileName(uid)}</div>
+            <div style="font-size:15px;font-weight:900;color:var(--red);">${data.total.toFixed(2)}€</div>
+          </div>`;
+        if (data.pending.length > 0) {
+          html += `<div style="margin-top:12px;"><button class="btn btn-primary btn-full" style="padding:8px;font-size:12px;" onclick="openLiquidarItem('${uid}', ${data.total})">Liquidar con Bizum</button></div>`;
+        } else if (data.requested.length > 0) {
+          html += `<div style="margin-top:12px;font-size:11px;color:var(--ink3);text-align:center;">Pendiente de que confirmen tu pago</div>`;
+        }
+        html += `</div>`;
       }
       cTuDebes.innerHTML = html;
+    }
+
+    // Historial
+    const histGastos = [];
+    const histTrans = [];
+
+    state.expenses.forEach(exp => {
+      histGastos.push(exp);
+      const splits = exp.expense_splits || [];
+      splits.forEach(split => {
+        if (split.status === 'paid') {
+          histTrans.push({ exp, split });
+        }
+      });
+    });
+
+    const listGastos = document.getElementById('historial-gastos');
+    if (listGastos) {
+      if (histGastos.length === 0) {
+        listGastos.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay gastos en este grupo todavía.</div>';
+      } else {
+        let html = '';
+        // Sort by created_at desc (newest first)
+        histGastos.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).forEach(exp => {
+          html += `<div class="card" style="padding:0 14px;margin-bottom:14px;">
+            <div class="expense-item" style="border-bottom:0;" onclick="openExpenseDetail('${exp.id}')">
+              <div class="exp-left">
+                <div class="exp-icon">🧾</div>
+                <div class="exp-info">
+                  <div class="exp-name">${exp.title}</div>
+                  <div class="exp-sub">Pagado por ${getProfileName(exp.payer_id)}</div>
+                </div>
+              </div>
+              <div class="exp-amount">${exp.amount.toFixed(2)}€</div>
+            </div>
+          </div>`;
+        });
+        listGastos.innerHTML = html;
+      }
+    }
+
+    const listTrans = document.getElementById('historial-transferencias');
+    if (listTrans) {
+      if (histTrans.length === 0) {
+        listTrans.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay transferencias completadas todavía.</div>';
+      } else {
+        let html = '';
+        histTrans.sort((a,b) => new Date(b.split.created_at) - new Date(a.split.created_at)).forEach(t => {
+          html += `<div class="card" style="padding:0 14px;margin-bottom:14px;">
+            <div class="expense-item" style="border-bottom:0;">
+              <div class="exp-left">
+                <div class="exp-icon" style="background:var(--bg3);color:var(--ink2);">💸</div>
+                <div class="exp-info">
+                  <div class="exp-name">${getProfileName(t.split.debtor_id)} a ${getProfileName(t.exp.payer_id)}</div>
+                  <div class="exp-sub">Liquidado · ${new Date(t.split.created_at).toLocaleDateString('es-ES')}</div>
+                </div>
+              </div>
+              <div class="exp-amount positive">+${t.split.amount.toFixed(2)}€</div>
+            </div>
+          </div>`;
+        });
+        listTrans.innerHTML = html;
+      }
     }
   }
 
@@ -1326,6 +1520,9 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
         if (window.loadPlans) window.loadPlans();
         if (window.loadFeed) window.loadFeed();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${state.currentUserId}` }, payload => {
+        if (window.loadNotifications) window.loadNotifications();
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('🔗 Suscrito en tiempo real al grupo', state.currentGroupId);
@@ -1351,14 +1548,6 @@ window.switchAgendaTab = function switchAgendaTab(el, name) {
 const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 // Días con plan por mes (clave: 'YYYY-M')
 // Cada día con plan lleva tu estado de asistencia:
-// voy = verde · novoy = rojo · quizas = azul · tarde = ámbar oscuro
-const planDays = {
-  '2026-2': { 12: 'voy', 22: 'novoy' },
-  '2026-3': { 5: 'voy', 19: 'novoy' },
-  '2026-4': { 2: 'voy', 10: 'voy', 22: 'tarde', 23: 'voy', 27: 'quizas', 29: 'novoy' },
-  '2026-5': { 14: 'voy', 20: 'quizas' },
-  '2026-6': { 5: 'voy' },
-};
 
 window.renderCalendar = function renderCalendar() {
   const grid = document.getElementById('cal-month-grid');
@@ -1385,19 +1574,36 @@ window.renderCalendar = function renderCalendar() {
   let leadingEmpty = firstDay === 0 ? 6 : firstDay - 1;
   for (let i = 0; i < leadingEmpty; i++) html += `<div></div>`;
 
-  const lastDate = new Date(y, m + 1, 0).getDate();
-  const planMap = planDays[key] || {};
+  // Create planMap dynamically from state.plans
+  const planMap = {};
+  if (state.plans && state.plans.length) {
+    state.plans.forEach(plan => {
+      if (plan.status !== 'cancelled') {
+        const pd = new Date(plan.event_date);
+        if (pd.getFullYear() === y && pd.getMonth() === m) {
+          const day = pd.getDate();
+          const myAtt = plan.plan_attendance?.find(a => a.user_id === state.currentUserId);
+          // Only show 'voy', 'novoy', 'tarde', 'quizas', or 'pendiente'
+          planMap[day] = myAtt ? myAtt.status : 'pendiente';
+        }
+      }
+    });
+  }
+
   const todayKey = `${todayY}-${todayM}`;
+  const currentKey = `${y}-${m}`;
 
   for (let day = 1; day <= lastDate; day++) {
-    const isToday = (key === todayKey && day === todayD);
+    const isToday = (currentKey === todayKey && day === todayD);
     const dayDate = new Date(y, m, day);
     const isPastDay = dayDate < new Date(todayY, todayM, todayD);
-    const attendance = planMap[day];   // 'voy' | 'novoy' | 'quizas' | 'tarde' | undefined
+    const attendance = planMap[day];   
     let dayCls = 'cal-day';
     if (isToday) dayCls += ' today';
     else if (isPastDay) dayCls += ' past';
+    
     if (attendance) dayCls += ' has-plan att-' + attendance;
+    
     const isFuture = !isPastDay;
     html += `<div class="${dayCls}" onclick="showCalModal('${day}', ${isFuture})">${day}</div>`;
   }
@@ -1607,7 +1813,131 @@ window.confirmTransferAdmin = function confirmTransferAdmin(name) {
    ════════════════════════════════════════════════════════════════ */
 let pendingReplyTo = null;       // @handle al que se responde
 let pendingReplyRootId = null;   // id del comentario RAÍZ donde anidar el hilo
-let commentSeq = 100;            // generador de IDs únicos
+
+window.loadPlanComments = async function loadPlanComments(planId) {
+  const list = document.getElementById('comments-list');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:10px;">Cargando comentarios...</div>';
+
+  const { data: comments, error } = await supabase
+    .from('plan_comments')
+    .select('*')
+    .eq('plan_id', planId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error loadPlanComments:', error);
+    list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--red);padding:10px;">Error al cargar comentarios</div>';
+    return;
+  }
+
+  const countEl = document.getElementById('comment-count-2');
+  if (countEl) countEl.textContent = comments ? comments.length : 0;
+
+  if (!comments || comments.length === 0) {
+    list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:10px;">No hay comentarios aún.</div>';
+    return;
+  }
+
+  // Build tree
+  const roots = comments.filter(c => !c.parent_comment_id);
+  const replies = comments.filter(c => c.parent_comment_id);
+
+  let html = '';
+  roots.forEach(r => {
+    html += generateCommentHtml(r, replies.filter(rep => rep.parent_comment_id === r.id));
+  });
+
+  list.innerHTML = html;
+}
+
+function generateCommentHtml(comment, thread = []) {
+  const name = getProfileName(comment.user_id);
+  const initials = name.substring(0,2).toUpperCase();
+  const time = new Date(comment.created_at).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+  const authorHandle = '@' + name.split(' ')[0].toLowerCase();
+  
+  let html = `
+    <div class="comment" data-author="${authorHandle}" data-comment-id="${comment.id}">
+      <div class="comment-header">
+        <div class="comment-avatar" style="background:var(--blue);">${initials}</div>
+        <div class="comment-author">${name}</div>
+        <div class="comment-time">${time}</div>
+      </div>
+      <div class="comment-text">${comment.text}</div>
+      <div class="comment-actions">
+        <span class="comment-action" onclick="likeComment('${comment.id}')">❤ ${comment.likes || 0}</span>
+        <span class="comment-action" onclick="startReply('${authorHandle}','${comment.id}')">Responder</span>
+      </div>`;
+
+  if (thread.length > 0) {
+    html += '<div class="comment-reply-thread">';
+    thread.forEach(rep => {
+      const rname = getProfileName(rep.user_id);
+      const rinitials = rname.substring(0,2).toUpperCase();
+      const rtime = new Date(rep.created_at).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+      const rauthorHandle = '@' + rname.split(' ')[0].toLowerCase();
+      html += `
+        <div class="comment-reply" data-author="${rauthorHandle}" data-comment-id="${rep.id}">
+          <div class="comment-header">
+            <div class="comment-avatar" style="background:var(--green);">${rinitials}</div>
+            <div class="comment-author">${rname}</div>
+            <div class="comment-time">${rtime}</div>
+          </div>
+          <div class="comment-text">${rep.text}</div>
+          <div class="comment-actions">
+            <span class="comment-action" onclick="likeComment('${rep.id}')">❤ ${rep.likes || 0}</span>
+            <span class="comment-action" onclick="startReply('${rauthorHandle}','${comment.id}')">Responder</span>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="comment-reply-thread"></div>';
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+window.addComment = async function addComment() {
+  const input = document.getElementById('comment-input');
+  const val = input.value.trim();
+  if (!val) { showToast('Escribe algo antes de enviar'); return; }
+
+  const startsWithMention = /^@[\w]+\s/.test(val);
+  const parentId = (startsWithMention && pendingReplyRootId) ? pendingReplyRootId : null;
+
+  input.value = 'Enviando...';
+  input.disabled = true;
+
+  const { error } = await supabase.from('plan_comments').insert([{
+    plan_id: state.currentPlanId,
+    user_id: state.currentUserId,
+    text: val,
+    parent_comment_id: parentId
+  }]);
+
+  input.value = '';
+  input.disabled = false;
+  pendingReplyRootId = null;
+
+  if (error) {
+    console.error(error);
+    showToast('Error al enviar el comentario');
+  } else {
+    loadPlanComments(state.currentPlanId);
+  }
+}
+
+window.likeComment = async function likeComment(commentId) {
+  // Simplificado para MVP: sumar 1 al counter directo sin tabla pivote.
+  const { data } = await supabase.from('plan_comments').select('likes').eq('id', commentId).single();
+  if (data) {
+    await supabase.from('plan_comments').update({ likes: (data.likes || 0) + 1 }).eq('id', commentId);
+    loadPlanComments(state.currentPlanId);
+  }
+}
 
 // startReply recibe el handle y el id del comentario donde se pulsó "Responder".
 // Si ese comentario es una respuesta, se sube hasta el comentario raíz para
@@ -2207,11 +2537,31 @@ window.openReclamFor = function openReclamFor(type, contextLabel) {
   }
   document.getElementById('modal-new-reclam').classList.add('open');
 }
-window.submitReclam = function submitReclam() {
+window.submitReclam = async function submitReclam() {
   const motivo = document.getElementById('reclam-motivo').value.trim();
   if (!motivo) { showToast('Debes explicar el motivo de la reclamación'); return; }
-  closeModal('modal-new-reclam');
-  showToast('Reclamación enviada · Pendiente de revisión del admin ✓');
+  
+  const btn = document.querySelector('#modal-new-reclam .btn-primary');
+  if (btn) btn.textContent = 'Enviando...';
+
+  const { error } = await supabase.from('claims').insert([{
+    user_id: state.currentUserId,
+    group_id: state.currentGroupId,
+    type: newReclamType,
+    description: `[${newReclamContext}] ${motivo}`,
+    status: 'pending'
+  }]);
+
+  if (btn) btn.textContent = 'Enviar reclamación';
+
+  if (error) {
+    console.error(error);
+    showToast('Error al enviar la reclamación');
+  } else {
+    closeModal('modal-new-reclam');
+    showToast('Reclamación enviada · Pendiente de revisión del admin ✓');
+    if (window.loadActivityClaims) window.loadActivityClaims();
+  }
 }
 
 // Aplicar visibilidad de admin a las reclamaciones
@@ -2263,36 +2613,141 @@ window.openGroupChat = function openGroupChat() {
 
 // Liquidar deuda individual
 window.openLiquidarItem = function openLiquidarItem(toId, amount) {
-  const nameMap = { carlos: 'Carlos', mario: 'Mario', pablo: 'Pablo', ana: 'Ana', lucas: 'Lucas', javi: 'Javi', sergio: 'Sergio', marta: 'Marta' };
   liqCurrentTo = toId;
-  document.getElementById('liq-item-name').textContent = 'Debes a ' + (nameMap[toId] || toId);
-  document.getElementById('liq-item-amount').textContent = '−' + amount;
+  const m = state.members.find(x => x.id === toId);
+  const name = m ? m.name : 'Usuario';
+  document.getElementById('liq-item-name').textContent = 'Debes a ' + name;
+  document.getElementById('liq-item-amount').textContent = '−' + amount.toFixed(2) + '€';
+  document.getElementById('liq-proof-input').value = ''; // Reset input
   document.getElementById('modal-liquidar-item').classList.add('open');
 }
 
-let liqUploaded = false;
 let liqCurrentTo = null;
-window.handleLiqUpload = function handleLiqUpload() {
-  liqUploaded = true;
-  const zone = document.getElementById('liq-upload-zone');
-  if (zone) { zone.style.borderColor = 'var(--green)'; zone.innerHTML = '<div class="upload-label" style="color:var(--green)">✓ Comprobante adjuntado</div>'; }
-}
-window.confirmLiquidar = function confirmLiquidar() {
-  if (!liqUploaded) { showToast('Debes adjuntar el comprobante primero'); return; }
-  closeModal('modal-liquidar-item');
-  liqUploaded = false;
-  // El botón de esa deuda pasa a "Liquidado"
-  if (liqCurrentTo) {
-    const btn = document.getElementById('liq-btn-' + liqCurrentTo);
-    if (btn) {
-      btn.textContent = '✓ Liquidado';
-      btn.disabled = true;
-      btn.classList.remove('btn-primary');
-      btn.classList.add('btn-secondary');
-      btn.onclick = null;
+
+window.confirmLiquidar = async function confirmLiquidar() {
+  const fileInput = document.getElementById('liq-proof-input');
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('Debes adjuntar el comprobante primero');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${state.currentUserId}-${Date.now()}.${fileExt}`;
+  const filePath = `${state.currentGroupId}/${fileName}`;
+
+  const btn = document.getElementById('liq-confirm-btn');
+  const prevText = btn.textContent;
+  btn.textContent = 'Subiendo...';
+  btn.disabled = true;
+  
+  // Subir archivo al bucket
+  const { error: uploadError } = await supabase.storage
+    .from('expense-proofs')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error(uploadError);
+    showToast('Error al subir comprobante');
+    btn.textContent = prevText;
+    btn.disabled = false;
+    return;
+  }
+
+  // Buscar todos los splits pendientes que le debes a esta persona
+  const splitIds = [];
+  state.expenses.forEach(exp => {
+    if (exp.payer_id === liqCurrentTo) {
+      const splits = exp.expense_splits || [];
+      splits.forEach(split => {
+        if (split.debtor_id === state.currentUserId && split.status === 'pending') {
+          splitIds.push(split.id);
+        }
+      });
+    }
+  });
+
+  if (splitIds.length > 0) {
+    const { error: updateError } = await supabase
+      .from('expense_splits')
+      .update({ status: 'requested', proof_url: filePath })
+      .in('id', splitIds);
+
+    if (updateError) {
+      console.error(updateError);
+      showToast('Error al actualizar deudas');
+    } else {
+      showToast('Pago enviado ✓');
+      closeModal('modal-liquidar-item');
+      if (window.loadExpenses) window.loadExpenses();
     }
   }
-  showToast('Pago liquidado · La otra persona debe confirmar la recepción ✓');
+  
+  btn.textContent = prevText;
+  btn.disabled = false;
+}
+
+window.revisarCurrentFrom = null;
+window.revisarSplitIds = [];
+
+window.openRevisarPago = async function openRevisarPago(fromId, amount) {
+  let proofPath = null;
+  const splitIds = [];
+  
+  state.expenses.forEach(exp => {
+    if (exp.payer_id === state.currentUserId) {
+      const splits = exp.expense_splits || [];
+      splits.forEach(split => {
+        if (split.debtor_id === fromId && split.status === 'requested') {
+          splitIds.push(split.id);
+          if (!proofPath && split.proof_url) proofPath = split.proof_url;
+        }
+      });
+    }
+  });
+
+  if (splitIds.length === 0) return;
+
+  window.revisarCurrentFrom = fromId;
+  window.revisarSplitIds = splitIds;
+
+  const m = state.members.find(x => x.id === fromId);
+  const name = m ? m.name : 'Usuario';
+  document.getElementById('rev-item-name').textContent = name + ' te ha pagado';
+  document.getElementById('rev-item-amount').textContent = '+' + amount.toFixed(2) + '€';
+  
+  const container = document.getElementById('rev-proof-container');
+  container.innerHTML = '<div style="padding:20px;color:var(--ink3);">Cargando comprobante...</div>';
+  document.getElementById('modal-revisar-pago').classList.add('open');
+
+  if (proofPath) {
+    const { data, error } = await supabase.storage.from('expense-proofs').createSignedUrl(proofPath, 3600);
+    if (data && data.signedUrl) {
+      container.innerHTML = `<img src="${data.signedUrl}" style="width:100%; border-radius:12px; max-height:400px; object-fit:contain; background:#f0f0f0;">`;
+    } else {
+      container.innerHTML = '<div style="padding:20px;color:var(--red);">Error al cargar comprobante</div>';
+    }
+  } else {
+    container.innerHTML = '<div style="padding:20px;color:var(--ink3);">No se adjuntó comprobante</div>';
+  }
+}
+
+window.confirmRecepcion = async function confirmRecepcion() {
+  if (window.revisarSplitIds.length === 0) return;
+  
+  const { error } = await supabase
+    .from('expense_splits')
+    .update({ status: 'paid' })
+    .in('id', window.revisarSplitIds);
+
+  if (error) {
+    console.error(error);
+    showToast('Error al confirmar');
+  } else {
+    showToast('Recepción confirmada ✓');
+    closeModal('modal-revisar-pago');
+    if (window.loadExpenses) window.loadExpenses();
+  }
 }
 
 // Parpadeo de pendientes: activar/desactivar según número
@@ -2675,7 +3130,19 @@ window.resetInviteCode = function resetInviteCode() {
 /* ════════════════════════════════════════════════════════════════
    V11: SUBSECCIONES DE CONFIGURACIÓN Y AYUDA
    ════════════════════════════════════════════════════════════════ */
-window.openSettingSub = function openSettingSub(kind) {
+window.openSettingSub = async function openSettingSub(kind) {
+  let email = 'tu_usuario@correo.com';
+  let phone = '+34 600 000 000';
+  if (kind === 'cuenta') {
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData && userData.user && userData.user.email) email = userData.user.email;
+    
+    if (state.currentUserId) {
+      const { data: profile } = await supabase.from('profiles').select('phone').eq('id', state.currentUserId).single();
+      if (profile && profile.phone) phone = profile.phone;
+      else phone = 'No establecido';
+    }
+  }
   const cfg = {
     idioma: {
       title: 'Idioma',
@@ -2690,10 +3157,21 @@ window.openSettingSub = function openSettingSub(kind) {
       title: 'Tema',
       html: `
         <div class="card" style="padding:0 14px;">
-          <div class="card-row" style="cursor:pointer;" onclick="showToast('Tema: Claro')"><div class="card-content"><div class="card-name" style="font-size:13px;">Claro</div><div class="card-sub">Fondo blanco</div></div><span class="pill pill-dark">Activo</span></div>
-          <div class="card-row" style="cursor:pointer;" onclick="showToast('Tema: Oscuro (próximamente)')"><div class="card-content"><div class="card-name" style="font-size:13px;">Oscuro</div><div class="card-sub">Próximamente</div></div><span class="pill pill-outline">—</span></div>
-          <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="showToast('Tema: Automático')"><div class="card-content"><div class="card-name" style="font-size:13px;">Automático</div><div class="card-sub">Según el sistema</div></div><span class="pill pill-outline">—</span></div>
-        </div>`,
+          <div class="card-row" style="cursor:pointer;" onclick="setTheme('light')"><div class="card-content"><div class="card-name" style="font-size:13px;">Claro</div><div class="card-sub">Fondo blanco</div></div><span class="pill pill-dark" id="tema-claro-pill">Activo</span></div>
+          <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="setTheme('dark')"><div class="card-content"><div class="card-name" style="font-size:13px;">Oscuro</div><div class="card-sub">Fondo negro</div></div><span class="pill pill-outline" id="tema-oscuro-pill">—</span></div>
+        </div>
+        <script>
+          // update UI on render
+          setTimeout(() => {
+            const isDark = localStorage.getItem('koves_theme') === 'dark';
+            if (isDark) {
+              document.getElementById('tema-claro-pill').className = 'pill pill-outline';
+              document.getElementById('tema-claro-pill').textContent = '—';
+              document.getElementById('tema-oscuro-pill').className = 'pill pill-dark';
+              document.getElementById('tema-oscuro-pill').textContent = 'Activo';
+            }
+          }, 50);
+        </script>`,
     },
     push: {
       title: 'Notificaciones push',
@@ -2718,8 +3196,8 @@ window.openSettingSub = function openSettingSub(kind) {
       title: 'Cuenta',
       html: `
         <div class="card" style="padding:0 14px;">
-          <div class="card-row" style="cursor:pointer;" onclick="showToast('Correo verificado ✓')"><div class="card-content"><div class="card-name" style="font-size:13px;">Correo</div><div class="card-sub">tu_usuario@correo.com</div></div><span class="pill pill-green">Verificado</span></div>
-          <div class="card-row" style="cursor:pointer;" onclick="showToast('Teléfono verificado ✓')"><div class="card-content"><div class="card-name" style="font-size:13px;">Teléfono</div><div class="card-sub">+34 600 000 000</div></div><span class="pill pill-green">Verificado</span></div>
+          <div class="card-row" style="cursor:pointer;" onclick="showToast('Correo verificado ✓')"><div class="card-content"><div class="card-name" style="font-size:13px;">Correo</div><div class="card-sub">${email}</div></div><span class="pill pill-green">Verificado</span></div>
+          <div class="card-row" style="cursor:pointer;" onclick="showToast('Teléfono verificado ✓')"><div class="card-content"><div class="card-name" style="font-size:13px;">Teléfono</div><div class="card-sub">${phone}</div></div><span class="pill pill-green">Verificado</span></div>
           <div class="card-row" style="cursor:pointer;border-bottom:0;" onclick="showToast('Te enviaremos un enlace para cambiar la contraseña')"><div class="card-content"><div class="card-name" style="font-size:13px;">Cambiar contraseña</div></div><span style="color:var(--ink3);">›</span></div>
         </div>`,
     },
@@ -2772,6 +3250,33 @@ window.openHelpSub = function openHelpSub(kind) {
     </div>
   `;
   document.getElementById('modal-help-sub').classList.add('open');
+}
+
+window.setTheme = function setTheme(mode) {
+  if (mode === 'dark') {
+    document.body.classList.add('dark-theme');
+    localStorage.setItem('koves_theme', 'dark');
+    const pC = document.getElementById('tema-claro-pill');
+    const pO = document.getElementById('tema-oscuro-pill');
+    if (pC && pO) {
+      pC.className = 'pill pill-outline'; pC.textContent = '—';
+      pO.className = 'pill pill-dark'; pO.textContent = 'Activo';
+    }
+  } else {
+    document.body.classList.remove('dark-theme');
+    localStorage.setItem('koves_theme', 'light');
+    const pC = document.getElementById('tema-claro-pill');
+    const pO = document.getElementById('tema-oscuro-pill');
+    if (pC && pO) {
+      pC.className = 'pill pill-dark'; pC.textContent = 'Activo';
+      pO.className = 'pill pill-outline'; pO.textContent = '—';
+    }
+  }
+}
+
+// Inicializar tema al arrancar
+if (localStorage.getItem('koves_theme') === 'dark') {
+  document.body.classList.add('dark-theme');
 }
 let rouletteOptions = [];
 let rouletteSpinning = false;

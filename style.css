@@ -215,6 +215,7 @@ body {
 .cal-day.has-plan.att-novoy::after { background: var(--red); }
 .cal-day.has-plan.att-quizas::after { background: #2563EB; }
 .cal-day.has-plan.att-tarde::after { background: #C07000; }
+.cal-day.has-plan.att-pendiente::after { background: var(--ink); }
 .cal-day.today.has-plan::after { background: #fff; opacity: .85; }
 .cal-day.past { color: var(--ink3); }
 
@@ -758,10 +759,10 @@ textarea.form-input { resize: vertical; min-height: 72px; font-family: 'DM Sans'
 .msg-bubble.me { background: var(--ink); color: #fff; align-self: flex-end; border-bottom-right-radius: 6px; }
 .msg-author { font-size: 10px; font-weight: 700; color: var(--ink3); padding: 4px 12px 0; align-self: flex-start; }
 .msg-time { font-size: 9px; color: var(--ink3); padding: 2px 4px 0; }
-.msg-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; max-width: 85%; }
+.msg-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; max-width: 92%; }
 .msg-group.me { align-self: flex-end; }
 .msg-group.them { align-self: flex-start; }
-.conv-input-row { position: fixed; bottom: 0; left: 0; background: var(--bg); padding: 10px 14px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; box-sizing: border-box; width: 100%; z-index: 50; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.conv-input-row { position: fixed; bottom: var(--nav-h); left: 50%; transform: translateX(-50%); background: var(--bg); padding: 10px 14px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; box-sizing: border-box; width: 100%; max-width: 430px; z-index: 50; padding-bottom: 10px; }
 .conv-input-row .text-input { flex: 1 1 auto; min-width: 0; width: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .conv-input-row .send-btn { flex-shrink: 0; }
 

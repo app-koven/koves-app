@@ -119,6 +119,9 @@
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div class="month-nav-label" id="plans-act-month">Mayo 2026</div>
+          <button class="month-nav-btn" id="plans-act-next" onclick="plansMonthNav(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
         <div id="plans-activos-list"></div>
       </div>
@@ -155,10 +158,11 @@
           <!-- Generado dinámicamente -->
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line);margin-top:12px;">
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>Asististe</div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;"></span>No asististe</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>Voy</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;"></span>No voy</div>
           <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:#2563EB;display:inline-block;"></span>Quizás</div>
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:#C07000;display:inline-block;"></span>Llego tarde</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:#C07000;display:inline-block;"></span>Tarde</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);"><span style="width:8px;height:8px;border-radius:50%;background:var(--ink);display:inline-block;"></span>Pendiente</div>
         </div>
       </div>
     </div>
@@ -322,7 +326,7 @@
         </div>
       </div>
       <div style="font-size:10px;color:var(--ink3);margin-top:8px;line-height:1.5;" id="rules-static-hint">
-        Reglas fijas: rankings siempre anónimos · comprobante obligatorio · 2 amarillas = roja.
+        Reglas fijas: rankings siempre anónimos · comprobante obligatorio.
       </div>
     </div>
 
@@ -424,59 +428,7 @@
     <div class="section">
       <div class="section-head"><span class="section-title">Comentarios</span><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);" id="comment-count-2">8</span></div>
       <div id="comments-list">
-        <div class="comment" data-author="@mario" data-comment-id="c1">
-          <div class="comment-header">
-            <div class="comment-avatar">MR</div>
-            <div class="comment-author">Mario</div>
-            <div class="comment-time">20:45</div>
-          </div>
-          <div class="comment-text">Yo llego sobre las 22:45, si pedís cena contad conmigo.</div>
-          <div class="comment-actions">
-            <span class="comment-action" onclick="likeComment(this)">❤ 2</span>
-            <span class="comment-action" onclick="startReply('@mario','c1')">Responder</span>
-          </div>
-          <!-- Replies de c1 -->
-          <div class="comment-reply-thread">
-            <div class="comment-reply" data-author="@carlos" data-comment-id="c1r1">
-              <div class="comment-header">
-                <div class="comment-avatar" style="background:var(--green);">CS</div>
-                <div class="comment-author">Carlos</div>
-                <div class="comment-time">21:02</div>
-              </div>
-              <div class="comment-text"><strong style="color:var(--ink);">@mario</strong> ok, te esperamos para el arroz entonces 😄</div>
-              <div class="comment-actions">
-                <span class="comment-action" onclick="likeComment(this)">❤ 1</span>
-                <span class="comment-action" onclick="startReply('@carlos','c1')">Responder</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="comment" data-author="@lucas" data-comment-id="c2">
-          <div class="comment-header">
-            <div class="comment-avatar">LC</div>
-            <div class="comment-author">Lucas</div>
-            <div class="comment-time">21:10</div>
-          </div>
-          <div class="comment-text">Voy, pero no sé si después salgo. Depende del ambiente.</div>
-          <div class="comment-actions">
-            <span class="comment-action" onclick="likeComment(this)">❤ 1</span>
-            <span class="comment-action" onclick="startReply('@lucas','c2')">Responder</span>
-          </div>
-          <div class="comment-reply-thread"></div>
-        </div>
-        <div class="comment" data-author="@ana" data-comment-id="c3">
-          <div class="comment-header">
-            <div class="comment-avatar" style="background:var(--green);">AN</div>
-            <div class="comment-author">Ana</div>
-            <div class="comment-time">21:33</div>
-          </div>
-          <div class="comment-text">¿Alguien trae algo de beber? Yo traigo las cervezas si me decís cuántos sois.</div>
-          <div class="comment-actions">
-            <span class="comment-action" onclick="likeComment(this)">❤ 4</span>
-            <span class="comment-action" onclick="startReply('@ana','c3')">Responder</span>
-          </div>
-          <div class="comment-reply-thread"></div>
-        </div>
+        <div style="text-align:center;font-size:12px;color:var(--ink3);padding:10px;">Cargando comentarios...</div>
       </div>
       <!-- Input comentario -->
       <div class="input-row" style="margin-bottom:4px;">
@@ -540,17 +492,9 @@
       <div class="section-head"><span class="section-title">Mejores momentos</span><span style="font-size:10px;color:var(--ink3);">Solo asistentes</span></div>
       <div style="font-size:11px;color:var(--ink3);margin-bottom:12px;line-height:1.5;">Sube las fotos que quieras de este plan. Solo pueden subir fotos quienes asistieron.</div>
 
-      <!-- Fotos subidas (mock) -->
+      <!-- Fotos subidas (cargadas por JS) -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;" id="plan-photos-grid">
-        <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;">
-          <span style="font-size:24px;">🍽️</span>
-        </div>
-        <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;">
-          <span style="font-size:24px;">🎉</span>
-        </div>
-        <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;">
-          <span style="font-size:24px;">🎸</span>
-        </div>
+        <div style="grid-column:1/-1;text-align:center;font-size:12px;color:var(--ink3);">Cargando fotos...</div>
       </div>
 
       <!-- Subir foto -->
@@ -601,7 +545,7 @@
     <!-- KPI ampliado TOTALES (toda la antigüedad, todos los grupos) -->
     <div class="section" style="padding-top:16px;">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:8px;text-align:center;">Métricas totales · todos los grupos · desde el registro · toca para ver detalle</div>
-      <div style="display:grid;grid-template-columns:repeat(1,1fr);gap:6px;text-align:center;">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;text-align:center;">
         <div class="card" style="padding:10px 6px;cursor:pointer;">
           <div style="font-size:14px;font-weight:900;letter-spacing:-.03em;" id="mp-attended">-</div>
           <div style="font-size:9px;color:var(--ink3);font-weight:600;margin-top:2px;line-height:1.2;">Asistidos</div>
@@ -1022,6 +966,11 @@
         <div class="sheet-item-label">Editar perfil</div>
         <div class="sheet-item-arrow">›</div>
       </div>
+      <div class="sheet-item" onclick="openNotifications()">
+        <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div class="sheet-item-label">Notificaciones</div>
+        <div class="sheet-item-arrow">›</div>
+      </div>
       <div class="sheet-item" onclick="openMyStats()">
         <div class="sheet-item-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
         <div class="sheet-item-label">Mis estadísticas</div>
@@ -1363,19 +1312,7 @@
         <label class="form-label">Descripción</label>
         <textarea class="form-input" id="cp-desc" placeholder="Detalles del plan, qué se trae, dress code…"></textarea>
       </div>
-      <div class="form-group">
-        <label class="form-label">¿Crear como?</label>
-        <div class="action-grid" style="margin-top:2px;">
-          <div class="action-btn selected" onclick="selectCreateMode(this,'confirmado')">
-            <div class="action-title">Confirmado</div>
-            <div class="action-sub">Directo al calendario</div>
-          </div>
-          <div class="action-btn" onclick="selectCreateMode(this,'propuesto')">
-            <div class="action-title">Propuesto</div>
-            <div class="action-sub">Votación abierta</div>
-          </div>
-        </div>
-      </div>
+
       <button class="btn btn-primary btn-full" onclick="submitCreatePlan()" style="margin-bottom:8px;">Crear plan</button>
       <button class="btn btn-secondary btn-full" onclick="closeModal('modal-create-plan')">Cancelar</button>
     </div>
@@ -1390,7 +1327,9 @@
     <div class="modal-body">
       <div style="text-align:center;margin-bottom:16px;">
         <div class="sheet-profile-avatar" id="ep-avatar" style="margin:0 auto 8px;width:72px;height:72px;font-size:22px;">TU</div>
-        <span style="font-size:12px;color:var(--ink3);cursor:pointer;text-decoration:underline;">Cambiar foto</span>
+        <label style="font-size:12px;color:var(--ink3);cursor:pointer;text-decoration:underline;">Cambiar foto
+          <input type="file" id="ep-avatar-input" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+        </label>
       </div>
       <div class="form-group">
         <label class="form-label">Nombre</label>
@@ -1451,29 +1390,10 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Notificaciones <span class="modal-close" onclick="closeModal('modal-notif')">Cerrar</span></div>
     <div class="modal-body">
-      <div class="card" style="padding:0 14px;margin-bottom:14px;">
-        <div class="feed-item">
-          <div class="feed-num">●</div>
-          <div class="feed-body"><strong>Mario te ha mencionado</strong><p>"@tu, ¿llevas tú las cervezas?"</p></div>
-          <div class="feed-time">21:33</div>
-        </div>
-        <div class="feed-item">
-          <div class="feed-num">●</div>
-          <div class="feed-body"><strong>Ana propuso un plan</strong><p>Cena de mitad de semana · Miércoles 27</p></div>
-          <div class="feed-time">20:14</div>
-        </div>
-        <div class="feed-item">
-          <div class="feed-num" style="color:transparent;">○</div>
-          <div class="feed-body"><strong>Votación abierta</strong><p>Salida de fiesta · cierra a las 20:00</p></div>
-          <div class="feed-time">18:00</div>
-        </div>
-        <div class="feed-item">
-          <div class="feed-num" style="color:transparent;">○</div>
-          <div class="feed-body"><strong>Lucas te debe 6€</strong><p>Cena conjunta del viernes pasado</p></div>
-          <div class="feed-time">Ayer</div>
-        </div>
+      <div class="card" style="padding:0 14px;margin-bottom:14px;" id="notif-list">
+        <div style="padding:16px;text-align:center;color:var(--ink3);font-size:13px;">Cargando notificaciones...</div>
       </div>
-      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-notif')">Marcar todas como leídas</button>
+      <button class="btn btn-secondary btn-full" onclick="markAllNotifAsRead()">Marcar todas como leídas</button>
     </div>
   </div>
 </div>
@@ -1601,23 +1521,7 @@
         <strong>Solo administradores.</strong> Los cambios se aplican al instante. Todos los miembros verán las nuevas reglas.
       </div>
 
-      <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Sanciones</div>
-      <div class="card" style="padding:0 14px;margin-bottom:18px;">
-        <div class="card-row" style="cursor:default;">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Amarilla</div><div class="card-sub">Importe que va al bote del mes</div></div>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <input type="number" id="rules-yellow-amount" value="2" min="0" step="0.5" style="width:60px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px;font-family:'DM Mono',monospace;font-size:16px;">
-            <span style="font-size:12px;color:var(--ink3);font-weight:700;">€</span>
-          </div>
-        </div>
-        <div class="card-row" style="cursor:default;border-bottom:0;">
-          <div class="card-content"><div class="card-name" style="font-size:13px;">Sanción · Roja</div><div class="card-sub">Importe que va al bote del mes</div></div>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <input type="number" id="rules-red-amount" value="10" min="0" step="0.5" style="width:60px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px;font-family:'DM Mono',monospace;font-size:16px;">
-            <span style="font-size:12px;color:var(--ink3);font-weight:700;">€</span>
-          </div>
-        </div>
-      </div>
+
 
       <div style="font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Ajustes del grupo</div>
       <div class="card" style="padding:0 14px;margin-bottom:18px;">
@@ -1755,14 +1659,31 @@
       </div>
       <div class="form-group">
         <label class="form-label">Comprobante de pago (obligatorio)</label>
-        <div class="upload-zone" style="padding:16px;" id="liq-upload-zone" onclick="handleLiqUpload()">
-          <div class="upload-icon">📎</div>
-          <div class="upload-label">Adjuntar comprobante</div>
-          <div class="upload-sub">Captura de Bizum o transferencia</div>
-        </div>
+        <input type="file" id="liq-proof-input" class="form-input" accept="image/*" style="margin-top:8px;">
       </div>
       <button class="btn btn-primary btn-full" onclick="confirmLiquidar()" style="margin-bottom:8px;" id="liq-confirm-btn">Marcar como pagado</button>
       <button class="btn btn-secondary btn-full" onclick="closeModal('modal-liquidar-item')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVISAR PAGO (COBRADOR) -->
+<div class="modal-overlay" id="modal-revisar-pago">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Revisar pago <span class="modal-close" onclick="closeModal('modal-revisar-pago')">Cerrar</span></div>
+    <div class="modal-body">
+      <div class="card" style="padding:0 14px;margin-bottom:14px;">
+        <div class="expense-item" style="border-bottom:0;">
+          <div class="exp-left"><div class="exp-icon">💰</div><div class="exp-info"><div class="exp-name" id="rev-item-name">Carlos te ha pagado</div><div class="exp-sub">Comprobante adjunto</div></div></div>
+          <div class="exp-amount positive" id="rev-item-amount">+6€</div>
+        </div>
+      </div>
+      <div id="rev-proof-container" style="text-align:center;margin-bottom:16px;">
+        <!-- Imagen se carga aquí -->
+      </div>
+      <button class="btn btn-primary btn-full" onclick="confirmRecepcion()" style="margin-bottom:8px;">Confirmar Recepción</button>
+      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-revisar-pago')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1818,12 +1739,10 @@
           <!-- Participantes dinámicos -->
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Comprobante (obligatorio)</label>
-        <div class="upload-zone" style="padding:16px;">
-          <div class="upload-label">Adjuntar imagen</div>
-          <div class="upload-sub">Bizum, ticket o transferencia</div>
-        </div>
+      <!-- Comprobante opcional (ticket) si se quiere -->
+      <div class="form-group" style="display:none;">
+        <label class="form-label">Comprobante</label>
+        <input type="file" id="exp-receipt-input" class="form-input" accept="image/*">
       </div>
       <button class="btn btn-primary btn-full" onclick="submitExpense()" style="margin-bottom:8px;">Guardar gasto</button>
       <button class="btn btn-secondary btn-full" onclick="closeModal('modal-expense')">Cancelar</button>
