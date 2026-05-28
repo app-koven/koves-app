@@ -113,7 +113,7 @@ window.goBack = function goBack() {
   showScreen(target, { isBack: true });
 }
 
-window.openPlan = function openPlan(id) {
+window.openPlan = async function openPlan(id) {
   const p = state.plans.find(x => x.id === id);
   if (!p) return;
   
@@ -128,18 +128,59 @@ window.openPlan = function openPlan(id) {
   
   showScreen('plan-detail');
   
-  document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
-  
-  // TODO: Check if user attendance is pending by fetching plan_attendance
-  updateAttendanceBlink(true);
-  
   // Guardar el ID del plan activo globalmente
   state.currentPlanId = id;
+  
+  // --- Asistencia ---
+  document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
+  
+  // Calculate group attendance stats
+  const att = p.plan_attendance || [];
+  let counts = { voy: 0, tarde: 0, quizas: 0, novoy: 0 };
+  let myStatus = null;
+  
+  att.forEach(a => {
+    if (counts[a.status] !== undefined) counts[a.status]++;
+    if (a.user_id === state.currentUserId) myStatus = a.status;
+  });
+  
+  const totalGroupMembers = state.members ? state.members.length : 1;
+  const totalVoted = att.length;
+  
+  const pctVoy = totalVoted > 0 ? (counts.voy / totalVoted) * 100 : 0;
+  const pctTarde = totalVoted > 0 ? (counts.tarde / totalVoted) * 100 : 0;
+  const pctQuizas = totalVoted > 0 ? (counts.quizas / totalVoted) * 100 : 0;
+  const pctNovoy = totalVoted > 0 ? (counts.novoy / totalVoted) * 100 : 0;
+  
+  document.getElementById('att-count-voy').textContent = counts.voy;
+  document.getElementById('att-bar-voy').style.width = pctVoy + '%';
+  document.getElementById('att-count-tarde').textContent = counts.tarde;
+  document.getElementById('att-bar-tarde').style.width = pctTarde + '%';
+  document.getElementById('att-count-quizas').textContent = counts.quizas;
+  document.getElementById('att-bar-quizas').style.width = pctQuizas + '%';
+  document.getElementById('att-count-novoy').textContent = counts.novoy;
+  document.getElementById('att-bar-novoy').style.width = pctNovoy + '%';
+  
+  const pctTotal = totalGroupMembers > 0 ? (totalVoted / totalGroupMembers) * 100 : 0;
+  document.getElementById('att-total-bar').style.width = pctTotal + '%';
+  document.getElementById('att-total-text').textContent = `${totalVoted} de ${totalGroupMembers} han votado su asistencia`;
+  
+  if (myStatus) {
+    const btn = document.getElementById('btn-att-' + myStatus);
+    if (btn) btn.classList.add('selected');
+    updateAttendanceBlink(false);
+  } else {
+    updateAttendanceBlink(true);
+  }
+  // ------------------
+  
   // Cargar las fotos reales
   loadPlanPhotos(id);
   // Cargar tarjetas propuestas
-  if (window.loadPlanCards) window.loadPlanCards();
+  if (window.loadPlanCards) window.loadPlanCards(id);
   if (window.loadPlanComments) loadPlanComments(id);
+  if (window.loadPlanExpenses) loadPlanExpenses(id);
+  loadPlanLikes(id);
 }
 
 window.openHistorial = function openHistorial() {
@@ -163,37 +204,89 @@ window.switchPlansTab = function switchPlansTab(el, name) {
 }
 
 // ── ASISTENCIA ──
-window.selectAttendance = function selectAttendance(btn) {
+window.selectAttendance = async function selectAttendance(status) {
+  if (!state.currentPlanId || !state.currentUserId) return;
+  
   document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  // Al votar asistencia, el plan deja de estar pendiente: parar parpadeo
+  const btn = document.getElementById('btn-att-' + status);
+  if (btn) btn.classList.add('selected');
   updateAttendanceBlink(false);
+  
+  // Upsert to Supabase
+  const { error } = await supabase.from('plan_attendance').upsert({
+    plan_id: state.currentPlanId,
+    user_id: state.currentUserId,
+    status: status
+  }, { onConflict: 'plan_id, user_id' });
+  
+  if (error) {
+    showToast('Error al actualizar asistencia');
+    console.error(error);
+    return;
+  }
+  
   showToast('Asistencia actualizada ✓');
+  
+  // Update local state so it shows up correctly if reopened
+  const p = state.plans.find(x => x.id === state.currentPlanId);
+  if (p) {
+    if (!p.plan_attendance) p.plan_attendance = [];
+    const existing = p.plan_attendance.find(a => a.user_id === state.currentUserId);
+    if (existing) existing.status = status;
+    else p.plan_attendance.push({ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status });
+    openPlan(state.currentPlanId); // refresh stats
+    renderCalendar(); // refresh calendar
+  }
 }
 
-// ── LIKE ──
-window.toggleLike = function toggleLike(btn) {
+// ── LIKE PLAN ──
+window.loadPlanLikes = async function loadPlanLikes(planId) {
   const span = document.getElementById('like-count');
-  const count = parseInt(span.textContent);
+  const btn = document.getElementById('pd-like-btn');
+  if (!span || !btn) return;
+  
+  span.textContent = '...';
+  
+  const { data: likes, error } = await supabase.from('plan_likes').select('user_id').eq('plan_id', planId);
+  if (error) {
+    span.textContent = '0';
+    return;
+  }
+  
+  span.textContent = likes.length;
+  const myLike = likes.find(l => l.user_id === state.currentUserId);
+  
+  if (myLike) {
+    btn.style.background = 'var(--ink)';
+    btn.style.color = '#fff';
+    btn.dataset.liked = '1';
+  } else {
+    btn.style.background = '';
+    btn.style.color = '';
+    delete btn.dataset.liked;
+  }
+}
+
+window.toggleLike = async function toggleLike(btn) {
+  if (!state.currentPlanId || !state.currentUserId) return;
+  const span = document.getElementById('like-count');
+  const count = parseInt(span.textContent) || 0;
+  
   if (btn.dataset.liked) {
     span.textContent = count - 1;
     btn.style.background = '';
-    btn.style.borderColor = '';
+    btn.style.color = '';
     delete btn.dataset.liked;
+    
+    await supabase.from('plan_likes').delete().match({ plan_id: state.currentPlanId, user_id: state.currentUserId });
   } else {
     span.textContent = count + 1;
     btn.style.background = 'var(--ink)';
     btn.style.color = '#fff';
     btn.dataset.liked = '1';
-    showToast('❤ Te gusta este plan');
+    
+    await supabase.from('plan_likes').insert({ plan_id: state.currentPlanId, user_id: state.currentUserId });
   }
-}
-
-window.likeComment = function likeComment(el) {
-  const parts = el.textContent.split(' ');
-  const n = parseInt(parts[1]);
-  el.textContent = '❤ ' + (n + 1);
-  el.style.color = 'var(--red)';
 }
 
 window.escapeHtml = function escapeHtml(s) {
@@ -1592,6 +1685,7 @@ window.renderCalendar = function renderCalendar() {
 
   const todayKey = `${todayY}-${todayM}`;
   const currentKey = `${y}-${m}`;
+  const lastDate = new Date(y, m + 1, 0).getDate();
 
   for (let day = 1; day <= lastDate; day++) {
     const isToday = (currentKey === todayKey && day === todayD);
@@ -1962,80 +2056,6 @@ window.startReply = function startReply(authorHandle, commentId) {
   }
 }
 
-window.addComment = function addComment() {
-  const input = document.getElementById('comment-input');
-  const val = input.value.trim();
-  if (!val) { showToast('Escribe algo antes de enviar'); return; }
-
-  const acc = state.accounts.find(a => a.id === state.currentUserId);
-  const name = (acc.name === 'Tu cuenta') ? 'Tú' : acc.name.split(' ')[0];
-  const time = `${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}`;
-  const authorHandle = '@' + (acc.handle.replace('@','').toLowerCase());
-  const valHtml = escapeHtml(val).replace(/@([\w]+)/g, '<strong style="color:var(--ink);">@$1</strong>');
-  const newId = 'c' + (commentSeq++);
-
-  const startsWithMention = /^@[\w]+\s/.test(val);
-
-  if (startsWithMention && pendingReplyRootId) {
-    // Es una respuesta: anidar en el hilo del comentario RAÍZ correcto
-    const rootComment = document.querySelector(`.comment[data-comment-id="${pendingReplyRootId}"]`);
-    if (rootComment) {
-      let thread = rootComment.querySelector('.comment-reply-thread');
-      if (!thread) {
-        thread = document.createElement('div');
-        thread.className = 'comment-reply-thread';
-        rootComment.appendChild(thread);
-      }
-      const reply = document.createElement('div');
-      reply.className = 'comment-reply';
-      reply.dataset.author = authorHandle;
-      reply.dataset.commentId = newId;
-      reply.innerHTML = `
-        <div class="comment-header">
-          <div class="comment-avatar" style="background:var(--blue);">${acc.initials}</div>
-          <div class="comment-author">${name}</div>
-          <div class="comment-time">${time}</div>
-        </div>
-        <div class="comment-text">${valHtml}</div>
-        <div class="comment-actions">
-          <span class="comment-action" onclick="likeComment(this)">❤ 0</span>
-          <span class="comment-action" onclick="startReply('${authorHandle}','${newId}')">Responder</span>
-        </div>
-      `;
-      thread.appendChild(reply);
-    }
-  } else {
-    // Comentario nuevo de primer nivel
-    const list = document.getElementById('comments-list');
-    const div = document.createElement('div');
-    div.className = 'comment';
-    div.dataset.author = authorHandle;
-    div.dataset.commentId = newId;
-    div.innerHTML = `
-      <div class="comment-header">
-        <div class="comment-avatar" style="background:var(--blue);">${acc.initials}</div>
-        <div class="comment-author">${name}</div>
-        <div class="comment-time">${time}</div>
-      </div>
-      <div class="comment-text">${valHtml}</div>
-      <div class="comment-actions">
-        <span class="comment-action" onclick="likeComment(this)">❤ 0</span>
-        <span class="comment-action" onclick="startReply('${authorHandle}','${newId}')">Responder</span>
-      </div>
-      <div class="comment-reply-thread"></div>
-    `;
-    list.appendChild(div);
-  }
-
-  input.value = '';
-  pendingReplyTo = null;
-  pendingReplyRootId = null;
-  const cnt = document.getElementById('comment-count');
-  const cnt2 = document.getElementById('comment-count-2');
-  if (cnt) cnt.textContent = parseInt(cnt.textContent) + 1;
-  if (cnt2) cnt2.textContent = parseInt(cnt2.textContent) + 1;
-  showToast('Comentario publicado ✓');
-}
 
 /* ════════════════════════════════════════════════════════════════
    V5: PODIUM PICKER (MVP / TARDÓN)
@@ -2844,6 +2864,107 @@ window.loadMemberPlans = async function loadMemberPlans(memberId) {
   listEl.innerHTML = html;
 }
 
+// ── CARGAR GASTOS DEL PLAN ──
+window.loadPlanExpenses = async function loadPlanExpenses(planId) {
+  const list = document.getElementById('plan-expenses-list');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">Cargando gastos...</div>';
+  
+  const { data: expenses, error } = await supabase
+    .from('expenses')
+    .select('*, expense_splits(*)')
+    .eq('plan_id', planId)
+    .order('created_at', { ascending: false });
+    
+  if (error || !expenses || expenses.length === 0) {
+    list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">No hay gastos registrados.</div>';
+    return;
+  }
+  
+  let html = '';
+  expenses.forEach(e => {
+    const creatorName = getProfileName(e.payer_id);
+    const amountStr = parseFloat(e.amount).toFixed(2).replace(/\.00$/, '') + '€';
+    const participantsCount = e.expense_splits ? e.expense_splits.length : 0;
+    
+    html += `
+      <div class="expense-item" onclick="openExpenseDetail('${e.id}')">
+        <div class="exp-left">
+          <div class="exp-icon">🍽️</div>
+          <div class="exp-info">
+            <div class="exp-name">${e.description}</div>
+            <div class="exp-sub">Pagado por ${creatorName.split(' ')[0]} · ${participantsCount} participantes</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="exp-amount">${amountStr}</div>
+          <div style="margin-top:3px;"><span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div>
+        </div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+// ── CARGAR TARJETAS DEL PLAN ──
+window.loadPlanCards = async function loadPlanCards(planId) {
+  const list = document.getElementById('plan-cards-list');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">Cargando tarjetas...</div>';
+  
+  const { data: cards, error } = await supabase
+    .from('sanctions')
+    .select('*, sanction_votes(*)')
+    .eq('plan_id', planId)
+    .order('created_at', { ascending: false });
+    
+  if (error || !cards || cards.length === 0) {
+    list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">No hay tarjetas propuestas.</div>';
+    return;
+  }
+  
+  let html = '';
+  cards.forEach(c => {
+    const targetName = getProfileName(c.user_id);
+    const creatorName = getProfileName(c.creator_id).split(' ')[0];
+    const color = c.type === 'red' ? '#E12A3C' : '#C07000';
+    
+    const votes = c.sanction_votes || [];
+    const favor = votes.filter(v => v.vote === 'favor').length;
+    const contra = votes.filter(v => v.vote === 'contra').length;
+    const totalVotes = favor + contra;
+    const pctFavor = totalVotes > 0 ? (favor / totalVotes) * 100 : 0;
+    const pctContra = totalVotes > 0 ? (contra / totalVotes) * 100 : 0;
+    
+    const myVote = votes.find(v => v.user_id === state.currentUserId);
+    
+    html += `
+      <div class="card" style="padding:14px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:24px;height:34px;border-radius:4px;background:${color};"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;">${targetName} · ${c.reason || 'Sin motivo'}</div>
+            <div style="font-size:11px;color:var(--ink3);">Propuesto por ${creatorName}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+          <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
+            <div style="width:${pctFavor}%;background:var(--green);"></div>
+            <div style="width:${pctContra}%;background:var(--red);"></div>
+          </div>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">${favor}/${totalVotes}</span>
+        </div>
+        <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
+          <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;${myVote?.vote === 'favor' ? 'background:var(--green);color:#fff;border-color:var(--green);' : ''}" onclick="voteCard('${c.id}','favor')">A favor (${favor})</button>
+          <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;${myVote?.vote === 'contra' ? 'background:var(--red);color:#fff;border-color:var(--red);' : ''}" onclick="voteCard('${c.id}','contra')">En contra (${contra})</button>
+        </div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+
 // Cargar fotos reales del plan
 window.loadPlanPhotos = async function loadPlanPhotos(planId) {
   const grid = document.getElementById('plan-photos-grid');
@@ -2868,8 +2989,14 @@ window.loadPlanPhotos = async function loadPlanPhotos(planId) {
   }
 
   grid.innerHTML = photos.map(p => `
-    <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);background-image:url('${p.photo_url}');background-size:cover;background-position:center;"></div>
+    <div style="aspect-ratio:1;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);background-image:url('${p.photo_url}');background-size:cover;background-position:center;cursor:pointer;" onclick="openPhotoViewer('${p.photo_url}')"></div>
   `).join('');
+}
+
+window.openPhotoViewer = function openPhotoViewer(url) {
+  const img = document.getElementById('photo-viewer-img');
+  if (img) img.src = url;
+  document.getElementById('modal-photo-viewer').classList.add('open');
 }
 
 // Subir foto real a Supabase Storage

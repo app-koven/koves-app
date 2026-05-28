@@ -375,23 +375,23 @@
       <div class="card" style="padding:14px;">
         <div class="dist-row">
           <span class="dist-label">Voy</span>
-          <div class="dist-track"><div class="dist-fill" style="width:78%;background:var(--green);"></div></div>
-          <span class="dist-count">7</span>
+          <div class="dist-track"><div class="dist-fill" id="att-bar-voy" style="width:0%;background:var(--green);"></div></div>
+          <span class="dist-count" id="att-count-voy">0</span>
         </div>
         <div class="dist-row">
           <span class="dist-label">Tarde</span>
-          <div class="dist-track"><div class="dist-fill" style="width:11%;background:var(--amber);"></div></div>
-          <span class="dist-count">1</span>
+          <div class="dist-track"><div class="dist-fill" id="att-bar-tarde" style="width:0%;background:var(--amber);"></div></div>
+          <span class="dist-count" id="att-count-tarde">0</span>
         </div>
         <div class="dist-row">
           <span class="dist-label">Quizás</span>
-          <div class="dist-track"><div class="dist-fill" style="width:11%;background:var(--blue);"></div></div>
-          <span class="dist-count">1</span>
+          <div class="dist-track"><div class="dist-fill" id="att-bar-quizas" style="width:0%;background:var(--blue);"></div></div>
+          <span class="dist-count" id="att-count-quizas">0</span>
         </div>
         <div class="dist-row" style="margin-bottom:0;">
           <span class="dist-label">No voy</span>
-          <div class="dist-track"><div class="dist-fill" style="width:0%;background:var(--red);"></div></div>
-          <span class="dist-count">0</span>
+          <div class="dist-track"><div class="dist-fill" id="att-bar-novoy" style="width:0%;background:var(--red);"></div></div>
+          <span class="dist-count" id="att-count-novoy">0</span>
         </div>
       </div>
     </div>
@@ -400,27 +400,27 @@
     <div class="section">
       <div class="section-head"><span class="section-title" id="pd-attendance-title">Tu asistencia</span></div>
       <div class="action-grid" id="attendance-grid">
-        <div class="action-btn" onclick="selectAttendance(this)">
+        <div class="action-btn" id="btn-att-voy" onclick="selectAttendance('voy')">
           <div class="action-title">Voy ✓</div>
           <div class="action-sub">Confirmado</div>
         </div>
-        <div class="action-btn" onclick="selectAttendance(this)">
+        <div class="action-btn" id="btn-att-novoy" onclick="selectAttendance('novoy')">
           <div class="action-title">No voy</div>
           <div class="action-sub">Marcar ausencia</div>
         </div>
-        <div class="action-btn" onclick="selectAttendance(this)">
+        <div class="action-btn" id="btn-att-quizas" onclick="selectAttendance('quizas')">
           <div class="action-title">Quizás</div>
           <div class="action-sub">Pendiente</div>
         </div>
-        <div class="action-btn" onclick="selectAttendance(this)">
+        <div class="action-btn" id="btn-att-tarde" onclick="selectAttendance('tarde')">
           <div class="action-title">Llego tarde</div>
           <div class="action-sub">Avisar al grupo</div>
         </div>
       </div>
       <!-- Barra de cuántos han votado -->
       <div style="margin-top:14px;">
-        <div class="progress-wrap"><div class="progress-bar" style="width:89%;"></div></div>
-        <div style="font-size:11px;color:var(--ink3);margin-top:4px;text-align:right;">8 de 9 han votado su asistencia</div>
+        <div class="progress-wrap"><div class="progress-bar" id="att-total-bar" style="width:0%;"></div></div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px;text-align:right;" id="att-total-text">0 de 0 han votado su asistencia</div>
       </div>
     </div>
 
@@ -442,11 +442,8 @@
     <!-- Gastos del plan -->
     <div class="section">
       <div class="section-head"><span class="section-title">Gastos del plan</span><span class="section-action" onclick="showAddExpense(true)">Añadir</span></div>
-      <div class="card" style="padding:0 14px;">
-        <div class="expense-item" onclick="openExpenseDetail('cena-conjunta')">
-          <div class="exp-left"><div class="exp-icon">🍽️</div><div class="exp-info"><div class="exp-name">Cena conjunta</div><div class="exp-sub">Pagado por Carlos · 5 participantes</div></div></div>
-          <div style="text-align:right;"><div class="exp-amount">27€</div><div style="margin-top:3px;"><span class="pill pill-green" style="font-size:10px;padding:2px 6px;">Validado</span></div></div>
-        </div>
+      <div class="card" style="padding:0 14px;" id="plan-expenses-list">
+        <div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">Cargando gastos...</div>
       </div>
       <div class="upload-zone" onclick="showAddExpense(true)" style="margin-top:8px;">
         <div class="upload-label">+ Añadir gasto</div>
@@ -461,28 +458,7 @@
       
       <!-- Lista de tarjetas propuestas -->
       <div id="plan-cards-list">
-        <!-- Mock de tarjeta propuesta en votación -->
-        <div class="card" style="padding:14px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div style="width:24px;height:34px;border-radius:4px;background:#C07000;"></div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:700;">Mario · No pagó a tiempo</div>
-              <div style="font-size:11px;color:var(--ink3);">Propuesto por Carlos</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-            <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
-              <div style="width:71%;background:var(--green);"></div>
-              <div style="width:29%;background:var(--red);"></div>
-            </div>
-            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">5/7</span>
-          </div>
-          <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
-            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard(this,'favor')">A favor (5)</button>
-            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard(this,'contra')">En contra (2)</button>
-          </div>
-          <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Asististe a este plan · Tu voto cuenta para validar la tarjeta</div>
-        </div>
+        <div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">Cargando tarjetas...</div>
       </div>
     </div>
 
@@ -1862,6 +1838,12 @@
 
 <!-- Toast -->
 <div id="toast" style="position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-full);font-size:13px;font-weight:600;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:320px;text-align:center;"></div>
+
+<!-- PHOTO VIEWER -->
+<div class="modal-overlay" id="modal-photo-viewer" style="background:rgba(0,0,0,0.95);align-items:center;justify-content:center;" onclick="closeModal('modal-photo-viewer')">
+  <div style="position:absolute;top:20px;right:20px;color:#fff;font-size:30px;cursor:pointer;">&times;</div>
+  <img id="photo-viewer-img" src="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;" onclick="event.stopPropagation()">
+</div>
 
 <script type="module" src="/main.js"></script>
 </body>
