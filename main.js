@@ -2831,15 +2831,15 @@ window.loadMemberPlans = async function loadMemberPlans(memberId) {
     const gName = p.groups ? p.groups.name : 'Grupo';
     const d = new Date(p.date + 'T' + (p.time || '00:00:00'));
     const dateStr = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
-    html += \`
+    html += `
       <div class="card" style="padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:var(--r-sm);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;">📅</div>
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:800;margin-bottom:2px;">\${p.title}</div>
-          <div style="font-size:11px;color:var(--ink3);">\${dateStr} · \${gName}</div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:2px;">${p.title}</div>
+          <div style="font-size:11px;color:var(--ink3);">${dateStr} · ${gName}</div>
         </div>
       </div>
-    \`;
+    `;
   });
   listEl.innerHTML = html;
 }
