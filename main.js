@@ -3118,7 +3118,15 @@ window.loadPlanPhotos = async function loadPlanPhotos(planId) {
 
 window.openPhotoViewer = function openPhotoViewer(url) {
   const img = document.getElementById('photo-viewer-img');
-  if (img) img.src = url;
+  if (img) {
+    img.src = url;
+    img.style.transform = 'scale(0.95)';
+    img.style.opacity = '0';
+    setTimeout(() => {
+      img.style.transform = 'scale(1)';
+      img.style.opacity = '1';
+    }, 10);
+  }
   document.getElementById('modal-photo-viewer').classList.add('open');
 }
 
