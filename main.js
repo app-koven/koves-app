@@ -581,7 +581,14 @@ window.closeModal = function closeModal(id) {
   }
 }
 document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  m.addEventListener('click', e => { 
+    if (e.target === m) {
+      m.classList.remove('open');
+      if (m.id === 'modal-photo-viewer') {
+        document.body.style.overflow = '';
+      }
+    }
+  });
 });
 
 // ── TOAST ──
@@ -3127,6 +3134,7 @@ window.openPhotoViewer = function openPhotoViewer(url) {
       img.style.opacity = '1';
     }, 10);
   }
+  document.body.style.overflow = 'hidden';
   document.getElementById('modal-photo-viewer').classList.add('open');
 }
 
