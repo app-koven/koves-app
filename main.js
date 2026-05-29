@@ -113,6 +113,11 @@ window.goBack = function goBack() {
   showScreen(target, { isBack: true });
 }
 
+window.getProfileName = function(id) {
+  const m = state.members ? state.members.find(x => x.user_id === id || (x.profiles && x.profiles.id === id)) : null;
+  return m ? (m.profiles?.full_name || m.profiles?.name || 'Usuario') : 'Usuario';
+};
+
 window.openPlan = async function openPlan(id) {
   const p = state.plans.find(x => x.id === id);
   if (!p) return;
@@ -372,8 +377,7 @@ window.submitExpense = async function submitExpense() {
     .insert([{
       group_id: state.currentGroupId,
       payer_id: state.currentUserId,
-      description: title,
-      title: title, // maintain both while migrating
+      title: title,
       amount: amount,
       plan_id: planId || null,
       status: 'validated', // Auto-validate for MVP
@@ -1440,6 +1444,7 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 /* ════════════════════════════════════════════════════════════════
    V6: BOTE DE SANCIONES
    ════════════════════════════════════════════════════════════════ */
+
   window.loadExpenses = async function loadExpenses() {
     if (!state.currentGroupId) return;
     const { data: expenses, error: err1 } = await supabase
@@ -1720,8 +1725,8 @@ window.renderCalendar = function renderCalendar() {
         if (pd.getFullYear() === y && pd.getMonth() === m) {
           const day = pd.getDate();
           const myAtt = plan.plan_attendance?.find(a => a.user_id === state.currentUserId);
-          // Only show 'voy', 'novoy', 'tarde', 'quizas', or 'pendiente'
-          planMap[day] = myAtt ? myAtt.status : 'pendiente';
+          // Only show 'confirmado' or 'pendiente'
+          planMap[day] = myAtt ? 'confirmado' : 'pendiente';
         }
       }
     });
@@ -2943,7 +2948,7 @@ window.loadPlanExpenses = async function loadPlanExpenses(planId) {
         <div class="exp-left">
           <div class="exp-icon">🍽️</div>
           <div class="exp-info">
-            <div class="exp-name">${e.description}</div>
+            <div class="exp-name">${e.title}</div>
             <div class="exp-sub">Pagado por ${creatorName.split(' ')[0]} · ${participantsCount} participantes</div>
           </div>
         </div>
@@ -4174,6 +4179,9 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (listHistorial) {
       listHistorial.innerHTML = historialHTML || '<div style="text-align:center;font-size:12px;color:var(--ink3);margin-top:16px;">No hay historial de planes.</div>';
     }
+    
+    // Refresh calendar so dots appear correctly after loading plans
+    if (window.renderCalendar) window.renderCalendar();
   }
 
   async function loadUserGroups() {
@@ -4463,6 +4471,7 @@ window.openProposeCard = async function openProposeCard() {
 window.submitProposeCard = async function submitProposeCard() {
   const targetId = document.getElementById('propose-target-input').value;
   const reason = document.getElementById('propose-reason-input').value.trim();
+  const cardType = document.getElementById('propose-type-input').value || 'amarilla';
 
   if (!targetId || !reason) {
     showToast('Selecciona a quién y escribe un motivo');
@@ -4474,7 +4483,7 @@ window.submitProposeCard = async function submitProposeCard() {
     plan_id: state.currentPlanId,
     target_user_id: targetId,
     proposed_by: state.currentUserId,
-    type: 'amarilla', // Default fallback
+    type: cardType,
     reason: reason,
     status: 'voting',
     amount: 0
