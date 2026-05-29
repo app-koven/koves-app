@@ -1762,8 +1762,12 @@ window.renderCalendar = function renderCalendar() {
         if (pd.getFullYear() === y && pd.getMonth() === m) {
           const day = pd.getDate();
           const myAtt = plan.plan_attendance?.find(a => a.user_id === state.currentUserId);
-          // Only show 'confirmado' or 'pendiente'
-          planMap[day] = myAtt ? 'confirmado' : 'pendiente';
+          let att = 'pendiente';
+          if (myAtt) {
+            if (myAtt.status === 'voy' || myAtt.status === 'tarde') att = 'confirmado';
+            else if (myAtt.status === 'novoy') att = 'rechazado';
+          }
+          planMap[day] = att;
         }
       }
     });
@@ -4229,7 +4233,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       
       const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
       const myStatus = att ? att.status : null;
-      let attBadge = `<span class="attendance-tag pendiente">${p.status === 'active' ? 'Confirmado' : 'Propuesto'}</span>`;
+      let attBadge = `<span class="attendance-tag pendiente">Pendiente</span>`;
       if (myStatus === 'voy' || myStatus === 'tarde') attBadge = `<span class="attendance-tag voy">✓ Voy</span>`;
       else if (myStatus === 'novoy') attBadge = `<span class="attendance-tag novoy">✗ No voy</span>`;
       else if (myStatus === 'quizas') attBadge = `<span class="attendance-tag quizas">? Quizás</span>`;

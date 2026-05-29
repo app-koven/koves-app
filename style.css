@@ -213,6 +213,7 @@ body {
 .cal-day.has-plan::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--ink3); position: absolute; bottom: 4px; }
 .cal-day.has-plan.att-confirmado::after { background: var(--ink); }
 .cal-day.has-plan.att-pendiente::after { background: var(--line2); animation: blink-pending 1.1s ease-in-out infinite; }
+.cal-day.has-plan.att-rechazado::after { background: var(--red); }
 .cal-day.today.has-plan::after { background: #fff; opacity: .85; }
 .cal-day.past { color: var(--ink3); }
 

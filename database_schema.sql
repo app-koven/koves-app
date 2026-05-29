@@ -450,7 +450,7 @@ CREATE POLICY "Users can update own notifications" ON public.notifications FOR U
 -- ══════════════════════════════════════
 INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true) ON CONFLICT DO NOTHING;
 INSERT INTO storage.buckets (id, name, public) VALUES ('plan-photos', 'plan-photos', true) ON CONFLICT DO NOTHING;
-INSERT INTO storage.buckets (id, name, public) VALUES ('expense-proofs', 'expense-proofs', false) ON CONFLICT DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('expense-proofs', 'expense-proofs', true) ON CONFLICT DO NOTHING;
 
 -- Storage policies
 CREATE POLICY "Avatar images are publicly accessible" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
