@@ -236,6 +236,7 @@ window.selectAttendance = async function selectAttendance(status) {
     else p.plan_attendance.push({ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status });
     openPlan(state.currentPlanId); // refresh stats
     renderCalendar(); // refresh calendar
+    if (window.loadPlans) window.loadPlans(); // refresh tags in active/historial lists
   }
 }
 
@@ -344,16 +345,39 @@ window.submitExpense = async function submitExpense() {
 
   const splitAmount = amount / selectedPills.length;
   
+  let proofUrl = null;
+  const fileInput = document.getElementById('exp-receipt-input');
+  const file = fileInput.files[0];
+  
+  if (file) {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    const filePath = `${state.currentGroupId}/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('expense-proofs')
+      .upload(filePath, file);
+      
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage
+        .from('expense-proofs')
+        .getPublicUrl(filePath);
+      proofUrl = publicUrlData.publicUrl;
+    }
+  }
+
   // Create expense
   const { data: exp, error: err1 } = await supabase
     .from('expenses')
     .insert([{
       group_id: state.currentGroupId,
       payer_id: state.currentUserId,
-      title: title,
+      description: title,
+      title: title, // maintain both while migrating
       amount: amount,
       plan_id: planId || null,
-      status: 'validated' // Auto-validate for MVP
+      status: 'validated', // Auto-validate for MVP
+      proof_url: proofUrl
     }])
     .select()
     .single();
@@ -385,6 +409,9 @@ window.submitExpense = async function submitExpense() {
   closeModal('modal-expense');
   showToast('Gasto guardado ✓');
   if (window.loadExpenses) window.loadExpenses();
+  if (planId && state.currentPlanId === planId && window.loadPlanExpenses) {
+    loadPlanExpenses(planId);
+  }
 }
 
 window.openExpenseDetail = function openExpenseDetail(id) {
@@ -468,22 +495,34 @@ const calPlanData = {
   '29': [{ planId: 'fiesta-ana', title: 'Escapada a Porto', meta: 'Viernes–Domingo · Viaje', status: 'pill-amber', statusLabel: 'Viaje' }],
 };
 
-let calModalDay = null;
-window.showCalModal = function showCalModal(day, isFuture) {
+window.showCalModal = function showCalModal(y, m, day, isFuture) {
   calModalDay = day;
-  const plans = calPlanData[day] || [];
-  document.getElementById('cal-modal-title').firstChild.textContent = `Día ${day} de Mayo`;
+  document.getElementById('cal-modal-title').firstChild.textContent = `Día ${day} de ${meses[m]}`;
   const content = document.getElementById('cal-modal-content');
+  
+  // Buscar planes para este día en state.plans
+  const plans = (state.plans || []).filter(p => {
+    if (p.status === 'cancelled') return false;
+    const pd = new Date(p.event_date);
+    return pd.getFullYear() === y && pd.getMonth() === m && pd.getDate() === day;
+  });
+
   if (plans.length) {
-    content.innerHTML = plans.map(p => `
-      <div class="card-row" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;" onclick="closeModal('modal-cal');openPlan('${p.planId}')">
+    content.innerHTML = plans.map(p => {
+      const isPast = new Date(p.event_date) < new Date();
+      const statusLabel = isPast ? 'Finalizado' : (p.status === 'active' ? 'Confirmado' : 'Propuesto');
+      const statusCls = isPast ? 'status-finalizado' : (p.status === 'active' ? 'pill-dark' : 'pill-outline');
+      
+      return `
+      <div class="card-row" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;" onclick="closeModal('modal-cal');openPlan('${p.id}')">
         <div class="card-content">
           <div class="card-name">${p.title}</div>
-          <div class="card-sub">${p.meta}</div>
+          <div class="card-sub">${p.description || ''}</div>
         </div>
-        <span class="pill ${p.status}">${p.statusLabel}</span>
+        <span class="pill ${statusCls}">${statusLabel}</span>
       </div>
-    `).join('');
+      `;
+    }).join('');
   } else {
     content.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Sin planes este día</div><div class="empty-sub">${isFuture ? 'Puedes crear uno nuevo.' : 'No hubo planes este día.'}</div></div>`;
   }
@@ -494,7 +533,12 @@ window.showCalModal = function showCalModal(day, isFuture) {
 }
 
 // ── MODALS GENERAL ──
-window.closeModal = function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+window.closeModal = function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-photo-viewer') {
+    document.body.style.overflow = '';
+  }
+}
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
@@ -1699,7 +1743,7 @@ window.renderCalendar = function renderCalendar() {
     if (attendance) dayCls += ' has-plan att-' + attendance;
     
     const isFuture = !isPastDay;
-    html += `<div class="${dayCls}" onclick="showCalModal('${day}', ${isFuture})">${day}</div>`;
+    html += `<div class="${dayCls}" onclick="showCalModal(${y}, ${m}, ${day}, ${isFuture})">${day}</div>`;
   }
   grid.innerHTML = html;
 }
@@ -1926,7 +1970,10 @@ window.loadPlanComments = async function loadPlanComments(planId) {
   }
 
   const countEl = document.getElementById('comment-count-2');
-  if (countEl) countEl.textContent = comments ? comments.length : 0;
+  const countElIcon = document.getElementById('comment-count');
+  const cLen = comments ? comments.length : 0;
+  if (countEl) countEl.textContent = cLen;
+  if (countElIcon) countElIcon.textContent = cLen;
 
   if (!comments || comments.length === 0) {
     list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:10px;">No hay comentarios aún.</div>';
@@ -1960,7 +2007,7 @@ function generateCommentHtml(comment, thread = []) {
       </div>
       <div class="comment-text">${comment.text}</div>
       <div class="comment-actions">
-        <span class="comment-action" onclick="likeComment('${comment.id}')">❤ ${comment.likes || 0}</span>
+        <span class="comment-action" onclick="likeComment('${comment.id}')">❤ ${comment.likes_count || 0}</span>
         <span class="comment-action" onclick="startReply('${authorHandle}','${comment.id}')">Responder</span>
       </div>`;
 
@@ -1980,7 +2027,7 @@ function generateCommentHtml(comment, thread = []) {
           </div>
           <div class="comment-text">${rep.text}</div>
           <div class="comment-actions">
-            <span class="comment-action" onclick="likeComment('${rep.id}')">❤ ${rep.likes || 0}</span>
+            <span class="comment-action" onclick="likeComment('${rep.id}')">❤ ${rep.likes_count || 0}</span>
             <span class="comment-action" onclick="startReply('${rauthorHandle}','${comment.id}')">Responder</span>
           </div>
         </div>`;
@@ -2017,18 +2064,22 @@ window.addComment = async function addComment() {
   pendingReplyRootId = null;
 
   if (error) {
-    console.error(error);
+    console.error('Error insertando comentario:', error);
     showToast('Error al enviar el comentario');
   } else {
+    // Increment the counters immediately for snappy UI
+    const countEl = document.getElementById('comment-count-2');
+    const countElIcon = document.getElementById('comment-count');
+    if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+    if (countElIcon) countElIcon.textContent = parseInt(countElIcon.textContent || 0) + 1;
     loadPlanComments(state.currentPlanId);
   }
 }
 
 window.likeComment = async function likeComment(commentId) {
-  // Simplificado para MVP: sumar 1 al counter directo sin tabla pivote.
-  const { data } = await supabase.from('plan_comments').select('likes').eq('id', commentId).single();
+  const { data } = await supabase.from('plan_comments').select('likes_count').eq('id', commentId).single();
   if (data) {
-    await supabase.from('plan_comments').update({ likes: (data.likes || 0) + 1 }).eq('id', commentId);
+    await supabase.from('plan_comments').update({ likes_count: (data.likes_count || 0) + 1 }).eq('id', commentId);
     loadPlanComments(state.currentPlanId);
   }
 }
@@ -4404,33 +4455,29 @@ window.openProposeCard = async function openProposeCard() {
   });
   selectTarget.innerHTML = tHtml;
 
-  // Llenar tarjetas del grupo
-  const cards = state.groupCards || [];
-  let cHtml = '<option value="">Selecciona una tarjeta del grupo</option>';
-  cards.forEach(c => {
-    cHtml += `<option value="${c.id}">${c.name}</option>`;
-  });
-  selectCard.innerHTML = cHtml;
+  document.getElementById('propose-reason-input').value = '';
 
   document.getElementById('modal-propose-card').classList.add('open');
 };
 
 window.submitProposeCard = async function submitProposeCard() {
   const targetId = document.getElementById('propose-target-input').value;
-  const cardId = document.getElementById('propose-card-input').value;
+  const reason = document.getElementById('propose-reason-input').value.trim();
 
-  if (!targetId || !cardId) {
-    showToast('Selecciona a quién y qué tarjeta proponer');
+  if (!targetId || !reason) {
+    showToast('Selecciona a quién y escribe un motivo');
     return;
   }
 
-  const { error } = await supabase.from('assigned_cards').insert([{
+  const { error } = await supabase.from('sanctions').insert([{
     group_id: state.currentGroupId,
     plan_id: state.currentPlanId,
-    card_id: cardId,
     target_user_id: targetId,
     proposed_by: state.currentUserId,
-    status: 'voting'
+    type: 'amarilla', // Default fallback
+    reason: reason,
+    status: 'voting',
+    amount: 0
   }]);
 
   if (error) {
@@ -4441,24 +4488,27 @@ window.submitProposeCard = async function submitProposeCard() {
 
   closeModal('modal-propose-card');
   showToast('Tarjeta propuesta ✓');
-  loadPlanCards();
+  if (window.loadPlanCards) loadPlanCards(state.currentPlanId);
 };
 
-window.votePlanCard = async function votePlanCard(assignedCardId, voteType) {
-  const { error } = await supabase.from('assigned_card_votes').insert([{
-    assigned_card_id: assignedCardId,
+window.voteCard = async function voteCard(sanctionId, voteType) {
+  if (!state.currentUserId) return;
+
+  // UPSERT: If you already voted, it replaces it
+  const { error } = await supabase.from('sanction_votes').upsert({
+    sanction_id: sanctionId,
     user_id: state.currentUserId,
     vote: voteType
-  }]);
+  }, { onConflict: 'sanction_id, user_id' });
 
   if (error) {
-    if (error.code === '23505') showToast('Ya has votado');
-    else showToast('Error al votar');
+    console.error('Error al votar:', error);
+    showToast('Error al votar');
     return;
   }
 
   showToast('Voto registrado ✓');
-  loadPlanCards();
+  if (window.loadPlanCards) loadPlanCards(state.currentPlanId);
 };
 
 // ── TARJETAS RECIBIDAS (MEMBER PROFILE) ──

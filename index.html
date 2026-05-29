@@ -1715,8 +1715,7 @@
           <!-- Participantes dinámicos -->
         </div>
       </div>
-      <!-- Comprobante opcional (ticket) si se quiere -->
-      <div class="form-group" style="display:none;">
+      <div class="form-group">
         <label class="form-label">Comprobante</label>
         <input type="file" id="exp-receipt-input" class="form-input" accept="image/*">
       </div>
@@ -1802,10 +1801,8 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">¿Qué tarjeta?</label>
-        <select class="form-input" id="propose-card-input">
-          <option value="">Selecciona una tarjeta del grupo</option>
-        </select>
+        <label class="form-label">Motivo (Razón de la tarjeta)</label>
+        <input type="text" id="propose-reason-input" class="form-input" placeholder="Ej: Llegó tarde">
       </div>
       <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="submitProposeCard()">Enviar propuesta</button>
     </div>
