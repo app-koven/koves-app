@@ -269,7 +269,7 @@ window.selectAttendance = async function selectAttendance(status) {
   
   openPlan(state.currentPlanId); // refresh stats
   renderCalendar(); // refresh calendar
-  if (window.loadPlans) window.loadPlans(); // refresh tags in active/historial lists
+  if (window.renderPlanLists) window.renderPlanLists(); // instantly refresh tags in active/historial lists
 }
 
 // ── LIKE PLAN ──
@@ -1804,6 +1804,7 @@ window.calendarNav = function calendarNav(delta) {
   renderCalendar();
   syncMonthLabels();
   syncHistPlansLabel();
+  if (window.renderPlanLists) window.renderPlanLists();
 }
 
 // Navegador de meses de planes activos — sincronizado con el calendario
@@ -1812,6 +1813,7 @@ window.plansMonthNav = function plansMonthNav(delta) {
   renderCalendar();
   syncMonthLabels();
   syncHistPlansLabel();
+  if (window.renderPlanLists) window.renderPlanLists();
 }
 
 // Mantener la etiqueta del historial de planes alineada con el offset del calendario
@@ -1839,6 +1841,7 @@ window.histPlansNav = function histPlansNav(delta) {
   state.calendarMonthOffset = histPlansOffset;
   renderCalendar();
   syncMonthLabels();
+  if (window.renderPlanLists) window.renderPlanLists();
 }
 
 // Popup de detalle de estadística del perfil de miembro
@@ -2025,18 +2028,23 @@ window.loadPlanComments = async function loadPlanComments(planId) {
   const replies = comments.filter(c => c.parent_comment_id);
 
   let html = '';
-  roots.forEach(r => {
-    html += generateCommentHtml(r, replies.filter(rep => rep.parent_comment_id === r.id));
-  });
+  try {
+    roots.forEach(r => {
+      html += generateCommentHtml(r, replies.filter(rep => rep.parent_comment_id === r.id));
+    });
+  } catch (err) {
+    console.error('Error generating comment html:', err);
+    html = '<div style="text-align:center;font-size:12px;color:var(--red);padding:10px;">Error al mostrar comentarios</div>';
+  }
 
   list.innerHTML = html;
 }
 
 function generateCommentHtml(comment, thread = []) {
-  const name = getProfileName(comment.user_id);
-  const initials = name.substring(0,2).toUpperCase();
-  const time = new Date(comment.created_at).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
-  const authorHandle = '@' + name.split(' ')[0].toLowerCase();
+  const name = getProfileName(comment.user_id) || 'Usuario';
+  const initials = name.length >= 2 ? name.substring(0,2).toUpperCase() : 'US';
+  const time = comment.created_at ? new Date(comment.created_at).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}) : '';
+  const authorHandle = '@' + (name.split(' ')[0] || 'usuario').toLowerCase();
   
   let html = `
     <div class="comment" data-author="${authorHandle}" data-comment-id="${comment.id}">
@@ -2045,7 +2053,7 @@ function generateCommentHtml(comment, thread = []) {
         <div class="comment-author">${name}</div>
         <div class="comment-time">${time}</div>
       </div>
-      <div class="comment-text">${comment.text}</div>
+      <div class="comment-text">${comment.text || ''}</div>
       <div class="comment-actions">
         <span class="comment-action" onclick="likeComment('${comment.id}')">❤ ${comment.likes_count || 0}</span>
         <span class="comment-action" onclick="startReply('${authorHandle}','${comment.id}')">Responder</span>
@@ -2054,10 +2062,10 @@ function generateCommentHtml(comment, thread = []) {
   if (thread.length > 0) {
     html += '<div class="comment-reply-thread">';
     thread.forEach(rep => {
-      const rname = getProfileName(rep.user_id);
-      const rinitials = rname.substring(0,2).toUpperCase();
-      const rtime = new Date(rep.created_at).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
-      const rauthorHandle = '@' + rname.split(' ')[0].toLowerCase();
+      const rname = getProfileName(rep.user_id) || 'Usuario';
+      const rinitials = rname.length >= 2 ? rname.substring(0,2).toUpperCase() : 'US';
+      const rtime = rep.created_at ? new Date(rep.created_at).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}) : '';
+      const rauthorHandle = '@' + (rname.split(' ')[0] || 'usuario').toLowerCase();
       html += `
         <div class="comment-reply" data-author="${rauthorHandle}" data-comment-id="${rep.id}">
           <div class="comment-header">
@@ -2065,7 +2073,7 @@ function generateCommentHtml(comment, thread = []) {
             <div class="comment-author">${rname}</div>
             <div class="comment-time">${rtime}</div>
           </div>
-          <div class="comment-text">${rep.text}</div>
+          <div class="comment-text">${rep.text || ''}</div>
           <div class="comment-actions">
             <span class="comment-action" onclick="likeComment('${rep.id}')">❤ ${rep.likes_count || 0}</span>
             <span class="comment-action" onclick="startReply('${rauthorHandle}','${comment.id}')">Responder</span>
@@ -4175,11 +4183,31 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (el('kpi-hist-pct')) el('kpi-hist-pct').textContent = histPct + '%';
     if (el('kpi-hist-fill')) el('kpi-hist-fill').style.width = histPct + '%';
     
+    window.renderPlanLists();
+    
+    // Refresh calendar so dots appear correctly after loading plans
+    if (window.renderCalendar) window.renderCalendar();
+  }
+
+  window.renderPlanLists = function renderPlanLists() {
+    const listActivos = document.getElementById('plans-activos-list');
+    const listHistorial = document.getElementById('plans-historial-list');
+    if (!listActivos && !listHistorial) return;
+
+    const now = new Date();
+    const offset = state.calendarMonthOffset || 0;
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const targetY = targetDate.getFullYear();
+    const targetM = targetDate.getMonth();
+
     let activosHTML = '';
     let historialHTML = '';
     
-    state.plans.forEach(p => {
+    (state.plans || []).forEach(p => {
       const d = new Date(p.event_date);
+      // Filter by the selected month
+      if (d.getFullYear() !== targetY || d.getMonth() !== targetM) return;
+
       const isPast = d < now;
       const dateStr = d.toLocaleString('es-ES', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
       
@@ -4188,6 +4216,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       let attBadge = `<span class="attendance-tag pendiente">${p.status === 'active' ? 'Confirmado' : 'Propuesto'}</span>`;
       if (myStatus === 'voy' || myStatus === 'tarde') attBadge = `<span class="attendance-tag voy">✓ Voy</span>`;
       else if (myStatus === 'novoy') attBadge = `<span class="attendance-tag novoy">✗ No voy</span>`;
+      else if (myStatus === 'quizas') attBadge = `<span class="attendance-tag quizas">? Quizás</span>`;
 
       const html = `
         <div class="card pending-border" style="margin-bottom:8px;">
@@ -4210,19 +4239,14 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       }
     });
 
-    const listActivos = document.getElementById('plans-activos-list');
     if (listActivos) {
-      listActivos.innerHTML = activosHTML || '<div class="notice" style="margin-bottom:16px;">No hay planes activos. ¡Crea el primero!</div>';
+      listActivos.innerHTML = activosHTML || '<div class="notice" style="margin-bottom:16px;">No hay planes activos en este mes. ¡Crea uno!</div>';
     }
     
-    const listHistorial = document.getElementById('plans-historial-list');
     if (listHistorial) {
-      listHistorial.innerHTML = historialHTML || '<div style="text-align:center;font-size:12px;color:var(--ink3);margin-top:16px;">No hay historial de planes.</div>';
+      listHistorial.innerHTML = historialHTML || '<div style="text-align:center;font-size:12px;color:var(--ink3);margin-top:16px;">No hay historial de planes en este mes.</div>';
     }
-    
-    // Refresh calendar so dots appear correctly after loading plans
-    if (window.renderCalendar) window.renderCalendar();
-  }
+  };
 
   async function loadUserGroups() {
     state.myGroups = [];
