@@ -493,8 +493,8 @@ window.openExpenseDetail = function openExpenseDetail(id) {
         ${isValidated ? '<span class="pill pill-green">Validado</span>' : '<span class="pill pill-amber">Pendiente</span>'}
       </div>
     </div>
-    ${d.proof_url ? '<button class="btn btn-secondary btn-full" onclick="showToast(\'Comprobante mostrado\')" style="margin-bottom:8px;">📎 Ver comprobante</button>' : ''}
-    <button class="btn btn-primary btn-full" onclick="reviewExpense('${id}')" style="margin-bottom:8px;">Revisar gasto</button>
+    ${d.proof_url ? `<button class="btn btn-secondary btn-full" onclick="window.open('${d.proof_url}', '_blank')" style="margin-bottom:8px;">📎 Ver comprobante</button>` : ''}
+    <button class="btn btn-primary btn-full" onclick="reviewExpense('${id}')" style="margin-bottom:8px;">Reclamar gasto</button>
     <button class="btn btn-secondary btn-full" onclick="closeModal('modal-expense-detail')">Cerrar</button>
   `;
   document.getElementById('modal-expense-detail').classList.add('open');
@@ -504,13 +504,15 @@ window.openExpenseDetail = function openExpenseDetail(id) {
 // Solo se puede reclamar un pago si asististe al plan.
 window.reviewExpense = function reviewExpense(id) {
   closeModal('modal-expense-detail');
+  const d = (state.expenses || []).find(e => e.id === id);
   // En esta demo el usuario asistió al plan actual; en real se comprobaría.
   const asististe = true;
   if (!asististe) {
     showToast('Solo puedes reclamar pagos de planes a los que asististe');
     return;
   }
-  openReclamFor('pago', 'Pago del plan · ' + (id || 'gasto'));
+  const planName = state.plans?.find(p => p.id === state.currentPlanId)?.title || d?.title || 'gasto';
+  openReclamFor('gasto', 'Pago del plan · ' + planName, id);
 }
 
 window.openLiquidar = function openLiquidar() {
@@ -2648,9 +2650,11 @@ window.resolveReclam = function resolveReclam(btn, action) {
 // Nueva reclamación — siempre se inicia desde un plan (un pago o una tarjeta)
 let newReclamType = 'gasto';
 let newReclamContext = '';
-window.openReclamFor = function openReclamFor(type, contextLabel) {
+let newReclamRefId = null;
+window.openReclamFor = function openReclamFor(type, contextLabel, refId = null) {
   newReclamType = type;
   newReclamContext = contextLabel || '';
+  newReclamRefId = refId;
   const motivo = document.getElementById('reclam-motivo');
   if (motivo) motivo.value = '';
   // Mostrar el contexto en el modal
@@ -2668,12 +2672,14 @@ window.submitReclam = async function submitReclam() {
   const btn = document.querySelector('#modal-new-reclam .btn-primary');
   if (btn) btn.textContent = 'Enviando...';
 
+  const typeValue = newReclamType === 'pago' ? 'gasto' : newReclamType;
   const { error } = await supabase.from('claims').insert([{
-    user_id: state.currentUserId,
+    claimant_id: state.currentUserId,
     group_id: state.currentGroupId,
-    type: newReclamType,
-    description: `[${newReclamContext}] ${motivo}`,
-    status: 'pending'
+    type: typeValue,
+    reference_id: newReclamRefId || state.currentPlanId || '00000000-0000-0000-0000-000000000000',
+    reason: `[${newReclamContext}] ${motivo}`,
+    status: 'active'
   }]);
 
   if (btn) btn.textContent = 'Enviar reclamación';
@@ -2980,6 +2986,15 @@ window.loadPlanExpenses = async function loadPlanExpenses(planId) {
     .eq('plan_id', planId)
     .order('created_at', { ascending: false });
     
+  if (!error && expenses) {
+    if (!state.expenses) state.expenses = [];
+    expenses.forEach(ex => {
+      const idx = state.expenses.findIndex(x => x.id === ex.id);
+      if (idx >= 0) state.expenses[idx] = ex;
+      else state.expenses.push(ex);
+    });
+  }
+
   if (error || !expenses || expenses.length === 0) {
     list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">No hay gastos registrados.</div>';
     return;
@@ -2990,11 +3005,12 @@ window.loadPlanExpenses = async function loadPlanExpenses(planId) {
     const creatorName = getProfileName(e.payer_id);
     const amountStr = parseFloat(e.amount).toFixed(2).replace(/\.00$/, '') + '€';
     const participantsCount = e.expense_splits ? e.expense_splits.length : 0;
+    const thumbnail = e.proof_url ? `<img src="${e.proof_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : '🍽️';
     
     html += `
       <div class="expense-item" onclick="openExpenseDetail('${e.id}')">
         <div class="exp-left">
-          <div class="exp-icon">🍽️</div>
+          <div class="exp-icon" style="padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">${thumbnail}</div>
           <div class="exp-info">
             <div class="exp-name">${e.title}</div>
             <div class="exp-sub">Pagado por ${creatorName.split(' ')[0]} · ${participantsCount} participantes</div>
@@ -3011,7 +3027,7 @@ window.loadPlanExpenses = async function loadPlanExpenses(planId) {
 }
 
 // ── CARGAR TARJETAS DEL PLAN ──
-window.loadPlanCards = async function loadPlanCards(planId) {
+window.oldLoadPlanCards = async function oldLoadPlanCards(planId) {
   const list = document.getElementById('plan-cards-list');
   if (!list) return;
   list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">Cargando tarjetas...</div>';
@@ -4440,7 +4456,7 @@ window.loadPlanCards = async function loadPlanCards() {
   // Cargar tarjetas asignadas a este plan
   const { data: cards, error } = await supabase
     .from('assigned_cards')
-    .select('*, group_cards(*), profiles!assigned_cards_target_user_id_fkey(name), proposer:profiles!assigned_cards_proposed_by_fkey(name)')
+    .select('*, group_cards(*), profiles!assigned_cards_target_user_id_fkey(full_name, username), proposer:profiles!assigned_cards_proposed_by_fkey(full_name, username)')
     .eq('plan_id', state.currentPlanId);
 
   if (error) {
@@ -4489,13 +4505,18 @@ window.loadPlanCards = async function loadPlanCards() {
        voteUI = `<div style="font-size:11px;font-weight:700;color:var(--ink2);text-align:center;margin-top:8px;">${statusText[ac.status]}</div>`;
     }
 
+    const targetName = ac.profiles?.full_name || ac.profiles?.username || 'Usuario';
+    const proposerName = ac.proposer?.full_name || ac.proposer?.username || 'Usuario';
+    const cardColor = ac.group_cards?.color || '#ccc';
+    const cardName = ac.group_cards?.name || 'Tarjeta eliminada';
+
     html += `
       <div class="card" style="padding:14px;margin-bottom:10px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="width:24px;height:34px;border-radius:4px;background:${ac.group_cards.color};"></div>
+          <div style="width:24px;height:34px;border-radius:4px;background:${cardColor};"></div>
           <div style="flex:1;">
-            <div style="font-size:13px;font-weight:700;">${ac.profiles.name} · ${ac.group_cards.name}</div>
-            <div style="font-size:11px;color:var(--ink3);">Propuesto por ${ac.proposer.name}</div>
+            <div style="font-size:13px;font-weight:700;">${targetName} · ${cardName}</div>
+            <div style="font-size:11px;color:var(--ink3);">Propuesto por ${proposerName}</div>
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
@@ -4516,14 +4537,22 @@ window.openProposeCard = async function openProposeCard() {
   const selectTarget = document.getElementById('propose-target-input');
   const selectCard = document.getElementById('propose-type-input');
   
-  // Llenar asistentes (fallback a state.members si no hay attendees reales aún)
-  let attendees = state.currentPlanAttendees || [];
-  if (attendees.length === 0 && state.members) {
-    attendees = state.members.map(m => ({ user_id: m.id, profiles: { name: m.name || m.full_name || m.username } }));
+  // Llenar asistentes reales (voy, tarde)
+  const p = state.plans.find(x => x.id === state.currentPlanId);
+  let attendees = [];
+  if (p && p.plan_attendance) {
+    const attendeesVotes = p.plan_attendance.filter(a => a.status === 'voy' || a.status === 'tarde');
+    attendees = attendeesVotes.map(a => {
+      const m = state.members.find(mem => mem.profiles && mem.profiles.id === a.user_id);
+      return { user_id: a.user_id, profiles: m ? m.profiles : { full_name: 'Usuario' } };
+    });
+  } else if (state.members) {
+    attendees = state.members.map(m => ({ user_id: m.profiles.id, profiles: m.profiles }));
   }
+
   let tHtml = '<option value="">Selecciona un asistente</option>';
   attendees.forEach(a => {
-    tHtml += `<option value="${a.user_id}">${a.profiles.name || 'Asistente'}</option>`;
+    tHtml += `<option value="${a.user_id}">${a.profiles.full_name || a.profiles.username || 'Asistente'}</option>`;
   });
   selectTarget.innerHTML = tHtml;
 
