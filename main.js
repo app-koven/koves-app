@@ -493,7 +493,7 @@ window.openExpenseDetail = function openExpenseDetail(id) {
         ${isValidated ? '<span class="pill pill-green">Validado</span>' : '<span class="pill pill-amber">Pendiente</span>'}
       </div>
     </div>
-    ${d.proof_url ? `<button class="btn btn-secondary btn-full" onclick="window.open('${d.proof_url}', '_blank')" style="margin-bottom:8px;">📎 Ver comprobante</button>` : ''}
+    ${d.proof_url ? `<button class="btn btn-secondary btn-full" onclick="openPhotoViewer('${d.proof_url}')" style="margin-bottom:8px;">📎 Ver comprobante</button>` : ''}
     <button class="btn btn-primary btn-full" onclick="reviewExpense('${id}')" style="margin-bottom:8px;">Reclamar gasto</button>
     <button class="btn btn-secondary btn-full" onclick="closeModal('modal-expense-detail')">Cerrar</button>
   `;
@@ -1764,8 +1764,7 @@ window.renderCalendar = function renderCalendar() {
           const myAtt = plan.plan_attendance?.find(a => a.user_id === state.currentUserId);
           let att = 'pendiente';
           if (myAtt) {
-            if (myAtt.status === 'voy' || myAtt.status === 'tarde') att = 'confirmado';
-            else if (myAtt.status === 'novoy') att = 'rechazado';
+            att = 'confirmado'; // Cualquiera de las 4 opciones cuenta como confirmado
           }
           planMap[day] = att;
         }
@@ -4234,7 +4233,8 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
       const myStatus = att ? att.status : null;
       let attBadge = `<span class="attendance-tag pendiente">Pendiente</span>`;
-      if (myStatus === 'voy' || myStatus === 'tarde') attBadge = `<span class="attendance-tag voy">✓ Voy</span>`;
+      if (myStatus === 'voy') attBadge = `<span class="attendance-tag voy">✓ Voy</span>`;
+      else if (myStatus === 'tarde') attBadge = `<span class="attendance-tag voy">⏱️ Llego tarde</span>`;
       else if (myStatus === 'novoy') attBadge = `<span class="attendance-tag novoy">✗ No voy</span>`;
       else if (myStatus === 'quizas') attBadge = `<span class="attendance-tag quizas">? Quizás</span>`;
 
