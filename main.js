@@ -212,37 +212,64 @@ window.switchPlansTab = function switchPlansTab(el, name) {
 window.selectAttendance = async function selectAttendance(status) {
   if (!state.currentPlanId || !state.currentUserId) return;
   
-  document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
-  const btn = document.getElementById('btn-att-' + status);
-  if (btn) btn.classList.add('selected');
-  updateAttendanceBlink(false);
-  
-  // Upsert to Supabase
-  const { error } = await supabase.from('plan_attendance').upsert({
-    plan_id: state.currentPlanId,
-    user_id: state.currentUserId,
-    status: status
-  }, { onConflict: 'plan_id, user_id' });
-  
-  if (error) {
-    showToast('Error al actualizar asistencia');
-    console.error(error);
-    return;
-  }
-  
-  showToast('Asistencia actualizada ✓');
-  
-  // Update local state so it shows up correctly if reopened
   const p = state.plans.find(x => x.id === state.currentPlanId);
-  if (p) {
-    if (!p.plan_attendance) p.plan_attendance = [];
-    const existing = p.plan_attendance.find(a => a.user_id === state.currentUserId);
-    if (existing) existing.status = status;
-    else p.plan_attendance.push({ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status });
-    openPlan(state.currentPlanId); // refresh stats
-    renderCalendar(); // refresh calendar
-    if (window.loadPlans) window.loadPlans(); // refresh tags in active/historial lists
+  const existing = p?.plan_attendance?.find(a => a.user_id === state.currentUserId);
+  const isToggleOff = existing && existing.status === status;
+
+  document.querySelectorAll('#attendance-grid .action-btn').forEach(b => b.classList.remove('selected'));
+  
+  if (isToggleOff) {
+    updateAttendanceBlink(true);
+    // Delete from Supabase
+    const { error } = await supabase.from('plan_attendance')
+      .delete()
+      .eq('plan_id', state.currentPlanId)
+      .eq('user_id', state.currentUserId);
+      
+    if (error) {
+      showToast('Error al quitar asistencia');
+      console.error(error);
+      return;
+    }
+    
+    showToast('Asistencia eliminada (pendiente)');
+    
+    // Update local state
+    if (p && p.plan_attendance) {
+      p.plan_attendance = p.plan_attendance.filter(a => a.user_id !== state.currentUserId);
+    }
+  } else {
+    const btn = document.getElementById('btn-att-' + status);
+    if (btn) btn.classList.add('selected');
+    updateAttendanceBlink(false);
+    
+    // Upsert to Supabase
+    const { error } = await supabase.from('plan_attendance').upsert({
+      plan_id: state.currentPlanId,
+      user_id: state.currentUserId,
+      status: status
+    }, { onConflict: 'plan_id, user_id' });
+    
+    if (error) {
+      showToast('Error al actualizar asistencia');
+      console.error(error);
+      return;
+    }
+    
+    showToast('Asistencia actualizada ✓');
+    
+    // Update local state
+    if (p) {
+      if (!p.plan_attendance) p.plan_attendance = [];
+      const ex = p.plan_attendance.find(a => a.user_id === state.currentUserId);
+      if (ex) ex.status = status;
+      else p.plan_attendance.push({ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status });
+    }
   }
+  
+  openPlan(state.currentPlanId); // refresh stats
+  renderCalendar(); // refresh calendar
+  if (window.loadPlans) window.loadPlans(); // refresh tags in active/historial lists
 }
 
 // ── LIKE PLAN ──
@@ -354,6 +381,11 @@ window.submitExpense = async function submitExpense() {
   const fileInput = document.getElementById('exp-receipt-input');
   const file = fileInput.files[0];
   
+  if (!file) {
+    showToast('La foto del comprobante es obligatoria');
+    return;
+  }
+  
   if (file) {
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
@@ -368,6 +400,9 @@ window.submitExpense = async function submitExpense() {
         .from('expense-proofs')
         .getPublicUrl(filePath);
       proofUrl = publicUrlData.publicUrl;
+    } else {
+      showToast('Error al subir el comprobante');
+      return;
     }
   }
 
@@ -2182,14 +2217,19 @@ window.showAddExpense = function showAddExpense(fromPlan = false) {
 
   // Populate plans
   const planSelect = document.getElementById('exp-plan-input');
-  if (planSelect && !fromPlan) {
-    planSelect.innerHTML = '<option value="">Sin plan asociado</option>';
-    if (state.plans) {
-      state.plans.forEach(p => {
-        const d = new Date(p.event_date);
-        const dateStr = d.toLocaleString('es-ES', {month:'short', day:'numeric'});
-        planSelect.innerHTML += `<option value="${p.id}">${p.title} · ${dateStr}</option>`;
-      });
+  if (planSelect) {
+    if (fromPlan) {
+      planSelect.innerHTML = `<option value="${state.currentPlanId}">Plan Actual</option>`;
+      planSelect.value = state.currentPlanId;
+    } else {
+      planSelect.innerHTML = '<option value="">Sin plan asociado</option>';
+      if (state.plans) {
+        state.plans.forEach(p => {
+          const d = new Date(p.event_date);
+          const dateStr = d.toLocaleString('es-ES', {month:'short', day:'numeric'});
+          planSelect.innerHTML += `<option value="${p.id}">${p.title} · ${dateStr}</option>`;
+        });
+      }
     }
   }
 
@@ -4450,18 +4490,29 @@ window.loadPlanCards = async function loadPlanCards() {
 
 window.openProposeCard = async function openProposeCard() {
   const selectTarget = document.getElementById('propose-target-input');
-  const selectCard = document.getElementById('propose-card-input');
+  const selectCard = document.getElementById('propose-type-input');
   
   // Llenar asistentes (fallback a state.members si no hay attendees reales aún)
   let attendees = state.currentPlanAttendees || [];
   if (attendees.length === 0 && state.members) {
-    attendees = state.members.map(m => ({ user_id: m.id, profiles: { name: m.name } }));
+    attendees = state.members.map(m => ({ user_id: m.id, profiles: { name: m.name || m.full_name || m.username } }));
   }
   let tHtml = '<option value="">Selecciona un asistente</option>';
   attendees.forEach(a => {
-    tHtml += `<option value="${a.user_id}">${a.profiles.name}</option>`;
+    tHtml += `<option value="${a.user_id}">${a.profiles.name || 'Asistente'}</option>`;
   });
   selectTarget.innerHTML = tHtml;
+
+  // Llenar tarjetas del grupo
+  let cHtml = '<option value="">Selecciona una tarjeta</option>';
+  if (state.groupCards && state.groupCards.length > 0) {
+    state.groupCards.forEach(c => {
+      cHtml += `<option value="${c.id}">${c.name}</option>`;
+    });
+  } else {
+    cHtml = '<option value="">No hay tarjetas configuradas en el grupo</option>';
+  }
+  selectCard.innerHTML = cHtml;
 
   document.getElementById('propose-reason-input').value = '';
 
@@ -4471,22 +4522,21 @@ window.openProposeCard = async function openProposeCard() {
 window.submitProposeCard = async function submitProposeCard() {
   const targetId = document.getElementById('propose-target-input').value;
   const reason = document.getElementById('propose-reason-input').value.trim();
-  const cardType = document.getElementById('propose-type-input').value || 'amarilla';
+  const cardId = document.getElementById('propose-type-input').value;
 
-  if (!targetId || !reason) {
-    showToast('Selecciona a quién y escribe un motivo');
+  if (!targetId || !reason || !cardId) {
+    showToast('Selecciona a quién, qué tarjeta y escribe un motivo');
     return;
   }
 
-  const { error } = await supabase.from('sanctions').insert([{
+  const { error } = await supabase.from('assigned_cards').insert([{
     group_id: state.currentGroupId,
     plan_id: state.currentPlanId,
     target_user_id: targetId,
     proposed_by: state.currentUserId,
-    type: cardType,
+    card_id: cardId,
     reason: reason,
-    status: 'voting',
-    amount: 0
+    status: 'voting'
   }]);
 
   if (error) {
@@ -4497,7 +4547,7 @@ window.submitProposeCard = async function submitProposeCard() {
 
   closeModal('modal-propose-card');
   showToast('Tarjeta propuesta ✓');
-  if (window.loadPlanCards) loadPlanCards(state.currentPlanId);
+  if (window.loadPlanCards) loadPlanCards();
 };
 
 window.voteCard = async function voteCard(sanctionId, voteType) {
