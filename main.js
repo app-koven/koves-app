@@ -4556,7 +4556,7 @@ window.loadPlanCards = async function loadPlanCards() {
            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','favor')" ${hasVoted ? 'disabled' : ''}>A favor (${favor})</button>
            <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','contra')" ${hasVoted ? 'disabled' : ''}>En contra (${contra})</button>
          </div>
-         <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Tu voto es público. Cierra a las 24h.</div>
+         <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Votación anónima. Cierra a las 24h.</div>
        `;
     } else {
        const statusText = {
@@ -4690,6 +4690,29 @@ window.submitProposeCard = async function submitProposeCard() {
 
   closeModal('modal-propose-card');
   showToast('Tarjeta propuesta ✓');
+  if (window.loadPlanCards) loadPlanCards();
+};
+
+window.votePlanCard = async function votePlanCard(cardId, voteType) {
+  if (!state.currentUserId) return;
+
+  const { error } = await supabase.from('assigned_card_votes').insert({
+    assigned_card_id: cardId,
+    user_id: state.currentUserId,
+    vote: voteType
+  });
+
+  if (error) {
+    if (error.code === '23505') {
+      showToast('Ya has votado esta tarjeta');
+    } else {
+      console.error('Error al votar:', error);
+      showToast('Error al votar');
+    }
+    return;
+  }
+
+  showToast('Voto anónimo registrado ✓');
   if (window.loadPlanCards) loadPlanCards();
 };
 
