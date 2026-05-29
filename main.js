@@ -1507,14 +1507,27 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 
   window.renderExpenses = function renderExpenses() {
     let totalGroup = 0;
+    let totalAssisted = 0;
     let paidByMe = 0;
     let owedToMe = 0;
     let oweToOthers = 0;
 
     const me = state.currentUserId;
 
+    // Planes a los que he asistido
+    const attendedPlans = new Set();
+    (state.plans || []).forEach(p => {
+      const myAtt = p.plan_attendance?.find(a => a.user_id === me);
+      if (myAtt && (myAtt.status === 'voy' || myAtt.status === 'tarde')) {
+        attendedPlans.add(p.id);
+      }
+    });
+
     state.expenses.forEach(exp => {
       totalGroup += exp.amount;
+      if (exp.plan_id && attendedPlans.has(exp.plan_id)) {
+        totalAssisted += exp.amount;
+      }
       if (exp.payer_id === me) {
         paidByMe += exp.amount;
       }
@@ -1535,6 +1548,7 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
     const balance = paidByMe - oweToOthers;
 
     document.getElementById('kpi-exp-total').textContent = totalGroup.toFixed(2) + '€';
+    document.getElementById('kpi-exp-assisted').textContent = totalAssisted.toFixed(2) + '€';
     document.getElementById('kpi-exp-paid').textContent = paidByMe.toFixed(2) + '€';
     document.getElementById('kpi-exp-owed').textContent = owedToMe.toFixed(2) + '€';
     document.getElementById('kpi-exp-owe').textContent = oweToOthers.toFixed(2) + '€';
@@ -1609,7 +1623,7 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
             <div style="font-size:15px;font-weight:900;color:var(--red);">${data.total.toFixed(2)}€</div>
           </div>`;
         if (data.pending.length > 0) {
-          html += `<div style="margin-top:12px;"><button class="btn btn-primary btn-full" style="padding:8px;font-size:12px;" onclick="openLiquidarItem('${uid}', ${data.total})">Liquidar con Bizum</button></div>`;
+          html += `<div style="margin-top:12px;"><button class="btn btn-primary btn-full" style="padding:8px;font-size:12px;" onclick="openLiquidarItem('${uid}', ${data.total})">Liquidar</button></div>`;
         } else if (data.requested.length > 0) {
           html += `<div style="margin-top:12px;font-size:11px;color:var(--ink3);text-align:center;">Pendiente de que confirmen tu pago</div>`;
         }
@@ -1618,27 +1632,50 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
       cTuDebes.innerHTML = html;
     }
 
-    // Historial
+    // Historial se renderiza por separado
+    window.renderHistorialExpenses();
+  }
+
+  window.renderHistorialExpenses = function renderHistorialExpenses() {
     const histGastos = [];
     const histTrans = [];
+    const now = new Date();
+    // Use the offset defined globally (histExpOffset)
+    const targetY = now.getFullYear();
+    const targetM = now.getMonth() + (window.histExpOffset || 0);
+    // targetDate normalizes month overflow/underflow
+    const targetDate = new Date(targetY, targetM, 1);
+    const filterY = targetDate.getFullYear();
+    const filterM = targetDate.getMonth();
 
     state.expenses.forEach(exp => {
-      histGastos.push(exp);
+      const eDate = new Date(exp.created_at);
+      if (eDate.getFullYear() === filterY && eDate.getMonth() === filterM) {
+        histGastos.push(exp);
+      }
+      
       const splits = exp.expense_splits || [];
       splits.forEach(split => {
         if (split.status === 'paid') {
-          histTrans.push({ exp, split });
+          const tDate = new Date(split.created_at);
+          if (tDate.getFullYear() === filterY && tDate.getMonth() === filterM) {
+            histTrans.push({ exp, split });
+          }
         }
       });
     });
 
+    const getProfileName = (id) => {
+      const m = state.members.find(x => x.id === id);
+      return m ? m.name : 'Usuario';
+    };
+
     const listGastos = document.getElementById('historial-gastos');
     if (listGastos) {
       if (histGastos.length === 0) {
-        listGastos.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay gastos en este grupo todavía.</div>';
+        listGastos.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay gastos en este mes.</div>';
       } else {
         let html = '';
-        // Sort by created_at desc (newest first)
         histGastos.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).forEach(exp => {
           html += `<div class="card" style="padding:0 14px;margin-bottom:14px;">
             <div class="expense-item" style="border-bottom:0;" onclick="openExpenseDetail('${exp.id}')">
@@ -1660,7 +1697,7 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
     const listTrans = document.getElementById('historial-transferencias');
     if (listTrans) {
       if (histTrans.length === 0) {
-        listTrans.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay transferencias completadas todavía.</div>';
+        listTrans.innerHTML = '<div class="card" style="padding:14px;text-align:center;color:var(--ink3);font-size:12px;">No hay transferencias este mes.</div>';
       } else {
         let html = '';
         histTrans.sort((a,b) => new Date(b.split.created_at) - new Date(a.split.created_at)).forEach(t => {
@@ -3307,16 +3344,21 @@ window.updateAttendanceBlink = function updateAttendanceBlink(isPending) {
    ════════════════════════════════════════════════════════════════ */
 
 // Navegador de meses del historial de gastos
-let histExpOffset = 0;
+window.histExpOffset = 0;
 window.histExpNav = function histExpNav(delta) {
-  const n = histExpOffset + delta;
+  const n = window.histExpOffset + delta;
   if (n > 0) return;
-  histExpOffset = n;
+  window.histExpOffset = n;
   const next = document.getElementById('hist-exp-next');
-  if (next) next.classList.toggle('disabled', histExpOffset >= 0);
-  const d = new Date(2026, 4 + histExpOffset, 1);
+  if (next) next.classList.toggle('disabled', window.histExpOffset >= 0);
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() + window.histExpOffset, 1);
   const lbl = document.getElementById('hist-exp-month');
   if (lbl) lbl.textContent = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+  
+  if (window.renderHistorialExpenses) {
+    window.renderHistorialExpenses();
+  }
 }
 
 // Navegador de meses del historial de disciplina del grupo
@@ -4508,7 +4550,7 @@ window.loadPlanCards = async function loadPlanCards() {
     
     // Si la tarjeta ya está activa, history o rejected, mostramos estado en vez de botones
     let voteUI = '';
-    if (ac.status === 'voting') {
+    if (ac.status === 'pending') {
        voteUI = `
          <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
            <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','favor')" ${hasVoted ? 'disabled' : ''}>A favor (${favor})</button>
@@ -4572,24 +4614,52 @@ window.openProposeCard = async function openProposeCard() {
 
   let tHtml = '<option value="">Selecciona un asistente</option>';
   attendees.forEach(a => {
-    tHtml += `<option value="${a.user_id}">${a.profiles.full_name || a.profiles.username || 'Asistente'}</option>`;
+    const un = a.profiles.username ? `@${a.profiles.username}` : (a.profiles.full_name || 'Asistente');
+    tHtml += `<option value="${a.user_id}">${un}</option>`;
   });
   selectTarget.innerHTML = tHtml;
 
-  // Llenar tarjetas del grupo
-  let cHtml = '<option value="">Selecciona una tarjeta</option>';
+  // Llenar tarjetas del grupo en el custom select
+  const optionsContainer = document.getElementById('custom-card-options');
+  const selectedContainer = document.getElementById('custom-card-selected');
+  const hiddenInput = document.getElementById('propose-type-input');
+  
+  hiddenInput.value = '';
+  selectedContainer.innerHTML = '<span style="color:var(--ink3);">Selecciona una tarjeta</span>';
+  
   if (state.groupCards && state.groupCards.length > 0) {
+    let cHtml = '';
     state.groupCards.forEach(c => {
-      cHtml += `<option value="${c.id}">${c.name}</option>`;
+      cHtml += `
+        <div style="padding:8px;display:flex;align-items:center;gap:8px;border-radius:var(--r-sm);" onclick="selectCustomCard('${c.id}', '${c.name}', '${c.color}')">
+          <div style="width:16px;height:24px;border-radius:3px;background:${c.color};"></div>
+          <div style="font-size:14px;color:var(--ink);">${c.name}</div>
+        </div>
+      `;
     });
+    optionsContainer.innerHTML = cHtml;
   } else {
-    cHtml = '<option value="">No hay tarjetas configuradas en el grupo</option>';
+    optionsContainer.innerHTML = '<div style="padding:8px;font-size:12px;color:var(--ink3);">No hay tarjetas configuradas</div>';
   }
-  selectCard.innerHTML = cHtml;
 
   document.getElementById('propose-reason-input').value = '';
 
   document.getElementById('modal-propose-card').classList.add('open');
+};
+
+window.toggleCustomCardSelect = function() {
+  const opts = document.getElementById('custom-card-options');
+  opts.style.display = opts.style.display === 'none' ? 'flex' : 'none';
+};
+
+window.selectCustomCard = function(id, name, color) {
+  document.getElementById('propose-type-input').value = id;
+  document.getElementById('custom-card-selected').innerHTML = `
+    <div style="width:16px;height:24px;border-radius:3px;background:${color};"></div>
+    <div style="font-size:14px;color:var(--ink);">${name}</div>
+  `;
+  document.getElementById('custom-card-options').style.display = 'none';
+  event.stopPropagation();
 };
 
 window.submitProposeCard = async function submitProposeCard() {
@@ -4607,9 +4677,9 @@ window.submitProposeCard = async function submitProposeCard() {
     plan_id: state.currentPlanId,
     target_user_id: targetId,
     proposed_by: state.currentUserId,
-    card_id: cardId,
+    group_card_id: cardId,
     reason: reason,
-    status: 'voting'
+    status: 'pending'
   }]);
 
   if (error) {

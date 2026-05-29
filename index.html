@@ -175,6 +175,7 @@
     <div class="section" style="padding-top:16px;">
       <div class="spend-summary light">
         <div class="spend-row"><span class="spend-label">Gastos totales del grupo</span><span class="spend-value" id="kpi-exp-total">0€</span></div>
+        <div class="spend-row"><span class="spend-label">Gastos de planes asistidos</span><span class="spend-value" id="kpi-exp-assisted">0€</span></div>
         <div class="spend-row"><span class="spend-label">Tú has pagado</span><span class="spend-value" id="kpi-exp-paid">0€</span></div>
         <div class="spend-row"><span class="spend-label">Te deben</span><span class="spend-value" id="kpi-exp-owed" style="color:var(--green);">0€</span></div>
         <div class="spend-row"><span class="spend-label">Tú debes</span><span class="spend-value" id="kpi-exp-owe" style="color:var(--red);">0€</span></div>
@@ -1799,10 +1800,15 @@
       </div>
       <div class="form-group">
         <label class="form-label">¿Qué tarjeta?</label>
-        <select class="form-input" id="propose-type-input">
-          <option value="amarilla">Tarjeta Amarilla</option>
-          <option value="roja">Tarjeta Roja</option>
-        </select>
+        <div id="custom-card-select" class="form-input" style="display:flex;align-items:center;cursor:pointer;position:relative;" onclick="window.toggleCustomCardSelect()">
+          <div id="custom-card-selected" style="display:flex;align-items:center;gap:8px;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">
+            <span style="color:var(--ink3);">Selecciona una tarjeta</span>
+          </div>
+          <div style="font-size:10px;color:var(--ink3);">▼</div>
+          <div id="custom-card-options" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:0 10px 30px rgba(0,0,0,0.1);z-index:100;max-height:200px;overflow-y:auto;flex-direction:column;margin-top:4px;padding:4px;">
+          </div>
+        </div>
+        <input type="hidden" id="propose-type-input" value="">
       </div>
       <div class="form-group">
         <label class="form-label">Motivo (Razón de la tarjeta)</label>
