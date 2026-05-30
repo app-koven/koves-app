@@ -277,12 +277,15 @@ window.selectAttendance = async function selectAttendance(status) {
     if (btn) btn.classList.add('selected');
     updateAttendanceBlink(false);
     
-    // Upsert to Supabase
-    const { error } = await supabase.from('plan_attendance').upsert({
-      plan_id: state.currentPlanId,
-      user_id: state.currentUserId,
-      status: status
-    }, { onConflict: 'plan_id, user_id' });
+    // Always DELETE first to prevent duplicates and bypass any missing UPDATE RLS policies
+    await supabase.from('plan_attendance')
+      .delete()
+      .eq('plan_id', state.currentPlanId)
+      .eq('user_id', state.currentUserId);
+
+    // Then INSERT the new choice
+    const { error } = await supabase.from('plan_attendance')
+      .insert([{ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status }]);
     
     if (error) {
       showToast('Error al actualizar asistencia');
