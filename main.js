@@ -918,6 +918,9 @@ window.loadNotifications = async function loadNotifications() {
   const list = document.getElementById('notif-list');
   if (!list) return;
 
+  // PURGA INMEDIATA
+  list.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando notificaciones...</div>';
+
   const { data: notifs, error } = await supabase
     .from('notifications')
     .select('*')
@@ -1579,6 +1582,11 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 
   window.loadExpenses = async function loadExpenses() {
     if (!state.currentGroupId) return;
+
+    // PURGA INMEDIATA
+    state.expenses = [];
+    if (window.renderExpensesList) window.renderExpensesList();
+    
     const { data: expenses, error: err1 } = await supabase
       .from('expenses')
       .select('*, expense_splits(*)')
@@ -1847,7 +1855,7 @@ window.voteDiscipline = function voteDiscipline(btn, side) {
 
 
 /* ════════════════════════════════════════════════════════════════
-   V5/V6: AGENDA TAB SWITCH (compatibilidad — pantalla agenda eliminada)
+   V5: AGENDA TAB SWITCH (compatibilidad — pantalla agenda eliminada)
    ════════════════════════════════════════════════════════════════ */
 window.switchAgendaTab = function switchAgendaTab(el, name) {
   // noop — la pantalla de agenda ya no existe en V6
@@ -2614,6 +2622,8 @@ window.loadActivityPlans = async function loadActivityPlans() {
   const container = document.getElementById('feed-list');
   if (!container) return;
   
+  if (container) container.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando planes...</div>';
+
   const { data, error } = await supabase
     .from('plans')
     .select('*')
@@ -2659,6 +2669,8 @@ window.loadActivityPlans = async function loadActivityPlans() {
 window.loadActivityTribunal = async function loadActivityTribunal() {
   const container = document.getElementById('activity-disciplina');
   if (!container) return;
+  
+  if (container) container.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando tarjetas...</div>';
   
   const { data, error } = await supabase
     .from('assigned_cards')
@@ -3105,6 +3117,9 @@ window.loadMemberPlans = async function loadMemberPlans(memberId) {
   const end = new Date(today.getFullYear(), today.getMonth() + memberPlansMonthOffset + 1, 0);
   const startStr = start.toISOString().split('T')[0];
   const endStr = end.toISOString().split('T')[0];
+
+  // PURGA INMEDIATA
+  listEl.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando planes...</div>';
 
   const { data, error } = await supabase
     .from('plan_participants')
@@ -3831,6 +3846,9 @@ window.loadRouletteHistory = async function loadRouletteHistory() {
   const end = new Date(today.getFullYear(), today.getMonth() + rouletteHistOffset + 1, 0);
   end.setHours(23, 59, 59, 999);
 
+  // PURGA INMEDIATA
+  hist.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando...</div>';
+
   const { data, error } = await supabase
     .from('roulette_spins')
     .select('*, profiles(name)')
@@ -4253,9 +4271,14 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       renderMembersList();
       return;
     }
+    
+    // PURGA INMEDIATA
+    state.members = [];
+    renderMembersList();
+
     const { data, error } = await supabase
       .from('group_members')
-      .select('*, profiles(*)')
+      .select('*, profiles(id, full_name, username)')
       .eq('group_id', state.currentGroupId);
     
     if (error) {
@@ -4324,6 +4347,12 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       if (list) list.innerHTML = '<div class="notice" style="margin-bottom:16px;">No tienes grupos. Crea uno o únete para ver los planes.</div>';
       return;
     }
+    
+    // PURGA INMEDIATA: Evitar ghosting
+    state.plans = [];
+    if (window.updatePlanKPIs) window.updatePlanKPIs();
+    const actList = document.getElementById('plans-activos-list');
+    if (actList) actList.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando planes...</div>';
     
     const { data: plans, error } = await supabase
       .from('plans')
@@ -4522,6 +4551,9 @@ window.loadGroupCards = async function loadGroupCards() {
   if (!state.currentGroupId) return;
   const list = document.getElementById('group-cards-list');
   if (!list) return;
+
+  // PURGA INMEDIATA
+  list.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando tarjetas...</div>';
 
   const { data, error } = await supabase
     .from('group_cards')
@@ -4902,6 +4934,9 @@ window.loadGroupLabels = async function loadGroupLabels() {
   if (!state.currentGroupId) return;
   const list = document.getElementById('group-labels-list');
   if (!list) return;
+
+  // PURGA INMEDIATA
+  list.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando...</div>';
 
   const { data, error } = await supabase
     .from('group_labels')
