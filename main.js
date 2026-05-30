@@ -2679,6 +2679,16 @@ window.loadActivityTribunal = async function loadActivityTribunal() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
+  let votes = [];
+  if (data && data.length > 0) {
+    const cardIds = data.map(c => c.id);
+    const { data: vData } = await supabase
+      .from('assigned_card_votes')
+      .select('*')
+      .in('assigned_card_id', cardIds);
+    votes = vData || [];
+  }
+
   if (error) {
     console.error('Error loadActivityTribunal:', error);
     container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Error al cargar tribunal.</div>';
@@ -2696,6 +2706,23 @@ window.loadActivityTribunal = async function loadActivityTribunal() {
     const cardName = c.group_cards?.name || 'Tarjeta';
     const targetName = c.profiles?.name || 'Usuario';
     const proposedByName = c.proposed_by_profile?.name || 'Alguien';
+
+    const cardVotes = votes.filter(v => v.assigned_card_id === c.id);
+    const favor = cardVotes.filter(v => v.vote === 'favor').length;
+    const contra = cardVotes.filter(v => v.vote === 'contra').length;
+    const hasVoted = cardVotes.some(v => v.user_id === state.currentUserId);
+
+    let voteUI = '';
+    if (hasVoted) {
+      voteUI = `<div style="font-size:11px;font-weight:700;color:var(--ink3);text-align:center;">Ya has votado. A favor: ${favor} | En contra: ${contra}</div>`;
+    } else {
+      voteUI = `
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;background:var(--ok);color:#fff;" onclick="voteCard('${c.id}', 'favor')">A favor (${favor})</button>
+          <button class="btn btn-primary" style="flex:1;background:var(--alert);color:#fff;" onclick="voteCard('${c.id}', 'contra')">En contra (${contra})</button>
+        </div>
+      `;
+    }
     
     html += `
       <div class="card" style="margin-bottom:12px;padding:14px;border:1px solid ${cardColor};">
@@ -2706,10 +2733,7 @@ window.loadActivityTribunal = async function loadActivityTribunal() {
           </div>
         </div>
         <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;">Propuesta por ${proposedByName}. ¿Estás de acuerdo?</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" style="flex:1;background:var(--ok);color:#fff;" onclick="voteCard('${c.id}', 'favor')">A favor</button>
-          <button class="btn btn-primary" style="flex:1;background:var(--alert);color:#fff;" onclick="voteCard('${c.id}', 'contra')">En contra</button>
-        </div>
+        ${voteUI}
       </div>
     `;
   });
@@ -2732,6 +2756,7 @@ window.voteCard = async function voteCard(cardId, voteType) {
     }
   } else {
     showToast('Voto registrado ✓');
+    if (window.loadActivityTribunal) window.loadActivityTribunal();
   }
 }
 
@@ -2739,6 +2764,8 @@ window.loadActivityClaims = async function loadActivityClaims() {
   const container = document.getElementById('reclam-activas');
   if (!container) return;
   
+  container.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando reclamos...</div>';
+
   const { data, error } = await supabase
     .from('claims')
     .select('*, profiles(name, username)')
@@ -4895,7 +4922,7 @@ window.votePlanCard = async function votePlanCard(cardId, voteType) {
   if (window.loadPlanCards) loadPlanCards();
 };
 
-window.voteCard = async function voteCard(sanctionId, voteType) {
+window.oldVoteCard = async function oldVoteCard(sanctionId, voteType) {
   if (!state.currentUserId) return;
 
   // UPSERT: If you already voted, it replaces it
