@@ -277,36 +277,16 @@ window.selectAttendance = async function selectAttendance(status) {
     if (btn) btn.classList.add('selected');
     updateAttendanceBlink(false);
     
-    // Select and Update/Insert to Supabase safely
-    const { data: existRecords, error: selErr } = await supabase.from('plan_attendance')
-      .select('*')
-      .eq('plan_id', state.currentPlanId)
-      .eq('user_id', state.currentUserId);
-
-    if (selErr) {
-      showToast('Error de red al actualizar asistencia');
-      console.error(selErr);
-      return;
-    }
-
-    let dbErr = null;
-    if (existRecords && existRecords.length > 0) {
-      // Update record
-      const { error } = await supabase.from('plan_attendance')
-        .update({ status: status })
-        .eq('plan_id', state.currentPlanId)
-        .eq('user_id', state.currentUserId);
-      dbErr = error;
-    } else {
-      // Insert new
-      const { error } = await supabase.from('plan_attendance')
-        .insert([{ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status }]);
-      dbErr = error;
-    }
+    // Upsert to Supabase
+    const { error } = await supabase.from('plan_attendance').upsert({
+      plan_id: state.currentPlanId,
+      user_id: state.currentUserId,
+      status: status
+    }, { onConflict: 'plan_id, user_id' });
     
-    if (dbErr) {
-      showToast('Error guardando asistencia');
-      console.error(dbErr);
+    if (error) {
+      showToast('Error al actualizar asistencia');
+      console.error(error);
       return;
     }
     
