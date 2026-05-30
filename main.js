@@ -536,10 +536,14 @@ const calPlanData = {
   '29': [{ planId: 'fiesta-ana', title: 'Escapada a Porto', meta: 'Viernes–Domingo · Viaje', status: 'pill-amber', statusLabel: 'Viaje' }],
 };
 
-window.showCalModal = function showCalModal(y, m, day, isFuture) {
+window.showCalModal = async function showCalModal(y, m, day, isFuture) {
+  calModalYear = y;
+  calModalMonth = m;
   calModalDay = day;
   document.getElementById('cal-modal-title').firstChild.textContent = `Día ${day} de ${meses[m]}`;
   const content = document.getElementById('cal-modal-content');
+  content.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Cargando...</div>';
+  document.getElementById('modal-cal').classList.add('open');
   
   // Buscar planes para este día en state.plans
   const plans = (state.plans || []).filter(p => {
@@ -548,29 +552,67 @@ window.showCalModal = function showCalModal(y, m, day, isFuture) {
     return pd.getFullYear() === y && pd.getMonth() === m && pd.getDate() === day;
   });
 
-  if (plans.length) {
-    content.innerHTML = plans.map(p => {
-      const isPast = new Date(p.event_date) < new Date();
-      const statusLabel = isPast ? 'Finalizado' : (p.status === 'active' ? 'Confirmado' : 'Propuesto');
-      const statusCls = isPast ? 'status-finalizado' : (p.status === 'active' ? 'pill-dark' : 'pill-outline');
-      
-      return `
-      <div class="card-row" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;" onclick="closeModal('modal-cal');openPlan('${p.id}')">
-        <div class="card-content">
-          <div class="card-name">${p.title}</div>
-          <div class="card-sub">${p.description || ''}</div>
-        </div>
-        <span class="pill ${statusCls}">${statusLabel}</span>
-      </div>
-      `;
-    }).join('');
-  } else {
-    content.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Sin planes este día</div><div class="empty-sub">${isFuture ? 'Puedes crear uno nuevo.' : 'No hubo planes este día.'}</div></div>`;
-  }
   // El botón de crear plan solo tiene sentido en días de hoy/futuros
   const createBtn = document.getElementById('cal-create-btn');
   if (createBtn) createBtn.style.display = (isFuture === false) ? 'none' : 'block';
-  document.getElementById('modal-cal').classList.add('open');
+
+  if (!plans.length) {
+    content.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Sin planes este día</div><div class="empty-sub">${isFuture ? 'Puedes crear uno nuevo.' : 'No hubo planes este día.'}</div></div>`;
+    return;
+  }
+
+  let html = '';
+  for (const p of plans) {
+    const isPast = new Date(p.event_date) < new Date();
+    const statusLabel = isPast ? 'Finalizado' : (p.status === 'active' ? 'Confirmado' : 'Propuesto');
+    const statusCls = isPast ? 'status-finalizado' : (p.status === 'active' ? 'pill-dark' : 'pill-outline');
+    
+    html += `
+    <div class="card-row" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;background:var(--surface);" onclick="closeModal('modal-cal');openPlan('${p.id}')">
+      <div class="card-content">
+        <div class="card-name">${p.title}</div>
+        <div class="card-sub">${p.description || ''}</div>
+      </div>
+      <span class="pill ${statusCls}">${statusLabel}</span>
+    </div>
+    `;
+
+    if (isPast) {
+      // Buscar sanciones (tarjetas) asociadas a este plan
+      const { data: cards } = await supabase
+        .from('assigned_cards')
+        .select('*, group_cards(*)')
+        .eq('plan_id', p.id);
+
+      if (cards && cards.length > 0) {
+        html += '<div style="margin-left:14px;border-left:2px solid var(--line);padding-left:12px;margin-bottom:14px;margin-top:-4px;">';
+        cards.forEach(c => {
+          const m = state.members?.find(x => x.id === c.target_user_id);
+          const targetName = m ? m.name : 'Usuario';
+          const cardDef = c.group_cards || {};
+          const cColor = cardDef.color || '#D02020';
+          const cName = cardDef.name || 'Tarjeta';
+          
+          let statusLabelCard = 'Aprobada';
+          if (c.status === 'rejected') statusLabelCard = 'Rechazada';
+          if (c.status === 'pending') statusLabelCard = 'Pendiente';
+
+          html += `
+            <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+              <div style="width:12px;height:16px;border-radius:2px;background:${cColor};flex-shrink:0;margin-top:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);"></div>
+              <div style="min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:var(--ink);">${targetName}</div>
+                <div style="font-size:11px;color:var(--ink3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.reason || cName} · ${statusLabelCard}</div>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+      }
+    }
+  }
+
+  content.innerHTML = html;
 }
 
 // ── MODALS GENERAL ──
@@ -1355,7 +1397,6 @@ window.submitRules = async function submitRules() {
   if (!state.currentGroupId) return;
   const yellowAmount = parseFloat(document.getElementById('rules-yellow-amount').value) || 2;
   const redAmount = parseFloat(document.getElementById('rules-red-amount').value) || 10;
-  const potGoal = document.getElementById('rules-pot-goal') ? document.getElementById('rules-pot-goal').value : 'Cena de grupo';
   const privacy = document.getElementById('rules-privacy') ? document.getElementById('rules-privacy').value : 'private';
   const showInfo = document.getElementById('rules-show-info') ? document.getElementById('rules-show-info').value === 'true' : true;
   const allowInvites = document.getElementById('rules-allow-invites') ? document.getElementById('rules-allow-invites').value : 'all';
@@ -1366,7 +1407,6 @@ window.submitRules = async function submitRules() {
       .update({
         yellow_card_amount: yellowAmount,
         red_card_amount: redAmount,
-        pot_goal: potGoal,
         privacy: privacy,
         show_info_if_private: showInfo,
         allow_invites: allowInvites
@@ -1399,10 +1439,8 @@ window.loadGroupSettings = async function loadGroupSettings() {
   }
   state.groupSettings = data || { yellow_card_amount: 2, red_card_amount: 10, pot_goal: 'Cena de grupo', privacy: 'private', show_info_if_private: true, allow_invites: 'all' };
   
-  // Set values in modal
   if (document.getElementById('rules-yellow-amount')) document.getElementById('rules-yellow-amount').value = state.groupSettings.yellow_card_amount;
   if (document.getElementById('rules-red-amount')) document.getElementById('rules-red-amount').value = state.groupSettings.red_card_amount;
-  if (document.getElementById('rules-pot-goal')) document.getElementById('rules-pot-goal').value = state.groupSettings.pot_goal || '';
   if (document.getElementById('rules-privacy')) document.getElementById('rules-privacy').value = state.groupSettings.privacy || 'private';
   if (document.getElementById('rules-show-info')) document.getElementById('rules-show-info').value = state.groupSettings.show_info_if_private ? 'true' : 'false';
   if (document.getElementById('rules-allow-invites')) document.getElementById('rules-allow-invites').value = state.groupSettings.allow_invites || 'all';
@@ -1413,12 +1451,6 @@ window.loadGroupSettings = async function loadGroupSettings() {
   const list = document.getElementById('rules-list');
   if (list) {
     list.innerHTML = `
-      <div class="card-row" style="cursor:default;">
-        <div class="card-content">
-          <div class="card-name" style="font-size:13px;">Objetivo del Bote: ${state.groupSettings.pot_goal || 'Cena'}</div>
-          <div class="card-sub">Los miembros deciden en qué gastarlo</div>
-        </div>
-      </div>
       <div class="card-row" style="cursor:default;">
         <div class="card-content">
           <div class="card-name" style="font-size:13px;">Privacidad</div>
