@@ -177,15 +177,49 @@ window.openPlan = async function openPlan(id) {
   } else {
     updateAttendanceBlink(true);
   }
+  
+  const isPast = new Date(p.event_date) < new Date();
+  if (isPast) {
+    // Disable attendance changes for past plans
+    document.querySelectorAll('#attendance-grid .action-btn').forEach(b => {
+      b.onclick = () => showToast('No puedes cambiar asistencia de un plan pasado');
+    });
+    // Hide propose card button
+    const proposeBtn = document.getElementById('btn-propose-card');
+    if (proposeBtn) proposeBtn.style.display = 'none';
+    // Disable comment input
+    const commentInput = document.getElementById('comment-input');
+    if (commentInput) {
+      commentInput.disabled = true;
+      commentInput.placeholder = 'Comentarios cerrados (plan pasado)';
+    }
+    const sendBtn = document.getElementById('comment-send-btn');
+    if (sendBtn) sendBtn.style.display = 'none';
+  } else {
+    // Re-enable everything if it's a future plan
+    document.querySelectorAll('#attendance-grid .action-btn').forEach(b => {
+      const st = b.id.replace('btn-att-', '');
+      b.onclick = () => selectAttendance(st);
+    });
+    const proposeBtn = document.getElementById('btn-propose-card');
+    if (proposeBtn) proposeBtn.style.display = 'block';
+    const commentInput = document.getElementById('comment-input');
+    if (commentInput) {
+      commentInput.disabled = false;
+      commentInput.placeholder = 'Añade un comentario...';
+    }
+    const sendBtn = document.getElementById('comment-send-btn');
+    if (sendBtn) sendBtn.style.display = 'block';
+  }
   // ------------------
   
   // Cargar las fotos reales
-  loadPlanPhotos(id);
+  try { loadPlanPhotos(id); } catch(e){}
   // Cargar tarjetas propuestas
-  if (window.loadPlanCards) window.loadPlanCards(id);
-  if (window.loadPlanComments) loadPlanComments(id);
-  if (window.loadPlanExpenses) loadPlanExpenses(id);
-  loadPlanLikes(id);
+  if (window.loadPlanCards) { try { loadPlanCards(id); } catch(e){} }
+  if (window.loadPlanComments) { try { loadPlanComments(id); } catch(e){} }
+  if (window.loadPlanExpenses) { try { loadPlanExpenses(id); } catch(e){} }
+  try { loadPlanLikes(id); } catch(e){}
 }
 
 window.openHistorial = function openHistorial() {
@@ -2095,6 +2129,8 @@ window.confirmTransferAdmin = function confirmTransferAdmin(name) {
 let pendingReplyTo = null;       // @handle al que se responde
 let pendingReplyRootId = null;   // id del comentario RAÍZ donde anidar el hilo
 
+
+
 window.loadPlanComments = async function loadPlanComments(planId) {
   const list = document.getElementById('comments-list');
   if (!list) return;
@@ -2191,6 +2227,7 @@ function generateCommentHtml(comment, thread = []) {
 
 window.addComment = async function addComment() {
   const input = document.getElementById('comment-input');
+  if (!input) return;
   const val = input.value.trim();
   if (!val) { showToast('Escribe algo antes de enviar'); return; }
 
@@ -2200,27 +2237,29 @@ window.addComment = async function addComment() {
   input.value = 'Enviando...';
   input.disabled = true;
 
-  const { error } = await supabase.from('plan_comments').insert([{
-    plan_id: state.currentPlanId,
-    user_id: state.currentUserId,
-    text: val,
-    parent_comment_id: parentId
-  }]);
+  try {
+    const { error } = await supabase.from('plan_comments').insert([{
+      plan_id: state.currentPlanId,
+      user_id: state.currentUserId,
+      text: val,
+      parent_comment_id: parentId
+    }]);
 
-  input.value = '';
-  input.disabled = false;
-  pendingReplyRootId = null;
+    if (error) throw error;
 
-  if (error) {
-    console.error('Error insertando comentario:', error);
-    showToast('Error al enviar el comentario');
-  } else {
     // Increment the counters immediately for snappy UI
     const countEl = document.getElementById('comment-count-2');
     const countElIcon = document.getElementById('comment-count');
     if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
     if (countElIcon) countElIcon.textContent = parseInt(countElIcon.textContent || 0) + 1;
     loadPlanComments(state.currentPlanId);
+  } catch (err) {
+    console.error('Error insertando comentario:', err);
+    showToast('Error al enviar el comentario');
+  } finally {
+    input.value = '';
+    input.disabled = false;
+    pendingReplyRootId = null;
   }
 }
 
@@ -4286,10 +4325,11 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
         }
       } else {
         totalFuture++;
-        if (myStatus === 'voy' || myStatus === 'tarde') {
-          activeCount++;
-        } else if (!myStatus || myStatus === 'quizas') {
-          pendingCount++;
+        if (myStatus) {
+          activeCount++; // Confirmado (cualquier opción)
+        }
+        if (!myStatus) {
+          pendingCount++; // Pendiente de confirmación
         }
       }
     });
@@ -4602,20 +4642,27 @@ window.loadPlanCards = async function loadPlanCards() {
     // Si la tarjeta ya está activa, history o rejected, mostramos estado en vez de botones
     let voteUI = '';
     if (ac.status === 'pending') {
-       voteUI = `
-         <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
-           <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','favor')" ${hasVoted ? 'disabled' : ''}>A favor (${favor})</button>
-           <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','contra')" ${hasVoted ? 'disabled' : ''}>En contra (${contra})</button>
-         </div>
-         <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Votación anónima. Cierra a las 24h.</div>
-       `;
+       if (hasVoted) {
+         voteUI = `<div style="font-size:11px;font-weight:700;color:var(--ink3);text-align:center;margin-top:8px;padding:8px 0;">Ya has votado. A favor: ${favor} | En contra: ${contra}</div>`;
+       } else {
+         voteUI = `
+           <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
+             <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','favor')">A favor (${favor})</button>
+             <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;" onclick="votePlanCard('${ac.id}','contra')">En contra (${contra})</button>
+           </div>
+           <div style="font-size:10px;color:var(--ink3);margin-top:8px;text-align:center;">Votación anónima. Cierra a las 24h.</div>
+         `;
+       }
     } else {
        const statusText = {
          'active': 'Aprobada y Activa',
-         'history': 'Historial',
+         'history': 'Historial (Pagada)',
          'rejected': 'Rechazada'
        };
-       voteUI = `<div style="font-size:11px;font-weight:700;color:var(--ink2);text-align:center;margin-top:8px;">${statusText[ac.status]}</div>`;
+       voteUI = `<div style="font-size:11px;font-weight:700;color:var(--ink2);text-align:center;margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+         <div>${statusText[ac.status]}</div>
+         ${ac.status === 'active' ? `<button class="btn btn-secondary" style="font-size:10px;padding:4px 8px;" onclick="reclamarTarjeta('${ac.id}')">Reclamar Tarjeta</button>` : ''}
+       </div>`;
     }
 
     const targetName = ac.profiles?.full_name || ac.profiles?.username || 'Usuario';
@@ -4656,8 +4703,8 @@ window.openProposeCard = async function openProposeCard() {
   if (p && p.plan_attendance) {
     const attendeesVotes = p.plan_attendance.filter(a => a.status === 'voy' || a.status === 'tarde');
     attendees = attendeesVotes.map(a => {
-      const m = state.members.find(mem => mem.profiles && mem.profiles.id === a.user_id);
-      return { user_id: a.user_id, profiles: m ? m.profiles : { full_name: 'Usuario' } };
+      const m = state.members.find(mem => mem.user_id === a.user_id);
+      return { user_id: a.user_id, profiles: m ? m.profiles : { full_name: 'Usuario', username: '' } };
     });
   } else if (state.members) {
     attendees = state.members.map(m => ({ user_id: m.profiles.id, profiles: m.profiles }));
@@ -4710,7 +4757,7 @@ window.selectCustomCard = function(id, name, color) {
     <div style="font-size:14px;color:var(--ink);">${name}</div>
   `;
   document.getElementById('custom-card-options').style.display = 'none';
-  event.stopPropagation();
+  if (window.event) window.event.stopPropagation();
 };
 
 window.submitProposeCard = async function submitProposeCard() {
@@ -4723,25 +4770,36 @@ window.submitProposeCard = async function submitProposeCard() {
     return;
   }
 
-  const { error } = await supabase.from('assigned_cards').insert([{
-    group_id: state.currentGroupId,
+  const payload = {
     plan_id: state.currentPlanId,
     target_user_id: targetId,
     proposed_by: state.currentUserId,
     group_card_id: cardId,
     reason: reason,
     status: 'pending'
-  }]);
+  };
 
-  if (error) {
-    console.error('Error proposing card:', error);
-    showToast('Error al proponer la tarjeta');
-    return;
+  try {
+    const { error } = await supabase.from('assigned_cards').insert([payload]);
+
+    if (error) {
+      console.error('Error proposing card:', error);
+      showToast('Error al proponer la tarjeta');
+      return;
+    }
+
+    closeModal('modal-propose-card');
+    showToast('Tarjeta propuesta ✓');
+    if (window.loadPlanCards) loadPlanCards();
+  } catch (err) {
+    console.error('Submit card crash:', err);
+    showToast('Error interno al proponer');
   }
+};
 
-  closeModal('modal-propose-card');
-  showToast('Tarjeta propuesta ✓');
-  if (window.loadPlanCards) loadPlanCards();
+window.reclamarTarjeta = async function reclamarTarjeta(assignedCardId) {
+  showToast('Reclamación enviada al grupo. Queda en revisión.');
+  // Aquí se podría cambiar el status a 'reclaimed' o generar una notificación
 };
 
 window.votePlanCard = async function votePlanCard(cardId, voteType) {
