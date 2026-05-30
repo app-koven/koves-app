@@ -329,7 +329,7 @@ window.selectAttendance = async function selectAttendance(status) {
   
   openPlan(state.currentPlanId); // refresh stats
   renderCalendar(); // refresh calendar
-  if (window.renderPlanLists) window.renderPlanLists(); // instantly refresh tags in active/historial lists
+  if (window.updatePlanKPIs) window.updatePlanKPIs(); // recalculate top numbers and refresh lists
 }
 
 // ── LIKE PLAN ──
@@ -4360,6 +4360,11 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     }
     
     state.plans = plans || [];
+    if (window.updatePlanKPIs) window.updatePlanKPIs();
+  }
+
+  window.updatePlanKPIs = function updatePlanKPIs() {
+    if (!state.plans) return;
     
     // Calcular KPIs reales de MI cuenta
     const now = new Date();
@@ -4367,7 +4372,6 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     let activeCount = 0;
     let historicCount = 0;
     let totalFuture = 0;
-    let totalAll = state.plans.length;
     let totalPast = 0;
 
     state.plans.forEach(p => {
@@ -4408,7 +4412,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (el('kpi-hist-pct')) el('kpi-hist-pct').textContent = histPct + '%';
     if (el('kpi-hist-fill')) el('kpi-hist-fill').style.width = histPct + '%';
     
-    window.renderPlanLists();
+    if (window.renderPlanLists) window.renderPlanLists();
     
     // Refresh calendar so dots appear correctly after loading plans
     if (window.renderCalendar) window.renderCalendar();
