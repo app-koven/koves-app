@@ -537,9 +537,9 @@ const calPlanData = {
 };
 
 window.showCalModal = async function showCalModal(y, m, day, isFuture) {
-  calModalYear = y;
-  calModalMonth = m;
-  calModalDay = day;
+  window.calModalYear = y;
+  window.calModalMonth = m;
+  window.calModalDay = day;
   document.getElementById('cal-modal-title').firstChild.textContent = `Día ${day} de ${meses[m]}`;
   const content = document.getElementById('cal-modal-content');
   content.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink3);">Cargando...</div>';
@@ -578,36 +578,42 @@ window.showCalModal = async function showCalModal(y, m, day, isFuture) {
     `;
 
     if (isPast) {
-      // Buscar sanciones (tarjetas) asociadas a este plan
-      const { data: cards } = await supabase
-        .from('assigned_cards')
-        .select('*, group_cards(*)')
-        .eq('plan_id', p.id);
+      try {
+        // Buscar sanciones (tarjetas) asociadas a este plan
+        const { data: cards, error } = await supabase
+          .from('assigned_cards')
+          .select('*, group_cards(*)')
+          .eq('plan_id', p.id);
 
-      if (cards && cards.length > 0) {
-        html += '<div style="margin-left:14px;border-left:2px solid var(--line);padding-left:12px;margin-bottom:14px;margin-top:-4px;">';
-        cards.forEach(c => {
-          const m = state.members?.find(x => x.id === c.target_user_id);
-          const targetName = m ? m.name : 'Usuario';
-          const cardDef = c.group_cards || {};
-          const cColor = cardDef.color || '#D02020';
-          const cName = cardDef.name || 'Tarjeta';
-          
-          let statusLabelCard = 'Aprobada';
-          if (c.status === 'rejected') statusLabelCard = 'Rechazada';
-          if (c.status === 'pending') statusLabelCard = 'Pendiente';
+        if (error) throw error;
 
-          html += `
-            <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
-              <div style="width:12px;height:16px;border-radius:2px;background:${cColor};flex-shrink:0;margin-top:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);"></div>
-              <div style="min-width:0;">
-                <div style="font-size:12px;font-weight:700;color:var(--ink);">${targetName}</div>
-                <div style="font-size:11px;color:var(--ink3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.reason || cName} · ${statusLabelCard}</div>
+        if (cards && cards.length > 0) {
+          html += '<div style="margin-left:14px;border-left:2px solid var(--line);padding-left:12px;margin-bottom:14px;margin-top:-4px;">';
+          cards.forEach(c => {
+            const memberObj = state.members?.find(x => x.id === c.target_user_id);
+            const targetName = memberObj ? memberObj.name : 'Usuario';
+            const cardDef = c.group_cards || {};
+            const cColor = cardDef.color || '#D02020';
+            const cName = cardDef.name || 'Tarjeta';
+            
+            let statusLabelCard = 'Aprobada';
+            if (c.status === 'rejected') statusLabelCard = 'Rechazada';
+            if (c.status === 'pending') statusLabelCard = 'Pendiente';
+
+            html += `
+              <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+                <div style="width:12px;height:16px;border-radius:2px;background:${cColor};flex-shrink:0;margin-top:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);"></div>
+                <div style="min-width:0;">
+                  <div style="font-size:12px;font-weight:700;color:var(--ink);">${targetName}</div>
+                  <div style="font-size:11px;color:var(--ink3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.reason || cName} · ${statusLabelCard}</div>
+                </div>
               </div>
-            </div>
-          `;
-        });
-        html += '</div>';
+            `;
+          });
+          html += '</div>';
+        }
+      } catch (err) {
+        console.error('Error loading cards for plan', p.id, err);
       }
     }
   }
@@ -1299,9 +1305,22 @@ window.openMemberProfile = async function openMemberProfile(id) {
    ════════════════════════════════════════════════════════════════ */
 
 window.openCreatePlan = function openCreatePlan() {
-  // Preset fecha de hoy
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0];
+  // Preset fecha
+  let targetDate = new Date();
+  if (window.calModalYear !== undefined && window.calModalMonth !== undefined && window.calModalDay !== undefined) {
+    targetDate = new Date(window.calModalYear, window.calModalMonth, window.calModalDay);
+    // Clear global state so it doesn't affect future clicks from elsewhere
+    window.calModalYear = undefined;
+    window.calModalMonth = undefined;
+    window.calModalDay = undefined;
+  }
+  
+  // Format as YYYY-MM-DD local time
+  const y = targetDate.getFullYear();
+  const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const d = String(targetDate.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
+  
   document.getElementById('cp-date').value = dateStr;
   document.getElementById('cp-time').value = '22:00';
   document.getElementById('modal-create-plan').classList.add('open');
