@@ -277,16 +277,42 @@ window.selectAttendance = async function selectAttendance(status) {
     if (btn) btn.classList.add('selected');
     updateAttendanceBlink(false);
     
-    // Upsert to Supabase
-    const { error } = await supabase.from('plan_attendance').upsert({
-      plan_id: state.currentPlanId,
-      user_id: state.currentUserId,
-      status: status
-    }, { onConflict: 'plan_id, user_id' });
+    // Select and Update/Insert to Supabase safely
+    const { data: existRecords, error: selErr } = await supabase.from('plan_attendance')
+      .select('id')
+      .eq('plan_id', state.currentPlanId)
+      .eq('user_id', state.currentUserId);
+
+    if (selErr) {
+      showToast('Error de red al actualizar asistencia');
+      console.error(selErr);
+      return;
+    }
+
+    let dbErr = null;
+    if (existRecords && existRecords.length > 0) {
+      // Update first record
+      const { error } = await supabase.from('plan_attendance')
+        .update({ status: status })
+        .eq('id', existRecords[0].id);
+      dbErr = error;
+      
+      // Clean up duplicates if any
+      if (existRecords.length > 1) {
+        for(let i=1; i<existRecords.length; i++) {
+           await supabase.from('plan_attendance').delete().eq('id', existRecords[i].id);
+        }
+      }
+    } else {
+      // Insert new
+      const { error } = await supabase.from('plan_attendance')
+        .insert([{ plan_id: state.currentPlanId, user_id: state.currentUserId, status: status }]);
+      dbErr = error;
+    }
     
-    if (error) {
-      showToast('Error al actualizar asistencia');
-      console.error(error);
+    if (dbErr) {
+      showToast('Error guardando asistencia');
+      console.error(dbErr);
       return;
     }
     
