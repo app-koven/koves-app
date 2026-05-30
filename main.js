@@ -2073,20 +2073,51 @@ window.openKpiSheet = function openKpiSheet(kind) {
   const title = document.getElementById('kpi-modal-title');
   const content = document.getElementById('kpi-modal-content');
   let planes = [];
+  
+  const now = new Date();
+  const futurePlans = (state.plans || []).filter(p => new Date(p.event_date) >= now);
+  const pastPlans = (state.plans || []).filter(p => new Date(p.event_date) < now);
+
   if (kind === 'pendientes') {
     title.firstChild.textContent = 'Planes pendientes ';
     // Planes activos en los que aún NO has marcado tu asistencia
-    planes = [
-      { id: 'quedada', label: 'Hoy · 22:30', name: 'Quedada en el piso', tag: 'Pendiente', tagCls: 'attendance-tag pendiente' },
-    ];
-  } else {
+    planes = futurePlans.filter(p => {
+      const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
+      return !att || !att.status;
+    });
+  } else if (kind === 'activos') {
     title.firstChild.textContent = 'Planes activos ';
-    // Solo los planes a los que has dicho que asistirás (✓ Voy)
-    planes = [
-      { id: 'fiesta-ana', label: 'Sáb 14 Jun · 23:00', name: 'Fiesta en casa de Ana', tag: '✓ Voy', tagCls: 'attendance-tag voy' },
-    ];
+    // Planes activos en los que SÍ has marcado tu asistencia (confirmados)
+    planes = futurePlans.filter(p => {
+      const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
+      return att && att.status;
+    });
+  } else {
+    title.firstChild.textContent = 'Histórico ';
+    // Planes pasados a los que asististe (voy o tarde)
+    planes = pastPlans.filter(p => {
+      const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
+      return att && (att.status === 'voy' || att.status === 'tarde');
+    });
   }
-  content.innerHTML = planes.length ? planes.map(p => `
+  
+  const planesMapped = planes.map(p => {
+    const d = new Date(p.event_date);
+    const dateStr = d.toLocaleString('es-ES', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+    
+    const att = (p.plan_attendance || []).find(a => a.user_id === state.currentUserId);
+    const myStatus = att ? att.status : null;
+    let tag = 'Pendiente';
+    let tagCls = 'attendance-tag pendiente';
+    if (myStatus === 'voy') { tag = '✓ Voy'; tagCls = 'attendance-tag voy'; }
+    else if (myStatus === 'tarde') { tag = '⏱️ Llego tarde'; tagCls = 'attendance-tag voy'; }
+    else if (myStatus === 'novoy') { tag = '✗ No voy'; tagCls = 'attendance-tag novoy'; }
+    else if (myStatus === 'quizas') { tag = '? Quizás'; tagCls = 'attendance-tag quizas'; }
+    
+    return { id: p.id, label: dateStr, name: p.title || 'Plan sin título', tag, tagCls };
+  });
+
+  content.innerHTML = planesMapped.length ? planesMapped.map(p => `
     <div class="card-row" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;" onclick="closeModal('modal-kpi');openPlan('${p.id}')">
       <div class="card-content">
         <div class="card-label">${p.label}</div>
