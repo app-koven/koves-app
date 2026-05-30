@@ -279,7 +279,7 @@ window.selectAttendance = async function selectAttendance(status) {
     
     // Select and Update/Insert to Supabase safely
     const { data: existRecords, error: selErr } = await supabase.from('plan_attendance')
-      .select('id')
+      .select('*')
       .eq('plan_id', state.currentPlanId)
       .eq('user_id', state.currentUserId);
 
@@ -291,18 +291,12 @@ window.selectAttendance = async function selectAttendance(status) {
 
     let dbErr = null;
     if (existRecords && existRecords.length > 0) {
-      // Update first record
+      // Update record
       const { error } = await supabase.from('plan_attendance')
         .update({ status: status })
-        .eq('id', existRecords[0].id);
+        .eq('plan_id', state.currentPlanId)
+        .eq('user_id', state.currentUserId);
       dbErr = error;
-      
-      // Clean up duplicates if any
-      if (existRecords.length > 1) {
-        for(let i=1; i<existRecords.length; i++) {
-           await supabase.from('plan_attendance').delete().eq('id', existRecords[i].id);
-        }
-      }
     } else {
       // Insert new
       const { error } = await supabase.from('plan_attendance')
