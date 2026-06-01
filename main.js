@@ -1051,10 +1051,16 @@ window.openJoinCode = function openJoinCode() {
 
 window.submitJoinCode = async function submitJoinCode() {
   const inp = document.querySelector('#modal-join-code .form-input');
+  const btn = document.querySelector('#modal-join-code .btn-primary');
   const code = (inp.value || '').toUpperCase().trim();
   if (code.length !== 6) {
     showToast('El código debe tener 6 caracteres');
     return;
+  }
+  
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Buscando...';
   }
   
   try {
@@ -1109,6 +1115,11 @@ window.submitJoinCode = async function submitJoinCode() {
   } catch (error) {
     console.error(error);
     showToast('Error al unirse al grupo');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Unirse';
+    }
   }
 }
 
@@ -1125,6 +1136,7 @@ window.openCreateGroup = function openCreateGroup() {
 window.submitCreateGroup = async function submitCreateGroup() {
   const name = document.getElementById('cg-name').value.trim();
   const initialsInput = document.getElementById('cg-initials').value.trim().toUpperCase();
+  const btn = document.querySelector('#modal-create-group .btn-primary');
   if (!name) {
     showToast('Pon un nombre al grupo');
     return;
@@ -1132,6 +1144,12 @@ window.submitCreateGroup = async function submitCreateGroup() {
   const initials = initialsInput || name.substring(0,2).toUpperCase();
   const colors = ['#1A4B8A','#7A5800','#991B1B','#1A6B3A','#C07000'];
   const color = colors[state.myGroups.length % colors.length];
+  const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Creando...';
+  }
   
   try {
     // 1. Insert Group
@@ -1151,6 +1169,15 @@ window.submitCreateGroup = async function submitCreateGroup() {
       role: 'admin'
     }]);
     if (mError) throw mError;
+
+    // 3. Insert Invite Code
+    const { error: iError } = await supabase.from('group_invites').insert([{
+      group_id: groupId,
+      code: inviteCode,
+      created_by: state.currentUserId,
+      is_active: true
+    }]);
+    if (iError) console.error('Error creating invite code:', iError);
 
     // 3. Insert Settings
     await supabase.from('group_settings').insert([{ group_id: groupId }]);
@@ -1177,6 +1204,11 @@ window.submitCreateGroup = async function submitCreateGroup() {
   } catch (error) {
     console.error(error);
     showToast('Error al crear el grupo');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Crear Grupo';
+    }
   }
 }
 
@@ -1509,7 +1541,25 @@ window.loadGroupSettings = async function loadGroupSettings() {
   // Render rules
   const list = document.getElementById('rules-list');
   if (list) {
+    const { data: invite } = await supabase
+      .from('group_invites')
+      .select('code')
+      .eq('group_id', state.currentGroupId)
+      .eq('is_active', true)
+      .maybeSingle();
+      
+    const inviteCodeStr = invite ? invite.code : 'No hay código';
+
     list.innerHTML = `
+      <div class="card-row" style="cursor:default;">
+        <div class="card-content" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <div>
+            <div class="card-name" style="font-size:13px;">Código de Invitación</div>
+            <div class="card-sub">Pásale este código a tus amigos para que se unan</div>
+          </div>
+          <div style="font-size:16px; font-weight:800; letter-spacing:2px; color:var(--blue); background:var(--bg); padding:6px 12px; border-radius:6px; user-select:all;">${inviteCodeStr}</div>
+        </div>
+      </div>
       <div class="card-row" style="cursor:default;">
         <div class="card-content">
           <div class="card-name" style="font-size:13px;">Privacidad</div>
@@ -2718,8 +2768,8 @@ window.loadActivityTribunal = async function loadActivityTribunal() {
     } else {
       voteUI = `
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" style="flex:1;background:var(--ok);color:#fff;" onclick="voteCard('${c.id}', 'favor')">A favor (${favor})</button>
-          <button class="btn btn-primary" style="flex:1;background:var(--alert);color:#fff;" onclick="voteCard('${c.id}', 'contra')">En contra (${contra})</button>
+          <button class="btn btn-primary" style="flex:1;background:var(--ok);color:#fff;" onclick="voteCard('${c.id}', 'favor', this)">A favor (${favor})</button>
+          <button class="btn btn-primary" style="flex:1;background:var(--alert);color:#fff;" onclick="voteCard('${c.id}', 'contra', this)">En contra (${contra})</button>
         </div>
       `;
     }
@@ -2734,6 +2784,11 @@ window.loadActivityTribunal = async function loadActivityTribunal() {
         </div>
         <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;">Propuesta por ${proposedByName}. ¿Estás de acuerdo?</div>
         ${voteUI}
+        <div style="margin-top:12px;">
+          <button class="btn btn-secondary" style="width:100%;font-size:11px;padding:8px;background:#25D366;color:#fff;border:none;" onclick="shareToWhatsApp('🚨 ¡ATENCIÓN! He propuesto una ${cardName} para ${targetName}. ¡Entrad todos a votar al Tribunal de KOves!')">
+            Compartir al Grupo de WhatsApp 💬
+          </button>
+        </div>
       </div>
     `;
   });
@@ -2741,7 +2796,25 @@ window.loadActivityTribunal = async function loadActivityTribunal() {
   container.innerHTML = html;
 }
 
-window.voteCard = async function voteCard(cardId, voteType) {
+window.shareToWhatsApp = function shareToWhatsApp(text) {
+  const url = encodeURIComponent('https://koves.app'); // Update with actual URL when deployed
+  const encodedText = encodeURIComponent(text + '\n\nLink: ' + url);
+  window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+}
+
+window.sharePlanToWhatsApp = function sharePlanToWhatsApp() {
+  const p = state.plans.find(x => x.id === state.currentPlanId);
+  if (!p) return;
+  const dateStr = new Date(p.event_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit' });
+  const text = `📅 ¡Plan propuesto: ${p.title}!\nCuándo: ${dateStr}\n\nApúntate en KOves para saber cuántos somos:`;
+  shareToWhatsApp(text);
+}
+
+window.voteCard = async function voteCard(cardId, voteType, btnElement) {
+  if (btnElement) {
+    btnElement.disabled = true;
+    btnElement.textContent = 'Votando...';
+  }
   const { error } = await supabase.from('assigned_card_votes').insert({
     assigned_card_id: cardId,
     user_id: state.currentUserId,
@@ -2753,6 +2826,10 @@ window.voteCard = async function voteCard(cardId, voteType) {
     } else {
       showToast('Error al votar');
       console.error(error);
+    }
+    if (btnElement) {
+      btnElement.disabled = false;
+      btnElement.textContent = voteType === 'favor' ? 'A favor' : 'En contra';
     }
   } else {
     showToast('Voto registrado ✓');
@@ -4866,6 +4943,12 @@ window.submitProposeCard = async function submitProposeCard() {
     showToast('Selecciona a quién, qué tarjeta y escribe un motivo');
     return;
   }
+  
+  const btn = document.querySelector('#modal-propose-card .btn-primary');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Proponiendo...';
+  }
 
   const payload = {
     plan_id: state.currentPlanId,
@@ -4891,6 +4974,11 @@ window.submitProposeCard = async function submitProposeCard() {
   } catch (err) {
     console.error('Submit card crash:', err);
     showToast('Error interno al proponer');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Proponer tarjeta';
+    }
   }
 };
 
