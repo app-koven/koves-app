@@ -423,11 +423,17 @@ window.submitExpense = async function submitExpense() {
     return;
   }
   
-  if (file) {
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-    const filePath = `${state.currentGroupId}/${fileName}`;
-    
+  const ext = file.name.split('.').pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+  const filePath = `${state.currentGroupId}/${fileName}`;
+  
+  const btn = document.querySelector('#modal-expense .btn-primary');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Subiendo y guardando...';
+  }
+
+  try {
     const { error: uploadError } = await supabase.storage
       .from('expense-proofs')
       .upload(filePath, file);
@@ -438,55 +444,55 @@ window.submitExpense = async function submitExpense() {
         .getPublicUrl(filePath);
       proofUrl = publicUrlData.publicUrl;
     } else {
-      showToast('Error al subir el comprobante');
-      return;
+      throw new Error('Error al subir el comprobante');
     }
-  }
 
-  // Create expense
-  const { data: exp, error: err1 } = await supabase
-    .from('expenses')
-    .insert([{
-      group_id: state.currentGroupId,
-      payer_id: state.currentUserId,
-      title: title,
-      amount: amount,
-      plan_id: planId || null,
-      status: 'validated', // Auto-validate for MVP
-      proof_url: proofUrl
-    }])
-    .select()
-    .single();
+    // Create expense
+    const { data: exp, error: err1 } = await supabase
+      .from('expenses')
+      .insert([{
+        group_id: state.currentGroupId,
+        payer_id: state.currentUserId,
+        title: title,
+        amount: amount,
+        plan_id: planId || null,
+        status: 'validated', // Auto-validate for MVP
+        proof_url: proofUrl
+      }])
+      .select()
+      .single();
 
-  if (err1) {
-    console.error(err1);
-    showToast('Error al guardar el gasto');
-    return;
-  }
+    if (err1) throw err1;
 
-  // Create splits
-  const splits = selectedPills.map(p => {
-    return {
-      expense_id: exp.id,
-      debtor_id: p.getAttribute('data-id'),
-      amount: splitAmount,
-      status: p.getAttribute('data-id') === state.currentUserId ? 'paid' : 'pending' // payer is already paid
+    // Create splits
+    const splits = selectedPills.map(p => {
+      return {
+        expense_id: exp.id,
+        debtor_id: p.getAttribute('data-id'),
+        amount: splitAmount,
+        status: p.getAttribute('data-id') === state.currentUserId ? 'paid' : 'pending' // payer is already paid
+      }
+    });
+
+    const { error: err2 } = await supabase.from('expense_splits').insert(splits);
+    
+    if (err2) throw err2;
+
+    closeModal('modal-expense');
+    showToast('Gasto añadido ✓');
+    
+    if (window.loadExpenses) window.loadExpenses();
+    if (planId && state.currentPlanId === planId && window.loadPlanExpenses) {
+      loadPlanExpenses(planId);
     }
-  });
-
-  const { error: err2 } = await supabase.from('expense_splits').insert(splits);
-  
-  if (err2) {
-    console.error(err2);
-    showToast('Error al dividir el gasto');
-    return;
-  }
-
-  closeModal('modal-expense');
-  showToast('Gasto guardado ✓');
-  if (window.loadExpenses) window.loadExpenses();
-  if (planId && state.currentPlanId === planId && window.loadPlanExpenses) {
-    loadPlanExpenses(planId);
+  } catch (error) {
+    console.error(error);
+    showToast('Error interno al añadir gasto');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Añadir Gasto';
+    }
   }
 }
 
@@ -1429,6 +1435,12 @@ window.submitCreatePlan = async function submitCreatePlan() {
   
   const isoDate = new Date(`${date}T${time}`).toISOString();
 
+  const btn = document.querySelector('#modal-create-plan .btn-primary');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Creando...';
+  }
+
   try {
     const { data: newPlan, error } = await supabase.from('plans').insert([{
       group_id: state.currentGroupId,
@@ -1466,6 +1478,11 @@ window.submitCreatePlan = async function submitCreatePlan() {
   } catch(error) {
     console.error(error);
     showToast('Error al crear el plan');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Crear Plan';
+    }
   }
 }
 
@@ -2356,9 +2373,11 @@ window.addComment = async function addComment() {
 }
 
 window.likeComment = async function likeComment(commentId) {
-  const { data } = await supabase.from('plan_comments').select('likes_count').eq('id', commentId).single();
-  if (data) {
-    await supabase.from('plan_comments').update({ likes_count: (data.likes_count || 0) + 1 }).eq('id', commentId);
+  const { error } = await supabase.rpc('increment_like', { row_id: commentId });
+  if (error) {
+    console.error('Error liking comment:', error);
+    showToast('Error al dar me gusta');
+  } else {
     loadPlanComments(state.currentPlanId);
   }
 }
@@ -2892,13 +2911,28 @@ window.loadActivityClaims = async function loadActivityClaims() {
 }
 
 window.resolveClaim = async function resolveClaim(claimId, newStatus) {
-  const { error } = await supabase.from('claims').update({ status: newStatus }).eq('id', claimId);
-  if (error) {
-    showToast('Error al resolver la reclamación');
-    console.error(error);
-  } else {
-    showToast('Reclamación ' + (newStatus === 'approved' ? 'aprobada ✓' : 'rechazada ✗'));
-    loadActivityClaims();
+  const btn = document.querySelector(`button[onclick="resolveClaim('${claimId}', '${newStatus}')"]`);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+  }
+
+  try {
+    const { error } = await supabase.from('claims').update({ status: newStatus }).eq('id', claimId);
+    if (error) {
+      showToast('Error al resolver la reclamación');
+      console.error(error);
+    } else {
+      showToast('Reclamación ' + (newStatus === 'approved' ? 'aprobada ✓' : 'rechazada ✗'));
+      loadActivityClaims();
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = newStatus === 'approved' ? 'Aprobar' : 'Rechazar';
+    }
   }
 }
 
@@ -3317,62 +3351,6 @@ window.loadPlanExpenses = async function loadPlanExpenses(planId) {
 }
 
 // ── CARGAR TARJETAS DEL PLAN ──
-window.oldLoadPlanCards = async function oldLoadPlanCards(planId) {
-  const list = document.getElementById('plan-cards-list');
-  if (!list) return;
-  list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">Cargando tarjetas...</div>';
-  
-  const { data: cards, error } = await supabase
-    .from('sanctions')
-    .select('*, sanction_votes(*)')
-    .eq('plan_id', planId)
-    .order('created_at', { ascending: false });
-    
-  if (error || !cards || cards.length === 0) {
-    list.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--ink3);padding:14px 0;">No hay tarjetas propuestas.</div>';
-    return;
-  }
-  
-  let html = '';
-  cards.forEach(c => {
-    const targetName = getProfileName(c.user_id);
-    const creatorName = getProfileName(c.creator_id).split(' ')[0];
-    const color = c.type === 'red' ? '#E12A3C' : '#C07000';
-    
-    const votes = c.sanction_votes || [];
-    const favor = votes.filter(v => v.vote === 'favor').length;
-    const contra = votes.filter(v => v.vote === 'contra').length;
-    const totalVotes = favor + contra;
-    const pctFavor = totalVotes > 0 ? (favor / totalVotes) * 100 : 0;
-    const pctContra = totalVotes > 0 ? (contra / totalVotes) * 100 : 0;
-    
-    const myVote = votes.find(v => v.user_id === state.currentUserId);
-    
-    html += `
-      <div class="card" style="padding:14px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="width:24px;height:34px;border-radius:4px;background:${color};"></div>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:700;">${targetName} · ${c.reason || 'Sin motivo'}</div>
-            <div style="font-size:11px;color:var(--ink3);">Propuesto por ${creatorName}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-          <div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:flex;">
-            <div style="width:${pctFavor}%;background:var(--green);"></div>
-            <div style="width:${pctContra}%;background:var(--red);"></div>
-          </div>
-          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);">${favor}/${totalVotes}</span>
-        </div>
-        <div style="display:flex;gap:6px;" id="plan-card-vote-btns">
-          <button class="btn btn-primary" style="flex:1;font-size:11px;padding:8px;${myVote?.vote === 'favor' ? 'background:var(--green);color:#fff;border-color:var(--green);' : ''}" onclick="voteCard('${c.id}','favor')">A favor (${favor})</button>
-          <button class="btn btn-secondary" style="flex:1;font-size:11px;padding:8px;${myVote?.vote === 'contra' ? 'background:var(--red);color:#fff;border-color:var(--red);' : ''}" onclick="voteCard('${c.id}','contra')">En contra (${contra})</button>
-        </div>
-      </div>
-    `;
-  });
-  list.innerHTML = html;
-}
 
 
 // Cargar fotos reales del plan
@@ -5008,26 +4986,6 @@ window.votePlanCard = async function votePlanCard(cardId, voteType) {
 
   showToast('Voto anónimo registrado ✓');
   if (window.loadPlanCards) loadPlanCards();
-};
-
-window.oldVoteCard = async function oldVoteCard(sanctionId, voteType) {
-  if (!state.currentUserId) return;
-
-  // UPSERT: If you already voted, it replaces it
-  const { error } = await supabase.from('sanction_votes').upsert({
-    sanction_id: sanctionId,
-    user_id: state.currentUserId,
-    vote: voteType
-  }, { onConflict: 'sanction_id, user_id' });
-
-  if (error) {
-    console.error('Error al votar:', error);
-    showToast('Error al votar');
-    return;
-  }
-
-  showToast('Voto registrado ✓');
-  if (window.loadPlanCards) loadPlanCards(state.currentPlanId);
 };
 
 // ── TARJETAS RECIBIDAS (MEMBER PROFILE) ──
