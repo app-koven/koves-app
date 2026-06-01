@@ -2717,7 +2717,7 @@ window.loadActivityPlans = async function loadActivityPlans() {
 }
 
 window.loadActivityTribunal = async function loadActivityTribunal() {
-  const container = document.getElementById('activity-disciplina');
+  const container = document.getElementById('tribunal-activas');
   if (!container) return;
   
   if (container) container.innerHTML = '<div style="font-size:11px;color:var(--ink3);text-align:center;padding:16px;">Cargando tarjetas...</div>';
