@@ -79,9 +79,9 @@ window.showScreen = function showScreen(name, opts) {
   const navEl = document.getElementById('nav-' + navTarget);
   if (navEl) navEl.classList.add('active');
 
-  // FAB solo en la pantalla de planes
+  // FAB solo en la pantalla de planes y si hay grupo
   const fab = document.getElementById('fab-create');
-  if (fab) fab.style.display = (name === 'plans') ? 'flex' : 'none';
+  if (fab) fab.style.display = (name === 'plans' && state.currentGroupId) ? 'flex' : 'none';
   
   // Ocultar barra inferior en pantallas de detalle
   const bottomNav = document.querySelector('.bottom-nav');
@@ -4619,6 +4619,13 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       const list = document.getElementById('plans-activos-list');
       if (list) list.innerHTML = '<div class="notice" style="margin-bottom:16px;">No tienes grupos. Crea uno o únete para ver los planes.</div>';
     }
+    
+    // START TOUR si no se ha hecho
+    setTimeout(() => {
+      if (window.TourManager && !localStorage.getItem('koves_tour_done')) {
+        TourManager.start();
+      }
+    }, 1500);
   }
 
   document.addEventListener('DOMContentLoaded', initApp);
@@ -5313,3 +5320,84 @@ window.openCreateGroupModal = function() {
 window.openJoinGroupModal = function() {
   document.getElementById('modal-join-code').classList.add('open');
 };
+
+// ── ONBOARDING & TOUR MANAGER ──
+window.TourManager = {
+  steps: [
+    {
+      targetId: 'nav-group',
+      text: '¡Bienvenido a KOves! El primer paso es crear un Grupo para ti y tus amigos, o unirte a uno con tu código de invitación.'
+    },
+    {
+      targetId: 'nav-plans',
+      text: 'Aquí propondrás las fiestas, votarás fechas y verás quién asiste al próximo evento.'
+    },
+    {
+      targetId: 'nav-expenses',
+      text: 'Sube tus tickets de compra aquí. Nosotros calculamos automáticamente quién debe dinero a quién.'
+    }
+  ],
+  currentStep: 0,
+  
+  start: function() {
+    if (localStorage.getItem('koves_tour_done')) return;
+    this.currentStep = 0;
+    document.getElementById('spotlight-overlay').style.display = 'block';
+    document.getElementById('spotlight-tooltip').style.display = 'block';
+    this.showStep();
+  },
+
+  showStep: function() {
+    if (this.currentStep >= this.steps.length) {
+      this.finish();
+      return;
+    }
+    
+    const step = this.steps[this.currentStep];
+    const target = document.getElementById(step.targetId);
+    
+    if (!target) {
+      this.currentStep++;
+      this.showStep();
+      return;
+    }
+
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    setTimeout(() => {
+      const rect = target.getBoundingClientRect();
+      const hole = document.getElementById('spotlight-hole');
+      const tooltip = document.getElementById('spotlight-tooltip');
+      const textEl = document.getElementById('spotlight-text');
+      
+      hole.style.top = (rect.top - 10) + 'px';
+      hole.style.left = (rect.left - 10) + 'px';
+      hole.style.width = (rect.width + 20) + 'px';
+      hole.style.height = (rect.height + 20) + 'px';
+      
+      textEl.textContent = step.text;
+      
+      let tooltipTop = rect.bottom + 20;
+      if (tooltipTop + 150 > window.innerHeight) {
+        tooltipTop = Math.max(20, rect.top - 150);
+      }
+      
+      tooltip.style.top = tooltipTop + 'px';
+      tooltip.style.left = Math.max(20, Math.min(window.innerWidth - 300, rect.left + (rect.width/2) - 140)) + 'px';
+    }, 300);
+  },
+  
+  next: function() {
+    this.currentStep++;
+    this.showStep();
+  },
+  
+  finish: function() {
+    document.getElementById('spotlight-overlay').style.display = 'none';
+    document.getElementById('spotlight-tooltip').style.display = 'none';
+    localStorage.setItem('koves_tour_done', 'true');
+    showToast('¡Tour completado! Eres libre de usar KOves.');
+  }
+};
+
+document.getElementById('spotlight-next-btn')?.addEventListener('click', () => TourManager.next());

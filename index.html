@@ -1061,34 +1061,11 @@
     <div class="modal-body">
       <div class="search-wrap">
         <div class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <input type="text" class="search-input" placeholder="Buscar por nombre o categoría…">
+        <input type="text" class="search-input" id="search-groups-input" placeholder="Buscar por nombre o categoría…">
       </div>
-      <div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em;">Sugeridos</div>
-      <div class="card" style="padding:0;">
-        <div class="group-item" onclick="requestJoinGroup('Padel Murcia')">
-          <div class="group-avatar" style="background:var(--green);">PM</div>
-          <div class="group-info">
-            <div class="group-name-row"><span class="group-name">Padel Murcia</span></div>
-            <div class="group-meta">14 miembros · público · deporte</div>
-          </div>
-          <span class="pill pill-outline">Unirme</span>
-        </div>
-        <div class="group-item" onclick="requestJoinGroup('Ruta de los pinchos')">
-          <div class="group-avatar" style="background:#C07000;">RP</div>
-          <div class="group-info">
-            <div class="group-name-row"><span class="group-name">Ruta de los pinchos</span></div>
-            <div class="group-meta">8 miembros · público · gastronomía</div>
-          </div>
-          <span class="pill pill-outline">Unirme</span>
-        </div>
-        <div class="group-item" onclick="requestJoinGroup('Senderistas Sierra')">
-          <div class="group-avatar" style="background:var(--blue);">SS</div>
-          <div class="group-info">
-            <div class="group-name-row"><span class="group-name">Senderistas Sierra Espuña</span></div>
-            <div class="group-meta">23 miembros · público · naturaleza</div>
-          </div>
-          <span class="pill pill-outline">Unirme</span>
-        </div>
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em;">Resultados</div>
+      <div class="card" style="padding:0;" id="search-groups-results">
+        <div style="padding:20px;text-align:center;font-size:13px;color:var(--ink3);">Escribe para buscar grupos públicos</div>
       </div>
       <div style="font-size:11px;color:var(--ink3);margin-top:12px;text-align:center;">Los grupos privados no aparecen aquí. Pide un código de invitación.</div>
     </div>
@@ -1850,6 +1827,15 @@
   <div style="width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px;"></div>
   <div id="global-loader-text" style="font-size:14px;font-weight:700;color:var(--ink);">Procesando...</div>
   <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+</div>
+
+<!-- SPOTLIGHT ONBOARDING OVERLAY -->
+<div id="spotlight-overlay" style="display:none;position:fixed;inset:0;z-index:9998;pointer-events:none;transition:all 0.4s ease-in-out;">
+  <div id="spotlight-hole" style="position:absolute;background:transparent;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.7);transition:all 0.4s ease-in-out;"></div>
+</div>
+<div id="spotlight-tooltip" style="display:none;position:fixed;z-index:9999;background:var(--surface);padding:16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.3);width:280px;pointer-events:auto;transition:all 0.4s ease-in-out;">
+  <div id="spotlight-text" style="font-size:14px;color:var(--ink);margin-bottom:12px;font-weight:600;line-height:1.4;"></div>
+  <button id="spotlight-next-btn" class="btn btn-primary btn-full" style="padding:8px;font-size:13px;border-radius:8px;">Siguiente</button>
 </div>
 
 <!-- PHOTO VIEWER -->
