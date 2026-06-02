@@ -427,11 +427,7 @@ window.submitExpense = async function submitExpense() {
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
   const filePath = `${state.currentGroupId}/${fileName}`;
   
-  const btn = document.querySelector('#modal-expense .btn-primary');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Subiendo y guardando...';
-  }
+  showGlobalLoading('Subiendo y guardando gasto...');
 
   try {
     const { error: uploadError } = await supabase.storage
@@ -447,6 +443,7 @@ window.submitExpense = async function submitExpense() {
       throw new Error('Error al subir el comprobante');
     }
 
+    // Usar "rpc" para inserción atómica o hacerlo secuencialmente con control de errores fuerte
     // Create expense
     const { data: exp, error: err1 } = await supabase
       .from('expenses')
@@ -476,7 +473,11 @@ window.submitExpense = async function submitExpense() {
 
     const { error: err2 } = await supabase.from('expense_splits').insert(splits);
     
-    if (err2) throw err2;
+    if (err2) {
+      // Rollback manual
+      await supabase.from('expenses').delete().eq('id', exp.id);
+      throw err2;
+    }
 
     closeModal('modal-expense');
     showToast('Gasto añadido ✓');
@@ -489,10 +490,7 @@ window.submitExpense = async function submitExpense() {
     console.error(error);
     showToast('Error interno al añadir gasto');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Añadir Gasto';
-    }
+    hideGlobalLoading();
   }
 }
 
@@ -681,6 +679,21 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
     }
   });
 });
+
+// ── GLOBAL LOADER ──
+window.showGlobalLoading = function(text = 'Procesando...') {
+  const el = document.getElementById('global-loader');
+  const txt = document.getElementById('global-loader-text');
+  if (el && txt) {
+    txt.textContent = text;
+    el.style.display = 'flex';
+  }
+};
+
+window.hideGlobalLoading = function() {
+  const el = document.getElementById('global-loader');
+  if (el) el.style.display = 'none';
+};
 
 // ── TOAST ──
 window.showToast = function showToast(msg) {
@@ -1041,6 +1054,7 @@ window.switchGroup = function switchGroup(id) {
   if (window.loadFeed) window.loadFeed();
   if (window.loadRankings) window.loadRankings();
   if (window.loadGroupSettings) window.loadGroupSettings();
+  if (window.applyAdminVisibility) window.applyAdminVisibility();
   // Reiniciar WebSocket para el nuevo grupo
   if (window.initRealtime) window.initRealtime();
 }
@@ -1057,25 +1071,20 @@ window.openJoinCode = function openJoinCode() {
 
 window.submitJoinCode = async function submitJoinCode() {
   const inp = document.querySelector('#modal-join-code .form-input');
-  const btn = document.querySelector('#modal-join-code .btn-primary');
   const code = (inp.value || '').toUpperCase().trim();
   if (code.length !== 6) {
     showToast('El código debe tener 6 caracteres');
     return;
   }
   
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Buscando...';
-  }
+  showGlobalLoading('Buscando grupo...');
   
   try {
     // 1. Buscar el código en group_invites
     const { data: invite, error: inviteErr } = await supabase
       .from('group_invites')
       .select('group_id')
-      .eq('code', code)
-      .eq('is_active', true)
+      .eq('invite_code', code)
       .single();
       
     if (inviteErr || !invite) {
@@ -1122,10 +1131,7 @@ window.submitJoinCode = async function submitJoinCode() {
     console.error(error);
     showToast('Error al unirse al grupo');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Unirse';
-    }
+    hideGlobalLoading();
   }
 }
 
@@ -1142,7 +1148,6 @@ window.openCreateGroup = function openCreateGroup() {
 window.submitCreateGroup = async function submitCreateGroup() {
   const name = document.getElementById('cg-name').value.trim();
   const initialsInput = document.getElementById('cg-initials').value.trim().toUpperCase();
-  const btn = document.querySelector('#modal-create-group .btn-primary');
   if (!name) {
     showToast('Pon un nombre al grupo');
     return;
@@ -1152,10 +1157,7 @@ window.submitCreateGroup = async function submitCreateGroup() {
   const color = colors[state.myGroups.length % colors.length];
   const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
   
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Creando...';
-  }
+  showGlobalLoading('Creando grupo...');
   
   try {
     // 1. Insert Group
@@ -1176,25 +1178,16 @@ window.submitCreateGroup = async function submitCreateGroup() {
     }]);
     if (mError) throw mError;
 
-    // 3. Insert Invite Code
-    const { error: iError } = await supabase.from('group_invites').insert([{
-      group_id: groupId,
-      code: inviteCode,
-      created_by: state.currentUserId,
-      is_active: true
-    }]);
-    if (iError) console.error('Error creating invite code:', iError);
-
     // 3. Insert Settings
     await supabase.from('group_settings').insert([{ group_id: groupId }]);
 
     // 4. Generate & Insert Invite Code
-    const code = Math.random().toString(36).substring(2,8).toUpperCase();
-    await supabase.from('group_invites').insert([{
+    const { error: iError } = await supabase.from('group_invites').insert([{
       group_id: groupId,
-      code: code,
+      invite_code: inviteCode,
       created_by: state.currentUserId
     }]);
+    if (iError) console.error('Error creating invite code:', iError);
 
     showToast('Grupo creado correctamente');
     document.getElementById('cg-name').value = '';
@@ -1211,10 +1204,7 @@ window.submitCreateGroup = async function submitCreateGroup() {
     console.error(error);
     showToast('Error al crear el grupo');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Crear Grupo';
-    }
+    hideGlobalLoading();
   }
 }
 
@@ -1509,6 +1499,8 @@ window.submitRules = async function submitRules() {
   const showInfo = document.getElementById('rules-show-info') ? document.getElementById('rules-show-info').value === 'true' : true;
   const allowInvites = document.getElementById('rules-allow-invites') ? document.getElementById('rules-allow-invites').value : 'all';
 
+  showGlobalLoading('Guardando reglas...');
+
   try {
     const { error } = await supabase
       .from('group_settings')
@@ -1523,13 +1515,15 @@ window.submitRules = async function submitRules() {
 
     if (error) throw error;
 
-    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount, pot_goal: potGoal, privacy: privacy, show_info_if_private: showInfo, allow_invites: allowInvites };
+    state.groupSettings = { ...state.groupSettings, yellow_card_amount: yellowAmount, red_card_amount: redAmount, privacy: privacy, show_info_if_private: showInfo, allow_invites: allowInvites };
     loadGroupSettings();
     closeModal('modal-rules');
     showToast('Reglas guardadas ✓');
   } catch (err) {
     console.error(err);
     showToast('Error al guardar las reglas');
+  } finally {
+    hideGlobalLoading();
   }
 }
 
@@ -2682,9 +2676,13 @@ window.switchActivityTab = function switchActivityTab(el, name) {
 
 window.loadActivityFeed = async function loadActivityFeed() {
   if (!state.currentGroupId) return;
-  loadActivityPlans();
-  loadActivityTribunal();
-  loadActivityClaims();
+  
+  // Usar allSettled asegura que si una falla, las demás sigan cargando.
+  await Promise.allSettled([
+    loadActivityPlans(),
+    loadActivityTribunal(),
+    loadActivityClaims()
+  ]);
 }
 
 window.loadActivityPlans = async function loadActivityPlans() {
@@ -2911,11 +2909,7 @@ window.loadActivityClaims = async function loadActivityClaims() {
 }
 
 window.resolveClaim = async function resolveClaim(claimId, newStatus) {
-  const btn = document.querySelector(`button[onclick="resolveClaim('${claimId}', '${newStatus}')"]`);
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Procesando...';
-  }
+  showGlobalLoading(newStatus === 'approved' ? 'Aprobando...' : 'Rechazando...');
 
   try {
     const { error } = await supabase.from('claims').update({ status: newStatus }).eq('id', claimId);
@@ -2929,10 +2923,7 @@ window.resolveClaim = async function resolveClaim(claimId, newStatus) {
   } catch (err) {
     console.error(err);
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = newStatus === 'approved' ? 'Aprobar' : 'Rechazar';
-    }
+    hideGlobalLoading();
   }
 }
 
@@ -3910,9 +3901,17 @@ window.spinRoulette = function spinRoulette() {
         options: rouletteOptions,
         spun_by: state.currentUserId
       };
-      const { error } = await supabase.from('roulette_spins').insert([payload]);
-      if (!error) {
-        if (window.loadRouletteHistory) window.loadRouletteHistory();
+      
+      try {
+        const { error } = await supabase.from('roulette_spins').insert([payload]);
+        if (error) {
+          console.warn('Ruleta: Error al guardar en DB, pero el resultado es válido localmente.', error);
+          showToast('Resultado local (Error de conexión)');
+        } else {
+          if (window.loadRouletteHistory) window.loadRouletteHistory();
+        }
+      } catch(err) {
+        console.error('Network error on roulette:', err);
       }
     }
   }, 4100);
@@ -4369,6 +4368,12 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
       return;
     }
     state.members = data || [];
+    
+    // Update isAdmin flag
+    const myMember = state.members.find(m => m.user_id === state.currentUserId);
+    state.isAdmin = myMember ? (myMember.role === 'admin') : false;
+    if (window.applyAdminVisibility) window.applyAdminVisibility();
+    
     renderMembersList();
   };
 
@@ -5075,24 +5080,30 @@ window.saveGroupLabel = async function saveGroupLabel() {
     created_by: state.currentUserId
   };
 
-  let error;
-  if (state.editingLabelId) {
-    const res = await supabase.from('group_labels').update(payload).eq('id', state.editingLabelId);
-    error = res.error;
-  } else {
-    const res = await supabase.from('group_labels').insert([payload]);
-    error = res.error;
-  }
+  showGlobalLoading('Guardando etiqueta...');
 
-  if (error) {
-    console.error('Error saving group label:', error);
-    showToast('Error al guardar la etiqueta');
-    return;
-  }
+  try {
+    let error;
+    if (state.editingLabelId) {
+      const res = await supabase.from('group_labels').update(payload).eq('id', state.editingLabelId);
+      error = res.error;
+    } else {
+      const res = await supabase.from('group_labels').insert([payload]);
+      error = res.error;
+    }
 
-  closeModal('modal-create-label');
-  showToast('Etiqueta guardada ✓');
-  loadGroupLabels();
+    if (error) {
+      console.error('Error saving group label:', error);
+      showToast('Error al guardar la etiqueta');
+      return;
+    }
+
+    closeModal('modal-create-label');
+    showToast('Etiqueta guardada ✓');
+    loadGroupLabels();
+  } finally {
+    hideGlobalLoading();
+  }
 };
 
 window.loadWeeklyVotingStatus = async function loadWeeklyVotingStatus() {
